@@ -301,9 +301,46 @@ class MainActivity : Activity() {
         latestMarketBatch = batch
         latestValuation = valuation
 
+        val freshCurrentSession = valuation.isComplete &&
+            valuation.todayPnl != null &&
+            batch.quotes.size == symbols.size &&
+            batch.quotes.values.all { quote ->
+                quote.quality != QuoteQuality.STALE &&
+                    taipeiDateOf(quote.asOfEpochMillis) == currentTaipeiDate
+            }
+
+        if (
+            freshCurrentSession &&
+            now - lastHistoryWriteEpochMillis >= PerformanceHistoryRepository.INTRADAY_BUCKET_MILLIS
+        ) {
+            runCatching {
+                performanceHistoryRepository.recordFreshValuation(
+                    taipeiDate = currentTaipeiDate,
+                    capturedAtEpochMillis = now,
+                    totalMarketValue = valuation.totalMarketValue ?: 0L,
+                    totalInvestmentCost = snapshot.totalInvestmentCost,
+                    realizedNetPnL = snapshot.realizedNetPnL,
+                    dailyMarketPnL = valuation.todayPnl ?: 0L,
+                    totalUnrealizedProfit = valuation.totalPnl ?: 0.0,
+                    quotedHoldingCount = valuation.quotedHoldingCount,
+                    expectedHoldingCount = valuation.expectedHoldingCount,
+                    recordIntraday = tradingSession,
+                )
+            }.onSuccess { history ->
+                lastHistoryWriteEpochMillis = now
+                latestPreviousDayPnl = history.previousTradingDayPnl
+                latestIntradayPointCount = history.currentDayPointCount
+            }
+        }
+
         runOnUiThread {
             applyLedgerSnapshot(snapshot)
-            applyMarketValuation(batch, valuation, tradingSession)
+            applyMarketValuation(
+                batch = batch,
+                valuation = valuation,
+                tradingSession = tradingSession,
+                freshCurrentSession = freshCurrentSession,
+            )
         }
 
         val nextDelay = if (tradingSession) 1_000L else 30_000L
