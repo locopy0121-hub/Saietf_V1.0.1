@@ -207,6 +207,13 @@ class MainActivity : Activity() {
             runCatching { repository.loadDashboard() }
                 .onSuccess { snapshot ->
                     latestLedgerSnapshot = snapshot
+                    val today = LocalDate.now(taipeiZone).toString()
+                    latestPreviousDayPnl = runCatching {
+                        performanceHistoryRepository.previousTradingDay(today)?.dailyMarketPnL
+                    }.getOrNull()
+                    latestIntradayPointCount = runCatching {
+                        performanceHistoryRepository.intradayPointCount(today)
+                    }.getOrDefault(0)
                     runOnUiThread { applyLedgerSnapshot(snapshot) }
                     if (marketPollingActive) {
                         scheduleMarketRefresh(0L, pollGeneration)
