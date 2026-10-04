@@ -149,6 +149,9 @@ class MainActivity : Activity() {
             "三者為不同數據；昨日等待每日快照",
         )
         pnlValue = pnl.second
+        pnl.first.isClickable = true
+        pnl.first.isFocusable = true
+        pnl.first.setOnClickListener { showDailyPerformanceDialog() }
         root.addView(pnl.first)
 
         val holdingCount = buildMetricCard(
