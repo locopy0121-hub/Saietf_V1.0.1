@@ -1,5 +1,6 @@
 package tw.saietf.core.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -35,5 +36,6 @@ data class DailySnapshotEntity(
     val realizedNetPnL: Double,
     val totalDividendsReceived: Long,
     val comprehensivePnL: Double,
+    @ColumnInfo(defaultValue = "0")
     val dailyMarketPnL: Long,
 )
