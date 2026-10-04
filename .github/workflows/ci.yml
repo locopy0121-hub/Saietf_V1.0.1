@@ -28,13 +28,8 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: "platform-tools platforms;android-36 build-tools;36.0.0"
-      - name: Verify frozen finance fixtures are reproducible
-        run: |
-          rm -rf /tmp/v378-a /tmp/v378-b
-          node tools/tf-v378/export-fixtures.mjs /tmp/v378-a
-          node tools/tf-v378/export-fixtures.mjs /tmp/v378-b
-          diff -ru /tmp/v378-a /tmp/v378-b
-          diff -ru core/finance/src/test/resources/v378 /tmp/v378-a
+      - name: Verify frozen finance core lock
+        run: ./scripts/verify_finance_lock.sh
       - name: Verify unit tests, lint, and debug APK
         run: ./gradlew --no-daemon clean test lintDebug :app:assembleDebug
       - name: Upload debug APK
