@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "locopy0121-hub/ETF-Finance-Manager-V3.7",
+  "sourceCommit": "a872644c572d24fc5ffe597a97eb6d7d8bd7283f",
+  "cases": [
+    {
+      "id": "partial-sell-moving-average",
+      "input": {
+        "symbol": "0050",
+        "currentPrice": 25,
+        "liquidationTradeMode": "ROUND_LOT",
+        "latestDividendPerShare": 0,
+        "transactions": [
+          { "id": "b1", "type": "BUY", "shares": 100, "price": 10, "tradeMode": "ROUND_LOT", "date": "2026-01-01" },
+          { "id": "b2", "type": "BUY", "shares": 100, "price": 20, "tradeMode": "ROUND_LOT", "date": "2026-01-02" },
+          { "id": "s1", "type": "SELL", "shares": 50, "price": 30, "tradeMode": "ROUND_LOT", "date": "2026-01-03" }
+        ],
+        "dividends": []
+      },
+      "expected": {
+        "totalShares": 150,
+        "totalInvestmentCost": 2280,
+        "currentMarketValue": 3750,
+        "estimatedSellCommission": 20,
+        "estimatedSellTax": 3,
+        "netLiquidationValue": 3727,
+        "unrealizedProfit": 1447,
+        "realizedNetPnL": 719,
+        "totalDividendsReceived": 0,
+        "comprehensivePnL": 2166,
+        "nextEstimatedDividend": 0
+      }
+    },
+    {
+      "id": "00878-canonical-summary",
+      "input": {
+        "symbol": "00878",
+        "currentPrice": 22,
+        "liquidationTradeMode": "ROUND_LOT",
+        "dividendFrequency": 4,
+        "latestDividendPerShare": 0.4,
+        "transactions": [
+          { "id": "b1", "type": "BUY", "shares": 1000, "price": 20, "tradeMode": "ROUND_LOT", "date": "2026-02-01" }
+        ],
+        "dividends": [
+          { "id": "d1", "sharesHeld": 1000, "perShareAmount": 0.4, "paymentDate": "2026-03-01" }
+        ]
+      },
+      "expected": {
+        "totalShares": 1000,
+        "totalInvestmentCost": 20020,
+        "currentMarketValue": 22000,
+        "estimatedSellCommission": 20,
+        "estimatedSellTax": 22,
+        "netLiquidationValue": 21958,
+        "unrealizedProfit": 1938,
+        "realizedNetPnL": 0,
+        "totalDividendsReceived": 390,
+        "comprehensivePnL": 2328,
+        "nextEstimatedDividend": 390
+      }
+    },
+    {
+      "id": "two-instrument-portfolio",
+      "input": {
+        "instruments": [
+          {
+            "symbol": "0050",
+            "currentPrice": 90,
+            "liquidationTradeMode": "ODD_LOT",
+            "dividendFrequency": 4,
+            "latestDividendPerShare": 1,
+            "transactions": [
+              { "id": "b1", "type": "BUY", "shares": 20, "price": 82.4, "tradeMode": "ODD_LOT", "date": "2026-01-01", "actualFee": 2 }
+            ],
+            "dividends": [
+              { "id": "d1", "sharesHeld": 20, "perShareAmount": 1, "paymentDate": "2026-02-01" }
+            ]
+          },
+          {
+            "symbol": "00878",
+            "currentPrice": 22,
+            "liquidationTradeMode": "ROUND_LOT",
+            "dividendFrequency": 4,
+            "latestDividendPerShare": 0.4,
+            "transactions": [
+              { "id": "b1", "type": "BUY", "shares": 1000, "price": 20, "tradeMode": "ROUND_LOT", "date": "2026-02-01" }
+            ],
+            "dividends": [
+              { "id": "d1", "sharesHeld": 1000, "perShareAmount": 0.4, "paymentDate": "2026-03-01" }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "totalMarketValue": 23800,
+        "totalInvestmentCost": 21670,
+        "totalNetLiquidationValue": 23756,
+        "totalEstimatedSellCommission": 21,
+        "totalEstimatedSellTax": 23,
+        "totalUnrealizedProfit": 2086,
+        "totalUnrealizedROI": 9.63,
+        "realizedNetPnL": 0,
+        "totalDividendsReceived": 400,
+        "comprehensivePnL": 2486,
+        "totalPnl": 2486,
+        "nextEstimatedDividendTotal": 400,
+        "weights": { "0050": 7.56, "00878": 92.44 }
+      }
+    }
+  ]
+}
