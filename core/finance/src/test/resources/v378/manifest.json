@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "locopy0121-hub/ETF-Finance-Manager-V3.7",
+  "sourceCommit": "a872644c572d24fc5ffe597a97eb6d7d8bd7283f",
+  "sourcePaths": [
+    "src/utils/etfCalculators.ts",
+    "src/data/brokerProfiles.ts",
+    "src/types/etf.ts"
+  ],
+  "hashes": {
+    "trades.json": "b2d2078eb773b2002f4bdb00480a565b8985dc92e5d15ca6a683c8598b43542d",
+    "portfolios.json": "c0a0a2e2567648c8cecb1f9f31671a08525c031d7d5a3741b0c2bedd9d6ef1ef",
+    "dividends.json": "5836ec95bc8b50a924c60452e9182d144f36327feddd4acb96d73156bc8cccde"
+  }
+}
