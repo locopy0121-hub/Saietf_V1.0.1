@@ -87,13 +87,13 @@ jobs:
       - name: Upload Room schema
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-Room-schema-v1
+          name: SaiETF-Room-schema-v2
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.10 APK
+      - name: Upload V1.0.11 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.10-upgrade-safe-apk
+          name: SaiETF-V1.0.11-daily-pnl-intraday-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
