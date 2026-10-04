@@ -235,7 +235,8 @@ class MainActivity : Activity() {
 
         if (snapshot.holdings.isEmpty()) {
             totalAssetValue.text = "NT$ 0"
-            pnlValue.text = "— / NT$ 0 / NT$ 0"
+            pnlValue.text =
+                "${latestPreviousDayPnl?.let(::formatSignedTwd) ?: "—"} / NT$ 0 / NT$ 0"
             marketStatusValue.text = "目前沒有持股，不需抓取行情"
             latestMarketBatch = null
             latestValuation = valuator.value(emptyList(), emptyMap())
@@ -278,12 +279,13 @@ class MainActivity : Activity() {
 
         val now = System.currentTimeMillis()
         val taipeiNow = Instant.ofEpochMilli(now).atZone(taipeiZone)
+        val currentTaipeiDate = taipeiNow.toLocalDate().toString()
         val tradingSession = isTaipeiTradingSession(taipeiNow.dayOfWeek, taipeiNow.toLocalTime())
 
         val batch = marketDataCenter.refresh(
             symbols = symbols,
             nowEpochMillis = now,
-            currentTaipeiDate = taipeiNow.toLocalDate().toString(),
+            currentTaipeiDate = currentTaipeiDate,
             tradingSessionActive = tradingSession,
         )
         val valuation = valuator.value(
