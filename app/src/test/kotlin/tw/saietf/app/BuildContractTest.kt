@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.9", BuildConfig.VERSION_NAME)
-        assertEquals(10009, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.10", BuildConfig.VERSION_NAME)
+        assertEquals(10010, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v109 keeps launchable activity ledger wiring and internet permission`() {
+    fun `v1010 keeps launchable activity ledger wiring and internet permission`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -55,7 +55,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("P0 修護 1.0.9｜固定簽章｜可覆蓋升級 Gate", FirstVersionContract.releaseLine)
+        assertEquals("P0 修護 1.0.10｜固定簽章｜可覆蓋升級 Gate", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
