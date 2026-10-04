@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.1", BuildConfig.VERSION_NAME)
-        assertEquals(10001, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.2", BuildConfig.VERSION_NAME)
+        assertEquals(10002, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `first version apk has a launchable activity`() {
+    fun `next stage apk keeps a launchable activity`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
@@ -47,18 +47,29 @@ class BuildContractTest {
     }
 
     @Test
-    fun `first version landing screen exposes approved modules without formulas`() {
+    fun `next stage landing screen exposes dashboard and actionable entries`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第一版 1.0.1｜本機優先｜台股 ETF", FirstVersionContract.releaseLine)
+        assertEquals("第二階段 1.0.2｜主頁雛型｜Room 帳務串接", FirstVersionContract.releaseLine)
+        assertEquals("本機優先｜台股 ETF｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
-            listOf(
-                "帳務核心：TF Asset V3.7.8 Finance Lock 已鎖定",
-                "資料層：Room 本機帳務資料庫 V1 已建立",
-                "行情牆：預留台股 / ETF 即時行情入口",
-                "股息：預留自動更新與待確認登錄入口",
-                "建置：GitHub Actions 產出可安裝 APK",
-            ),
-            FirstVersionContract.landingSections,
+            listOf("總資產", "昨日 / 今日 / 總損益", "持股檔數"),
+            FirstVersionContract.dashboardMetrics.map { it.title },
+        )
+        assertEquals(
+            listOf("交易新增", "持股清單", "行情牆", "股息", "資料備份"),
+            FirstVersionContract.landingCards.map { it.title },
+        )
+        assertTrue(
+            FirstVersionContract.dashboardMetrics
+                .single { it.title == "昨日 / 今日 / 總損益" }
+                .note
+                .contains("不互相加總混用"),
+        )
+        assertTrue(
+            FirstVersionContract.landingCards
+                .single { it.title == "持股清單" }
+                .status
+                .contains("UI 重算"),
         )
     }
 }
