@@ -12,6 +12,9 @@ interface DailySnapshotDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(snapshot: DailySnapshotEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertBlocking(snapshot: DailySnapshotEntity)
+
     @Query(
         """
         SELECT * FROM daily_snapshots
@@ -26,6 +29,33 @@ interface DailySnapshotDao {
         taipeiDate: String,
         sourceRevision: String,
     ): DailySnapshotEntity?
+
+    @Query(
+        """
+        SELECT * FROM daily_snapshots
+        WHERE portfolioId = :portfolioId
+          AND taipeiDate < :beforeTaipeiDate
+        ORDER BY taipeiDate DESC, capturedAtEpochMillis DESC, id DESC
+        LIMIT 1
+        """,
+    )
+    fun latestBeforeBlocking(
+        portfolioId: String,
+        beforeTaipeiDate: String,
+    ): DailySnapshotEntity?
+
+    @Query(
+        """
+        SELECT * FROM daily_snapshots
+        WHERE portfolioId = :portfolioId
+        ORDER BY taipeiDate DESC, capturedAtEpochMillis DESC, id DESC
+        LIMIT :limit
+        """,
+    )
+    fun recentBlocking(
+        portfolioId: String,
+        limit: Int,
+    ): List<DailySnapshotEntity>
 
     @Query(
         """
