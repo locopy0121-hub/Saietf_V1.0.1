@@ -1,11 +1,18 @@
-# SaiETF development APK signing
+# SaiETF development APK signing and upgrade contract
 
-SaiETF V1.0.4 establishes a repository-fixed **development-only** signing identity for installable CI APKs.
+SaiETF uses one fixed **development-only** signing identity for CI APKs so Android can perform normal in-place upgrades without uninstalling the previous app.
 
 - Package: `tw.saietf.app`
-- First fixed-signing version: `1.0.4`
+- First published fixed-signing APK: `1.0.4` (`versionCode=10004`)
+- Current upgrade contract epoch: `1`
 - Certificate SHA-256: `A034087FD9D4DE4669715C518D244AE7A534676CC0AAB44B05BA0A8EE5E139B7`
-- CI verifies the APK certificate before publishing the artifact.
-- This key is intentionally development-only and must never be reused for a production/store release.
+- Every installable CI APK must use this exact package and certificate.
+- Every new APK must have a higher `versionCode`.
+- CI runs `scripts/verify_upgrade_install_contract.sh` after APK creation. Artifact upload is blocked if package, versionCode, or certificate breaks update compatibility.
+- The development key is not a production/store signing identity and must never be reused for a production release.
 
-V1.0.3 did not publish an APK because its CI compile gate failed. Because V1.0.1 and V1.0.2 were built with ephemeral runner debug keys, V1.0.2 cannot be upgraded in-place to V1.0.4. A one-time uninstall is required when moving to V1.0.4. From V1.0.4 onward, CI APKs using this fixed development identity can upgrade in place without deleting Room data.
+## Legacy boundary
+
+V1.0.1 and V1.0.2 were created by ephemeral GitHub runners before a persistent signing identity existed. Their private signing keys were not stored in the repository or CI configuration, so Android cryptographically rejects an in-place update from those legacy APKs to the fixed-signing line.
+
+That legacy boundary is not repeated. Once a device is on a fixed-signing build (V1.0.4 or later), subsequent CI APKs must install by normal Android update/replace and preserve the Room database. A build that would require another uninstall must fail CI and must not be published.
