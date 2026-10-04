@@ -25,6 +25,7 @@ import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import tw.saietf.core.database.LedgerRepository
+import tw.saietf.core.database.PerformanceHistoryRepository
 import tw.saietf.core.finance.LedgerEntryKind
 import tw.saietf.core.market.HoldingCost
 import tw.saietf.core.market.MarketBatch
@@ -32,6 +33,7 @@ import tw.saietf.core.market.MarketDataCenter
 import tw.saietf.core.market.MarketSource
 import tw.saietf.core.market.PortfolioMarketValuation
 import tw.saietf.core.market.PortfolioMarketValuator
+import tw.saietf.core.market.QuoteQuality
 import tw.saietf.core.model.TradeMode
 
 class MainActivity : Activity() {
@@ -45,6 +47,9 @@ class MainActivity : Activity() {
 
     private val marketDataCenter: MarketDataCenter
         get() = (application as SaiEtfApplication).marketDataCenter
+
+    private val performanceHistoryRepository: PerformanceHistoryRepository
+        get() = (application as SaiEtfApplication).performanceHistoryRepository
 
     @Volatile
     private var marketPollingActive = false
@@ -60,6 +65,15 @@ class MainActivity : Activity() {
 
     @Volatile
     private var latestValuation: PortfolioMarketValuation? = null
+
+    @Volatile
+    private var latestPreviousDayPnl: Long? = null
+
+    @Volatile
+    private var latestIntradayPointCount: Int = 0
+
+    @Volatile
+    private var lastHistoryWriteEpochMillis: Long = 0L
 
     private lateinit var totalAssetValue: TextView
     private lateinit var investmentCostValue: TextView
