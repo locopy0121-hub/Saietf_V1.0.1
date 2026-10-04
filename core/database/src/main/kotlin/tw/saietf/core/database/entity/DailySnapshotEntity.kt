@@ -35,4 +35,5 @@ data class DailySnapshotEntity(
     val realizedNetPnL: Double,
     val totalDividendsReceived: Long,
     val comprehensivePnL: Double,
+    val dailyMarketPnL: Long,
 )
