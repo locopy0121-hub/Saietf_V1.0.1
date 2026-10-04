@@ -351,13 +351,20 @@ class MainActivity : Activity() {
         batch: MarketBatch,
         valuation: PortfolioMarketValuation,
         tradingSession: Boolean,
+        freshCurrentSession: Boolean,
     ) {
         if (valuation.expectedHoldingCount == 0) return
 
         if (valuation.isComplete) {
             totalAssetValue.text = formatTwd(valuation.totalMarketValue ?: 0L)
+            val previousText = latestPreviousDayPnl?.let(::formatSignedTwd) ?: "—"
+            val todayText = if (freshCurrentSession) {
+                valuation.todayPnl?.let(::formatSignedTwd) ?: "—"
+            } else {
+                "—"
+            }
             pnlValue.text =
-                "— / ${valuation.todayPnl?.let(::formatSignedTwd) ?: "—"} / " +
+                "$previousText / $todayText / " +
                     "${valuation.totalPnl?.let(::formatSignedTwd) ?: "—"}"
         } else {
             totalAssetValue.text =
