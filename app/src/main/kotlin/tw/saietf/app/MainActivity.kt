@@ -445,11 +445,12 @@ class MainActivity : Activity() {
         } else {
             snapshot.holdings.joinToString("\n\n") { holding ->
                 val market = valuation?.holdings?.firstOrNull { it.symbol == holding.symbol }
+                val quote = market?.quote
                 buildString {
                     append("${holding.symbol}｜${holding.shares} 股")
                     append("\n投入成本 ${formatTwd(holding.investmentCost)}")
-                    if (market?.quote != null) {
-                        append("\n現價 ${market.quote.price}｜${sourceName(market.quote.source)}")
+                    if (quote != null) {
+                        append("\n現價 ${quote.price}｜${sourceName(quote.source)}")
                         append("\n市值 ${market.marketValue?.let(::formatTwd) ?: "—"}")
                         append("\n今日 ${market.todayPnl?.let(::formatSignedTwd) ?: "—"}")
                         append("｜總損益 ${market.totalPnl?.let(::formatSignedTwd) ?: "—"}")
