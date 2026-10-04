@@ -11,9 +11,30 @@
         "liquidationTradeMode": "ROUND_LOT",
         "latestDividendPerShare": 0,
         "transactions": [
-          { "id": "b1", "type": "BUY", "shares": 100, "price": 10, "tradeMode": "ROUND_LOT", "date": "2026-01-01" },
-          { "id": "b2", "type": "BUY", "shares": 100, "price": 20, "tradeMode": "ROUND_LOT", "date": "2026-01-02" },
-          { "id": "s1", "type": "SELL", "shares": 50, "price": 30, "tradeMode": "ROUND_LOT", "date": "2026-01-03" }
+          {
+            "id": "b1",
+            "type": "BUY",
+            "shares": 100,
+            "price": 10,
+            "tradeMode": "ROUND_LOT",
+            "date": "2026-01-01"
+          },
+          {
+            "id": "b2",
+            "type": "BUY",
+            "shares": 100,
+            "price": 20,
+            "tradeMode": "ROUND_LOT",
+            "date": "2026-01-02"
+          },
+          {
+            "id": "s1",
+            "type": "SELL",
+            "shares": 50,
+            "price": 30,
+            "tradeMode": "ROUND_LOT",
+            "date": "2026-01-03"
+          }
         ],
         "dividends": []
       },
@@ -40,10 +61,22 @@
         "dividendFrequency": 4,
         "latestDividendPerShare": 0.4,
         "transactions": [
-          { "id": "b1", "type": "BUY", "shares": 1000, "price": 20, "tradeMode": "ROUND_LOT", "date": "2026-02-01" }
+          {
+            "id": "b1",
+            "type": "BUY",
+            "shares": 1000,
+            "price": 20,
+            "tradeMode": "ROUND_LOT",
+            "date": "2026-02-01"
+          }
         ],
         "dividends": [
-          { "id": "d1", "sharesHeld": 1000, "perShareAmount": 0.4, "paymentDate": "2026-03-01" }
+          {
+            "id": "d1",
+            "sharesHeld": 1000,
+            "perShareAmount": 0.4,
+            "paymentDate": "2026-03-01"
+          }
         ]
       },
       "expected": {
@@ -71,10 +104,23 @@
             "dividendFrequency": 4,
             "latestDividendPerShare": 1,
             "transactions": [
-              { "id": "b1", "type": "BUY", "shares": 20, "price": 82.4, "tradeMode": "ODD_LOT", "date": "2026-01-01", "actualFee": 2 }
+              {
+                "id": "b1",
+                "type": "BUY",
+                "shares": 20,
+                "price": 82.4,
+                "tradeMode": "ODD_LOT",
+                "date": "2026-01-01",
+                "actualFee": 2
+              }
             ],
             "dividends": [
-              { "id": "d1", "sharesHeld": 20, "perShareAmount": 1, "paymentDate": "2026-02-01" }
+              {
+                "id": "d1",
+                "sharesHeld": 20,
+                "perShareAmount": 1,
+                "paymentDate": "2026-02-01"
+              }
             ]
           },
           {
@@ -84,10 +130,22 @@
             "dividendFrequency": 4,
             "latestDividendPerShare": 0.4,
             "transactions": [
-              { "id": "b1", "type": "BUY", "shares": 1000, "price": 20, "tradeMode": "ROUND_LOT", "date": "2026-02-01" }
+              {
+                "id": "b1",
+                "type": "BUY",
+                "shares": 1000,
+                "price": 20,
+                "tradeMode": "ROUND_LOT",
+                "date": "2026-02-01"
+              }
             ],
             "dividends": [
-              { "id": "d1", "sharesHeld": 1000, "perShareAmount": 0.4, "paymentDate": "2026-03-01" }
+              {
+                "id": "d1",
+                "sharesHeld": 1000,
+                "perShareAmount": 0.4,
+                "paymentDate": "2026-03-01"
+              }
             ]
           }
         ]
@@ -105,7 +163,10 @@
         "comprehensivePnL": 2486,
         "totalPnl": 2486,
         "nextEstimatedDividendTotal": 400,
-        "weights": { "0050": 7.56, "00878": 92.44 }
+        "weights": {
+          "0050": 7.56,
+          "00878": 92.44
+        }
       }
     }
   ]
