@@ -32,6 +32,12 @@ jobs:
         run: ./scripts/verify_finance_lock.sh
       - name: Verify unit tests, lint, and debug APK
         run: ./gradlew --no-daemon clean test :core:database:testDebugUnitTest :core:database:assembleAndroidTest lintDebug :app:assembleDebug
+      - name: Upload Room schema
+        uses: actions/upload-artifact@v4
+        with:
+          name: SaiETF-Room-schema-v1
+          path: core/database/schemas
+          if-no-files-found: error
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
