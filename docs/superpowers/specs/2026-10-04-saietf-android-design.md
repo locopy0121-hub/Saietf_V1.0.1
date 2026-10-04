@@ -1,7 +1,7 @@
 # SaiETF V1.0.1 Android App 設計規格
 
 日期：2026-10-04
-狀態：待使用者最終審閱
+狀態：使用者已確認，可進入實作計畫審閱
 Repo：`locopy0121-hub/Saietf_V1.0.1`
 產品：SaiETF
 平台：原生 Android（Kotlin／Jetpack Compose）
