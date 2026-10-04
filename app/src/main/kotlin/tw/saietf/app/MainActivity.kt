@@ -407,6 +407,51 @@ class MainActivity : Activity() {
         return !time.isBefore(LocalTime.of(9, 0)) && !time.isAfter(LocalTime.of(13, 30))
     }
 
+    private fun showDailyPerformanceDialog() {
+        ledgerExecutor.execute {
+            val today = LocalDate.now(taipeiZone).toString()
+            val recent = runCatching {
+                performanceHistoryRepository.recentDaily(30)
+            }.getOrDefault(emptyList())
+            val intraday = runCatching {
+                performanceHistoryRepository.intradaySummary(today)
+            }.getOrNull()
+
+            val body = buildString {
+                if (intraday != null && intraday.pointCount > 0) {
+                    append("今日走勢：${intraday.pointCount} 點")
+                    append("\n開盤紀錄 ${intraday.openMarketValue?.let(::formatTwd) ?: "—"}")
+                    append("｜最新 ${intraday.latestMarketValue?.let(::formatTwd) ?: "—"}")
+                    append("\n高 ${intraday.highMarketValue?.let(::formatTwd) ?: "—"}")
+                    append("｜低 ${intraday.lowMarketValue?.let(::formatTwd) ?: "—"}")
+                    append("\n\n")
+                } else {
+                    append("今日尚無完整的新鮮行情走勢紀錄。\n\n")
+                }
+
+                if (recent.isEmpty()) {
+                    append("尚無每日損益快照。")
+                } else {
+                    append(
+                        recent.joinToString("\n\n") { row ->
+                            "${row.taipeiDate}｜當日 ${formatSignedTwd(row.dailyMarketPnL)}\n" +
+                                "總市值 ${formatTwd(row.totalMarketValue)}｜" +
+                                "持有總損益 ${formatSignedTwd(row.totalUnrealizedProfit)}"
+                        },
+                    )
+                }
+            }
+
+            runOnUiThread {
+                AlertDialog.Builder(this)
+                    .setTitle("每日損益 / 今日走勢")
+                    .setMessage(body)
+                    .setPositiveButton("關閉", null)
+                    .show()
+            }
+        }
+    }
+
     private fun showTradeDialog() {
         val sideSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(
