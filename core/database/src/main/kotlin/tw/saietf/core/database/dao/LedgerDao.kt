@@ -12,6 +12,9 @@ interface LedgerDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(entry: LedgerEntryEntity)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    fun insertBlocking(entry: LedgerEntryEntity)
+
     @Query("SELECT * FROM ledger_entries WHERE id = :id LIMIT 1")
     suspend fun findById(id: String): LedgerEntryEntity?
 
@@ -26,6 +29,15 @@ interface LedgerDao {
         """,
     )
     fun observeChronological(portfolioId: String): Flow<List<LedgerEntryEntity>>
+
+    @Query(
+        """
+        SELECT * FROM ledger_entries
+        WHERE portfolioId = :portfolioId
+        ORDER BY occurredAtEpochMillis ASC, id ASC
+        """,
+    )
+    fun listChronological(portfolioId: String): List<LedgerEntryEntity>
 
     @Query(
         """

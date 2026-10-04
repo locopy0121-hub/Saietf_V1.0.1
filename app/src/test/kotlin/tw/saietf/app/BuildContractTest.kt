@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.2", BuildConfig.VERSION_NAME)
-        assertEquals(10002, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.3", BuildConfig.VERSION_NAME)
+        assertEquals(10003, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,22 +37,27 @@ class BuildContractTest {
     }
 
     @Test
-    fun `next stage apk keeps a launchable activity`() {
+    fun `v103 keeps a launchable activity and ledger wiring`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
+        val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
+        val gradle = File("build.gradle.kts").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
         assertTrue(manifest.contains("android.intent.action.MAIN"))
         assertTrue(manifest.contains("android.intent.category.LAUNCHER"))
+        assertTrue(activity.contains("showTradeDialog"))
+        assertTrue(activity.contains("ledgerRepository"))
+        assertTrue(gradle.contains("saietf-development.jks"))
     }
 
     @Test
-    fun `next stage landing screen exposes dashboard and actionable entries`() {
+    fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第二階段 1.0.2｜主頁雛型｜Room 帳務串接", FirstVersionContract.releaseLine)
+        assertEquals("第三階段 1.0.3｜Ledger 實裝｜固定開發簽章", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜台股 ETF｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
-            listOf("總資產", "昨日 / 今日 / 總損益", "持股檔數"),
+            listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
         )
         assertEquals(
@@ -61,15 +66,15 @@ class BuildContractTest {
         )
         assertTrue(
             FirstVersionContract.dashboardMetrics
-                .single { it.title == "昨日 / 今日 / 總損益" }
+                .single { it.title == "總資產" }
                 .note
-                .contains("不互相加總混用"),
+                .contains("不以成本冒充市值"),
         )
         assertTrue(
             FirstVersionContract.landingCards
-                .single { it.title == "持股清單" }
+                .single { it.title == "交易新增" }
                 .status
-                .contains("UI 重算"),
+                .contains("Ledger Repository"),
         )
     }
 }

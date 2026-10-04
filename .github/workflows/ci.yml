@@ -32,6 +32,13 @@ jobs:
         run: ./scripts/verify_finance_lock.sh
       - name: Verify unit tests, lint, and debug APK
         run: ./gradlew --no-daemon clean test :core:database:testDebugUnitTest :core:database:assembleAndroidTest lintDebug :app:assembleDebug
+      - name: Verify fixed development signing certificate
+        shell: bash
+        run: |
+          ACTUAL_SHA256="$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | sed -n 's/Signer #1 certificate SHA-256 digest: //p' | tr '[:lower:]' '[:upper:]')"
+          EXPECTED_SHA256="A034087FD9D4DE4669715C518D244AE7A534676CC0AAB44B05BA0A8EE5E139B7"
+          echo "SaiETF development certificate SHA-256: $ACTUAL_SHA256"
+          test "$ACTUAL_SHA256" = "$EXPECTED_SHA256"
       - name: Generate Room schema artifact bytes
         run: ./gradlew --no-daemon :core:database:kspDebugKotlin --rerun-tasks
       - name: Upload Room schema
@@ -41,9 +48,9 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.2 APK
+      - name: Upload V1.0.3 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.2-next-stage-apk
+          name: SaiETF-V1.0.3-ledger-fixed-signing-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

@@ -12,14 +12,29 @@ android {
     namespace = "tw.saietf.app"
     compileSdk = 36
 
+    signingConfigs {
+        create("development") {
+            storeFile = file("signing/saietf-development.jks")
+            storePassword = "saietf-dev-only-2026"
+            keyAlias = "saietf-development"
+            keyPassword = "saietf-dev-only-2026"
+        }
+    }
+
     defaultConfig {
         applicationId = "tw.saietf.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 10002
-        versionName = "1.0.2"
+        versionCode = 10003
+        versionName = "1.0.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "INCLUDED_MODULES", "\"$approvedModules\"")
+    }
+
+    buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("development")
+        }
     }
 
     buildFeatures {
@@ -32,5 +47,6 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:database"))
     testImplementation(libs.junit4)
 }

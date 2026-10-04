@@ -13,8 +13,14 @@ interface PortfolioDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(portfolio: PortfolioEntity)
 
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    fun insertBlocking(portfolio: PortfolioEntity)
+
     @Query("SELECT * FROM portfolios WHERE id = :id LIMIT 1")
     suspend fun findById(id: String): PortfolioEntity?
+
+    @Query("SELECT * FROM portfolios WHERE id = :id LIMIT 1")
+    fun findByIdBlocking(id: String): PortfolioEntity?
 
     @Query(
         """
