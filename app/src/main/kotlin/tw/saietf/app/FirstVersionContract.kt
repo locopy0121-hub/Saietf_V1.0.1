@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "P0 修護 1.0.10｜固定簽章｜可覆蓋升級 Gate"
+    const val releaseLine = "第五階段 1.0.11｜每日損益快照｜盤中走勢紀錄"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -31,7 +31,7 @@ object FirstVersionContract {
         DashboardMetric(
             title = "昨日 / 今日 / 總損益",
             value = "— / — / —",
-            note = "今日與總損益分開計算；昨日待每日快照串接",
+            note = "昨日取上一交易日快照；今日與持有總損益分開計算",
         ),
         DashboardMetric(
             title = "持股檔數",
@@ -49,12 +49,12 @@ object FirstVersionContract {
         LandingCard(
             title = "持股清單",
             body = "台股與 ETF 庫存由 Ledger 經 Finance Lock 投影",
-            status = "加入行情價格、市值、今日與總損益",
+            status = "加入行情價格、市值、今日與總損益；儀表板可查看每日紀錄",
         ),
         LandingCard(
             title = "行情牆",
             body = "TWSE MIS 優先，Yahoo 無金鑰備援；盤中 1 秒更新",
-            status = "App 啟動 / 回前景立即抓取",
+            status = "App 啟動 / 回前景立即抓取；盤中走勢每 15 秒留點",
         ),
         LandingCard(
             title = "股息",
