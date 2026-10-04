@@ -82,6 +82,35 @@ jobs:
           test "$CURRENT_PACKAGE" = "tw.saietf.app"
           test "$BASELINE_VERSION_CODE" -lt "$CURRENT_VERSION_CODE"
           echo "ANDROID_IN_PLACE_UPDATE_COMPATIBILITY=PASS"
+      - name: Enable KVM for Room migration test
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify Android update preserves app data and Room migration
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          arch: x86_64
+          disable-animations: true
+          script: |
+            set -eu
+            UPGRADE_DIR="$RUNNER_TEMP/saietf-upgrade"
+            adb install "$UPGRADE_DIR/baseline.apk"
+            adb shell am start -W -n tw.saietf.app/.MainActivity
+            sleep 4
+            adb shell "run-as tw.saietf.app test -f databases/saietf.db"
+            adb shell "run-as tw.saietf.app sh -c 'mkdir -p files; echo SAIETF_UPGRADE_PRESERVE > files/upgrade-marker.txt'"
+            adb install -r "$UPGRADE_DIR/current.apk"
+            adb shell am force-stop tw.saietf.app
+            adb shell am start -W -n tw.saietf.app/.MainActivity
+            sleep 4
+            adb shell pidof tw.saietf.app
+            MARKER_VALUE="$(adb shell run-as tw.saietf.app cat files/upgrade-marker.txt | tr -d '\r')"
+            test "$MARKER_VALUE" = "SAIETF_UPGRADE_PRESERVE"
+            adb shell "run-as tw.saietf.app test -f databases/saietf.db"
+            ./gradlew --no-daemon :core:database:connectedDebugAndroidTest
+            echo "ANDROID_ROOM_MIGRATION_AND_DATA_PRESERVATION=PASS"
       - name: Generate Room schema artifact bytes
         run: ./gradlew --no-daemon :core:database:kspDebugKotlin --rerun-tasks
       - name: Upload Room schema
