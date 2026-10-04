@@ -1,1 +1,3 @@
-// Module configuration follows the scaffold contract.
+dependencies {
+    implementation(project(":core:model"))
+}
