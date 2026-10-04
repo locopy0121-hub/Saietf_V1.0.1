@@ -389,10 +389,18 @@ class MainActivity : Activity() {
         } else {
             ""
         }
+        val trend = if (latestIntradayPointCount > 0) {
+            "｜今日走勢 ${latestIntradayPointCount} 點"
+        } else {
+            ""
+        }
         marketStatusValue.text =
             "行情中心：$sources｜$mode｜覆蓋 ${valuation.quotedHoldingCount}/" +
-                "${valuation.expectedHoldingCount}$stale"
+                "${valuation.expectedHoldingCount}$stale$trend"
     }
+
+    private fun taipeiDateOf(epochMillis: Long): String =
+        Instant.ofEpochMilli(epochMillis).atZone(taipeiZone).toLocalDate().toString()
 
     private fun isTaipeiTradingSession(day: DayOfWeek, time: LocalTime): Boolean {
         if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) return false
