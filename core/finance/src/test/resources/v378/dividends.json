@@ -5,18 +5,42 @@
   "cases": [
     {
       "id": "below-health-premium-threshold",
-      "input": { "sharesHeld": 1000, "perShareAmount": 0.4 },
-      "expected": { "grossDividend": 400, "supplementaryHealthPremium": 0, "transferFee": 10, "netDividend": 390 }
+      "input": {
+        "sharesHeld": 1000,
+        "perShareAmount": 0.4
+      },
+      "expected": {
+        "grossDividend": 400,
+        "supplementaryHealthPremium": 0,
+        "transferFee": 10,
+        "netDividend": 390
+      }
     },
     {
       "id": "at-health-premium-threshold",
-      "input": { "sharesHeld": 10000, "perShareAmount": 2 },
-      "expected": { "grossDividend": 20000, "supplementaryHealthPremium": 422, "transferFee": 10, "netDividend": 19568 }
+      "input": {
+        "sharesHeld": 10000,
+        "perShareAmount": 2
+      },
+      "expected": {
+        "grossDividend": 20000,
+        "supplementaryHealthPremium": 422,
+        "transferFee": 10,
+        "netDividend": 19568
+      }
     },
     {
       "id": "zero-dividend",
-      "input": { "sharesHeld": 1000, "perShareAmount": 0 },
-      "expected": { "grossDividend": 0, "supplementaryHealthPremium": 0, "transferFee": 0, "netDividend": 0 }
+      "input": {
+        "sharesHeld": 1000,
+        "perShareAmount": 0
+      },
+      "expected": {
+        "grossDividend": 0,
+        "supplementaryHealthPremium": 0,
+        "transferFee": 0,
+        "netDividend": 0
+      }
     }
   ]
 }
