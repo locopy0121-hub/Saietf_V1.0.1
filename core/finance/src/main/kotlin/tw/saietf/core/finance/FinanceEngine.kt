@@ -136,45 +136,7 @@ class DefaultFinanceEngine : FinanceEngine {
     }
 
     override fun calculatePortfolio(input: PortfolioCalculationInput): PortfolioCalculationResult {
-        val raw = input.instruments.map(::calculateInstrument)
-        val totalMarketValue = raw.fold(0L) { sum, row -> Math.addExact(sum, row.currentMarketValue) }
-        val totalInvestmentCost = raw.sumOf { it.totalInvestmentCost }
-        val totalNetLiquidationValue = raw.fold(0L) { sum, row -> Math.addExact(sum, row.netLiquidationValue) }
-        val totalEstimatedSellCommission = raw.fold(0L) { sum, row -> Math.addExact(sum, row.estimatedSellCommission) }
-        val totalEstimatedSellTax = raw.fold(0L) { sum, row -> Math.addExact(sum, row.estimatedSellTax) }
-        val totalUnrealizedProfit = totalNetLiquidationValue.toDouble() - totalInvestmentCost
-        val totalUnrealizedROI =
-            if (totalMarketValue > 0 && totalInvestmentCost > 0.0) {
-                roundPercent(totalUnrealizedProfit / totalInvestmentCost * 100.0)
-            } else 0.0
-        val realized = raw.sumOf { it.realizedNetPnL }
-        val dividends = raw.fold(0L) { sum, row -> Math.addExact(sum, row.totalDividendsReceived) }
-        val comprehensive = totalUnrealizedProfit + realized + dividends.toDouble()
-        val nextDividend = raw.fold(0L) { sum, row -> Math.addExact(sum, row.nextEstimatedDividend) }
-        val weighted = raw.map { row ->
-            row.copy(
-                portfolioWeight =
-                    if (totalMarketValue > 0 && row.totalShares > 0 && row.currentPrice > 0.0) {
-                        roundPercent(row.currentMarketValue.toDouble() / totalMarketValue.toDouble() * 100.0)
-                    } else 0.0,
-            )
-        }
-
-        return PortfolioCalculationResult(
-            totalMarketValue,
-            totalInvestmentCost,
-            totalNetLiquidationValue,
-            totalEstimatedSellCommission,
-            totalEstimatedSellTax,
-            totalUnrealizedProfit,
-            totalUnrealizedROI,
-            realized,
-            comprehensive,
-            comprehensive,
-            dividends,
-            nextDividend,
-            weighted,
-        )
+        return DefaultPortfolioAggregator().aggregate(input.instruments.map(::calculateInstrument))
     }
 
     override fun calculateNetDividend(input: DividendCalculationInput): DividendCalculationResult {
