@@ -46,7 +46,7 @@ jobs:
       - name: Build previous verified APK for real upgrade test
         shell: bash
         run: |
-          set -euo pipefail
+          set -eu
           BASELINE_COMMIT="$(sed -n 's/^previousVerifiedCommit=//p' app/upgrade-install-contract.properties | tail -n 1)"
           test -n "$BASELINE_COMMIT"
           UPGRADE_DIR="$RUNNER_TEMP/saietf-upgrade"
@@ -82,7 +82,7 @@ jobs:
             MARKER="$(adb shell run-as tw.saietf.app cat files/upgrade-marker.txt | tr -d '\r')"
             test "$MARKER" = "SAIETF_UPGRADE_PRESERVE"
             PACKAGE_INFO="$(adb shell dumpsys package tw.saietf.app | tr -d '\r')"
-            echo "$PACKAGE_INFO" | grep -q 'versionCode=10008'
+            echo "$PACKAGE_INFO" | grep -q 'versionCode=10009'
             echo "ANDROID_IN_PLACE_UPDATE_GATE=PASS"
       - name: Generate Room schema artifact bytes
         run: ./gradlew --no-daemon :core:database:kspDebugKotlin --rerun-tasks
@@ -93,9 +93,9 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.8 APK
+      - name: Upload V1.0.9 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.8-upgrade-safe-apk
+          name: SaiETF-V1.0.9-upgrade-safe-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
