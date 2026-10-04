@@ -94,20 +94,17 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
-            set -eu
-            UPGRADE_DIR="$RUNNER_TEMP/saietf-upgrade"
-            adb install "$UPGRADE_DIR/baseline.apk"
+            adb install "$RUNNER_TEMP/saietf-upgrade/baseline.apk"
             adb shell am start -W -n tw.saietf.app/.MainActivity
             sleep 4
             adb shell "run-as tw.saietf.app test -f databases/saietf.db"
             adb shell "run-as tw.saietf.app sh -c 'mkdir -p files; echo SAIETF_UPGRADE_PRESERVE > files/upgrade-marker.txt'"
-            adb install -r "$UPGRADE_DIR/current.apk"
+            adb install -r "$RUNNER_TEMP/saietf-upgrade/current.apk"
             adb shell am force-stop tw.saietf.app
             adb shell am start -W -n tw.saietf.app/.MainActivity
             sleep 4
             adb shell pidof tw.saietf.app
-            MARKER_VALUE="$(adb shell run-as tw.saietf.app cat files/upgrade-marker.txt | tr -d '\r')"
-            test "$MARKER_VALUE" = "SAIETF_UPGRADE_PRESERVE"
+            test "$(adb shell run-as tw.saietf.app cat files/upgrade-marker.txt | tr -d '\r')" = "SAIETF_UPGRADE_PRESERVE"
             adb shell "run-as tw.saietf.app test -f databases/saietf.db"
             ./gradlew --no-daemon :core:database:connectedDebugAndroidTest
             echo "ANDROID_ROOM_MIGRATION_AND_DATA_PRESERVATION=PASS"
@@ -120,9 +117,9 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.11 APK
+      - name: Upload V1.0.12 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.11-daily-pnl-intraday-apk
+          name: SaiETF-V1.0.12-daily-pnl-intraday-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
