@@ -1,0 +1,9 @@
+{
+  "name": "@saietf/tf-v378-fixture-exporter",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "export": "node export-fixtures.mjs ../../core/finance/src/test/resources/v378"
+  }
+}
