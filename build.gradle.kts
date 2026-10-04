@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
 }
 
+val junit4Dependency = libs.junit4
+
 subprojects {
     if (path != ":app" && buildFile.exists()) {
         pluginManager.apply("org.jetbrains.kotlin.jvm")
@@ -14,6 +16,6 @@ subprojects {
             jvmToolchain(17)
         }
 
-        dependencies.add("testImplementation", libs.junit4)
+        dependencies.add("testImplementation", junit4Dependency)
     }
 }
