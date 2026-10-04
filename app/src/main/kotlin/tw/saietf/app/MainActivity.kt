@@ -146,7 +146,7 @@ class MainActivity : Activity() {
         val pnl = buildMetricCard(
             "昨日 / 今日 / 總損益",
             "— / — / —",
-            "三者為不同數據；昨日等待每日快照",
+            "三者為不同數據；昨日取上一交易日快照",
         )
         pnlValue = pnl.second
         pnl.first.isClickable = true
@@ -242,7 +242,8 @@ class MainActivity : Activity() {
             latestValuation = valuator.value(emptyList(), emptyMap())
         } else if (latestMarketBatch == null) {
             totalAssetValue.text = "行情載入中"
-            pnlValue.text = "— / — / —"
+            pnlValue.text =
+                "${latestPreviousDayPnl?.let(::formatSignedTwd) ?: "—"} / — / —"
             marketStatusValue.text = "行情中心準備更新 ${snapshot.holdings.size} 檔持股"
         }
     }
