@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.4", BuildConfig.VERSION_NAME)
-        assertEquals(10004, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.5", BuildConfig.VERSION_NAME)
+        assertEquals(10005, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v104 keeps a launchable activity and ledger wiring`() {
+    fun `v105 keeps launchable activity ledger wiring and internet permission`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -45,7 +45,7 @@ class BuildContractTest {
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
         assertTrue(manifest.contains("android.intent.action.MAIN"))
-        assertTrue(manifest.contains("android.intent.category.LAUNCHER"))
+        assertTrue(manifest.contains("android.intent.category.LAUNCHER"))\n        assertTrue(manifest.contains("android.permission.INTERNET"))
         assertTrue(activity.contains("showTradeDialog"))
         assertTrue(activity.contains("ledgerRepository"))
         assertTrue(gradle.contains("saietf-development.jks"))
@@ -54,8 +54,8 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第三階段 1.0.4｜Ledger 實裝｜固定開發簽章", FirstVersionContract.releaseLine)
-        assertEquals("本機優先｜台股 ETF｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第四階段 1.0.5｜行情中心｜即時資產估值", FirstVersionContract.releaseLine)
+        assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
@@ -68,7 +68,7 @@ class BuildContractTest {
             FirstVersionContract.dashboardMetrics
                 .single { it.title == "總資產" }
                 .note
-                .contains("不以成本冒充市值"),
+                .contains("禁止用部分報價冒充總資產"),
         )
         assertTrue(
             FirstVersionContract.landingCards

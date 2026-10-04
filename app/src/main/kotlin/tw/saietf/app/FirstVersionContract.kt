@@ -14,14 +14,14 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第三階段 1.0.4｜Ledger 實裝｜固定開發簽章"
-    const val phaseLine = "本機優先｜台股 ETF｜Finance Lock 不變"
+    const val releaseLine = "第四階段 1.0.5｜行情中心｜即時資產估值"
+    const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
             title = "總資產",
-            value = "待行情中心",
-            note = "尚未接行情前不以成本冒充市值",
+            value = "行情載入中",
+            note = "完整行情覆蓋才發布總市值，禁止用部分報價冒充總資產",
         ),
         DashboardMetric(
             title = "帳務投入成本",
@@ -31,7 +31,7 @@ object FirstVersionContract {
         DashboardMetric(
             title = "昨日 / 今日 / 總損益",
             value = "— / — / —",
-            note = "行情損益待行情中心；已實現損益另由 Ledger 計算",
+            note = "今日與總損益分開計算；昨日待每日快照串接",
         ),
         DashboardMetric(
             title = "持股檔數",
@@ -44,17 +44,17 @@ object FirstVersionContract {
         LandingCard(
             title = "交易新增",
             body = "買進 / 賣出 / 股數 / 成交價 / 手續費 / 證交稅實際值",
-            status = "已接 Ledger Repository + Room",
+            status = "Ledger Repository + Room 已實裝",
         ),
         LandingCard(
             title = "持股清單",
             body = "台股與 ETF 庫存由 Ledger 經 Finance Lock 投影",
-            status = "公式禁止在 UI 重算",
+            status = "加入行情價格、市值、今日與總損益",
         ),
         LandingCard(
             title = "行情牆",
-            body = "預留台股 / ETF 即時行情與走勢圖模組入口",
-            status = "下一階段接行情中心",
+            body = "TWSE MIS 優先，Yahoo 無金鑰備援；盤中 1 秒更新",
+            status = "App 啟動 / 回前景立即抓取",
         ),
         LandingCard(
             title = "股息",
