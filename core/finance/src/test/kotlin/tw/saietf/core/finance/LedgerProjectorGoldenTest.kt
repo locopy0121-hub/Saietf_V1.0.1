@@ -52,8 +52,8 @@ class LedgerProjectorGoldenTest {
         )
 
         assertEquals(50L, result.totalShares)
-        assertEquals(502.5, result.totalInvestmentCost, 0.0)
-        assertEquals(488.5, result.realizedNetPnL, 0.0)
+        assertEquals(502.5, result.totalInvestmentCost, 1e-9)
+        assertEquals(488.5, result.realizedNetPnL, 1e-9)
     }
 
     @Test
