@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "P0 修護 1.0.8｜固定簽章｜可覆蓋升級 Gate"
+    const val releaseLine = "P0 修護 1.0.9｜固定簽章｜可覆蓋升級 Gate"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
