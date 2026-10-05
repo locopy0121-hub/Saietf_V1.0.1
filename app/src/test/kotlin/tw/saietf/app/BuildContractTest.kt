@@ -79,6 +79,8 @@ class BuildContractTest {
         assertTrue(activity.contains("marketWallRender"))
         assertTrue(activity.contains("marketWallRender?.invoke()"))
         assertTrue(activity.contains("marketWallDialog?.dismiss()"))
+        assertTrue(activity.contains("holdingDetailDialog?.dismiss()"))
+        assertTrue(activity.contains("holdingDetailDialog = dialog"))
         assertTrue(activity.contains("performanceDialog?.dismiss()"))
         assertTrue(activity.contains("performanceDialogContent = null"))
         assertTrue(activity.contains("showHoldingSelectorDialog"))
