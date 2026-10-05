@@ -1,6 +1,6 @@
 # SaiETF Market Data Synchronization Policy
 
-Version line: V1.0.57
+Version line: V1.0.59
 
 ## Goal
 
@@ -10,10 +10,11 @@ The app refresh loop may run every 1 second during the trading session, but that
 
 ## Current source path
 
-1. TWSE MIS: primary HTTP quote source for listed and OTC symbols.
-2. Yahoo: secondary fallback when the primary does not resolve a requested symbol.
-3. MarketDataCenter cache: last accepted same-session quote, used between paced network fetches.
-4. Prior-session cache: diagnostics only during an active session; it must not freeze today's valuation.
+1. Fugle WebSocket `trades`: preferred live stream when the user has configured a valid API key in Android Keystore.
+2. TWSE MIS: primary HTTP polling fallback for listed and OTC symbols.
+3. Yahoo: secondary HTTP fallback when upstream sources do not resolve a requested symbol.
+4. MarketDataCenter same-session cache / Memory Hot Store: latest accepted quote used between source updates.
+5. Prior-session cache: diagnostics only during an active session; it must not freeze today's valuation.
 
 ## Synchronization rules
 
@@ -73,3 +74,15 @@ If all live sources fail:
 - prior-session data is marked stale and excluded from an active-session complete valuation;
 - unresolved symbols remain explicit;
 - the UI must not invent, extrapolate, or silently substitute a fake price.
+
+
+## V1.0.59 Fugle WebSocket contract
+
+- Endpoint: `wss://api.fugle.tw/marketdata/v1.0/stock/streaming`.
+- Authenticate only after the socket opens; API keys are never committed to GitHub and are stored locally using Android Keystore AES/GCM.
+- The first live channel is `trades`; received trade events are normalized into `MarketQuote` and published to the Memory Hot Store.
+- Server heartbeat is expected roughly every 30 seconds. SaiETF sends an application-level ping after prolonged silence and reconnects if the stream remains silent beyond the watchdog timeout.
+- Reconnect uses bounded exponential backoff; an authentication rejection stops automatic retry until credentials change.
+- Subscription updates are diffed. Adding/removing holdings or watched symbols sends only the required subscribe/unsubscribe operations and does not intentionally rebuild the whole connection.
+- Fresh Fugle quotes are used before polling. If no fresh stream quote is available, the existing TWSE MIS → Yahoo fallback path remains active.
+- Trial messages are not accepted into portfolio valuation.
