@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第三十階段 1.0.39｜介面設定｜二次確認恢復標準"
+    const val releaseLine = "第三十一階段 1.0.40｜系統診斷｜一鍵複製行情報告"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -89,7 +89,7 @@ object FirstVersionContract {
         LandingCard(
             title = "系統狀態",
             body = "版本、Ledger、持股、行情覆蓋、資料來源與走勢點數",
-            status = "提供版本、新鮮度與逐檔來源 / 品質 / 距今秒數診斷，並保留升級保護",
+            status = "提供版本、新鮮度與逐檔來源 / 品質 / 距今秒數診斷；行情明細可一鍵複製",
         ),
         LandingCard(
             title = "立即更新行情",
