@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.62", BuildConfig.VERSION_NAME)
-        assertEquals(10062, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.63", BuildConfig.VERSION_NAME)
+        assertEquals(10063, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1062 keeps Shioaji streaming failover and upgrade contracts`() {
+    fun `v1063 keeps StockDetail batch schema cache-first and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -65,6 +65,8 @@ class BuildContractTest {
         val shioajiProvider = File("src/main/kotlin/tw/saietf/app/ShioajiSseGatewayProvider.kt").readText()
         val shioajiSettings = File("src/main/kotlin/tw/saietf/app/ShioajiGatewaySettingsStore.kt").readText()
         val realtimeController = File("src/main/kotlin/tw/saietf/app/RealtimeStreamingController.kt").readText()
+        val stockDetailRepository = File("src/main/kotlin/tw/saietf/app/StockDetailRepository.kt").readText()
+        val stockDetailDao = File("../core/database/src/main/kotlin/tw/saietf/core/database/dao/StockDetailDao.kt").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
@@ -136,8 +138,9 @@ class BuildContractTest {
         assertTrue(marketPersistence.contains("MarketQuoteSnapshotEntity"))
         assertTrue(marketPersistence.contains("MarketMinuteCandleEntity"))
         assertTrue(persistenceController.contains("PERSIST_INTERVAL_MILLIS = 5_000L"))
-        assertTrue(database.contains("version = 4"))
+        assertTrue(database.contains("version = 5"))
         assertTrue(database.contains("MIGRATION_3_4"))
+        assertTrue(database.contains("MIGRATION_4_5"))
         assertTrue(marketCacheDao.contains("upsertSnapshots"))
         assertTrue(marketCacheDao.contains("upsertCandles"))
         assertTrue(shioajiProvider.contains("text/event-stream"))
@@ -149,6 +152,13 @@ class BuildContractTest {
         assertTrue(realtimeController.contains("ProviderCircuitState.HEALTHY"))
         assertTrue(activity.contains("showShioajiSettingsDialog"))
         assertTrue(activity.contains("Shioaji SSE"))
+        assertTrue(stockDetailRepository.contains("StockDetailDataset"))
+        assertTrue(stockDetailRepository.contains("canonicalRevision"))
+        assertTrue(stockDetailRepository.contains("needsRefresh"))
+        assertTrue(stockDetailDao.contains("observeInstitutional"))
+        assertTrue(stockDetailDao.contains("observeMonthlyRevenue"))
+        assertTrue(stockDetailDao.contains("observeEtfComponents"))
+        assertTrue(stockDetailDao.contains("observeDividendReference"))
         assertTrue(activity.contains("showFugleSettingsDialog"))
         assertTrue(activity.contains("realtimeStreamingController.updateSymbols"))
         assertTrue(activity.contains("realtimeStreamingController.pause"))
@@ -290,8 +300,8 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第五十三階段 1.0.62｜Shioaji SSE｜Streaming Failover 整合", FirstVersionContract.releaseLine)
-        assertEquals("Fugle WebSocket → Shioaji SSE → TWSE MIS → Yahoo｜Streaming Failover｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第五十四階段 1.0.63｜個股資料中心｜Room Schema v5・Cache-First Repository", FirstVersionContract.releaseLine)
+        assertEquals("StockDetail Batch Pipeline｜Room v5｜Data Period / Lineage / Cache-First｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
