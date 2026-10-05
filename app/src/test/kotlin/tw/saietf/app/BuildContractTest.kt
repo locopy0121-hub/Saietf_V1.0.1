@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.47", BuildConfig.VERSION_NAME)
-        assertEquals(10047, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.48", BuildConfig.VERSION_NAME)
+        assertEquals(10048, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1047 keeps market wall modes daily performance and upgrade contracts`() {
+    fun `v1048 keeps stock info tabs market wall and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -106,7 +106,13 @@ class BuildContractTest {
         assertTrue(activity.contains("takeLast(12)"))
         assertTrue(activity.contains("showHoldingSelectorDialog"))
         assertTrue(activity.contains("showHoldingDetailDialog"))
-        assertTrue(activity.contains("平均成本"))
+        assertTrue(activity.contains("平均成本") || activity.contains(""均價""))
+        assertTrue(activity.contains("InstrumentInfoTab"))
+        assertTrue(activity.contains("buildInstrumentMetricCard"))
+        assertTrue(activity.contains(""均價""))
+        assertTrue(activity.contains(""市值""))
+        assertTrue(activity.contains("InstrumentInfoTab.COMPONENTS"))
+        assertTrue(activity.contains("InstrumentInfoTab.FINANCIAL"))
         assertTrue(activity.contains("上一檔"))
         assertTrue(activity.contains("下一檔"))
         assertTrue(activity.contains("latestAsOf"))
@@ -154,7 +160,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第三十八階段 1.0.47｜行情牆｜五種看盤顯示模式", FirstVersionContract.releaseLine)
+        assertEquals("第三十九階段 1.0.48｜個股資訊｜均價市值與八頁籤骨架", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
