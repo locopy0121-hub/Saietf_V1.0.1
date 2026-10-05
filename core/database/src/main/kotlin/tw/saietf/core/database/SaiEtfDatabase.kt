@@ -12,6 +12,7 @@ import tw.saietf.core.database.dao.IntradayPortfolioPointDao
 import tw.saietf.core.database.dao.LedgerDao
 import tw.saietf.core.database.dao.MarketCacheDao
 import tw.saietf.core.database.dao.PortfolioDao
+import tw.saietf.core.database.dao.StockDetailDao
 import tw.saietf.core.database.entity.DailySnapshotEntity
 import tw.saietf.core.database.entity.DividendEventEntity
 import tw.saietf.core.database.entity.IntradayPortfolioPointEntity
@@ -20,6 +21,12 @@ import tw.saietf.core.database.entity.MarketMinuteCandleEntity
 import tw.saietf.core.database.entity.MarketQuoteSnapshotEntity
 import tw.saietf.core.database.entity.ModelAllocationEntity
 import tw.saietf.core.database.entity.PortfolioEntity
+import tw.saietf.core.database.entity.AfterHoursEntity
+import tw.saietf.core.database.entity.DividendReferenceEntity
+import tw.saietf.core.database.entity.EtfComponentEntity
+import tw.saietf.core.database.entity.InstitutionalTradingEntity
+import tw.saietf.core.database.entity.MonthlyRevenueEntity
+import tw.saietf.core.database.entity.QuarterlyFinancialEntity
 
 @Database(
     entities = [
@@ -31,8 +38,14 @@ import tw.saietf.core.database.entity.PortfolioEntity
         DividendEventEntity::class,
         MarketQuoteSnapshotEntity::class,
         MarketMinuteCandleEntity::class,
+        InstitutionalTradingEntity::class,
+        MonthlyRevenueEntity::class,
+        QuarterlyFinancialEntity::class,
+        EtfComponentEntity::class,
+        DividendReferenceEntity::class,
+        AfterHoursEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class SaiEtfDatabase : RoomDatabase() {
@@ -42,10 +55,11 @@ abstract class SaiEtfDatabase : RoomDatabase() {
     abstract fun intradayPortfolioPointDao(): IntradayPortfolioPointDao
     abstract fun dividendEventDao(): DividendEventDao
     abstract fun marketCacheDao(): MarketCacheDao
+    abstract fun stockDetailDao(): StockDetailDao
 
     companion object {
         const val DATABASE_NAME = "saietf.db"
-        const val SCHEMA_VERSION = 4
+        const val SCHEMA_VERSION = 5
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -192,6 +206,135 @@ abstract class SaiEtfDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS institutional_trading (
+                        symbol TEXT NOT NULL,
+                        dataDate TEXT NOT NULL,
+                        period TEXT NOT NULL,
+                        foreignNetShares INTEGER,
+                        investmentTrustNetShares INTEGER,
+                        dealerNetShares INTEGER,
+                        source TEXT NOT NULL,
+                        fetchedAtEpochMillis INTEGER NOT NULL,
+                        sourceUpdatedAtEpochMillis INTEGER,
+                        quality TEXT NOT NULL,
+                        freshness TEXT NOT NULL,
+                        rawRevision TEXT NOT NULL,
+                        PRIMARY KEY(symbol, dataDate)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS monthly_revenue (
+                        symbol TEXT NOT NULL,
+                        dataDate TEXT NOT NULL,
+                        period TEXT NOT NULL,
+                        currentMonthRevenueTwd INTEGER,
+                        previousMonthRevenueTwd INTEGER,
+                        lastYearMonthRevenueTwd INTEGER,
+                        monthOverMonthPct REAL,
+                        yearOverYearPct REAL,
+                        accumulatedRevenueTwd INTEGER,
+                        source TEXT NOT NULL,
+                        fetchedAtEpochMillis INTEGER NOT NULL,
+                        sourceUpdatedAtEpochMillis INTEGER,
+                        quality TEXT NOT NULL,
+                        freshness TEXT NOT NULL,
+                        rawRevision TEXT NOT NULL,
+                        PRIMARY KEY(symbol, period)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS quarterly_financial (
+                        symbol TEXT NOT NULL,
+                        dataDate TEXT NOT NULL,
+                        period TEXT NOT NULL,
+                        revenueTwd INTEGER,
+                        netIncomeTwd INTEGER,
+                        eps REAL,
+                        roePct REAL,
+                        grossMarginPct REAL,
+                        operatingMarginPct REAL,
+                        source TEXT NOT NULL,
+                        fetchedAtEpochMillis INTEGER NOT NULL,
+                        sourceUpdatedAtEpochMillis INTEGER,
+                        quality TEXT NOT NULL,
+                        freshness TEXT NOT NULL,
+                        rawRevision TEXT NOT NULL,
+                        PRIMARY KEY(symbol, period)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS etf_components (
+                        symbol TEXT NOT NULL,
+                        componentSymbol TEXT NOT NULL,
+                        componentName TEXT,
+                        dataDate TEXT NOT NULL,
+                        period TEXT NOT NULL,
+                        weightPct REAL,
+                        shares INTEGER,
+                        source TEXT NOT NULL,
+                        fetchedAtEpochMillis INTEGER NOT NULL,
+                        sourceUpdatedAtEpochMillis INTEGER,
+                        quality TEXT NOT NULL,
+                        freshness TEXT NOT NULL,
+                        rawRevision TEXT NOT NULL,
+                        PRIMARY KEY(symbol, componentSymbol, period)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS dividend_reference (
+                        symbol TEXT NOT NULL,
+                        dataDate TEXT NOT NULL,
+                        period TEXT NOT NULL,
+                        exDateTaipei TEXT NOT NULL,
+                        recordDateTaipei TEXT,
+                        paymentDateTaipei TEXT,
+                        cashDividendPerShare REAL,
+                        stockDividendPerShare REAL,
+                        source TEXT NOT NULL,
+                        fetchedAtEpochMillis INTEGER NOT NULL,
+                        sourceUpdatedAtEpochMillis INTEGER,
+                        quality TEXT NOT NULL,
+                        freshness TEXT NOT NULL,
+                        rawRevision TEXT NOT NULL,
+                        PRIMARY KEY(symbol, exDateTaipei)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS after_hours_market (
+                        symbol TEXT NOT NULL,
+                        dataDate TEXT NOT NULL,
+                        period TEXT NOT NULL,
+                        closePrice REAL,
+                        afterHoursPrice REAL,
+                        afterHoursVolume INTEGER,
+                        totalVolume INTEGER,
+                        source TEXT NOT NULL,
+                        fetchedAtEpochMillis INTEGER NOT NULL,
+                        sourceUpdatedAtEpochMillis INTEGER,
+                        quality TEXT NOT NULL,
+                        freshness TEXT NOT NULL,
+                        rawRevision TEXT NOT NULL,
+                        PRIMARY KEY(symbol, dataDate)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         val APPEND_ONLY_CALLBACK = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -222,7 +365,7 @@ abstract class SaiEtfDatabase : RoomDatabase() {
                 SaiEtfDatabase::class.java,
                 DATABASE_NAME,
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .addCallback(APPEND_ONLY_CALLBACK)
                 .build()
 
