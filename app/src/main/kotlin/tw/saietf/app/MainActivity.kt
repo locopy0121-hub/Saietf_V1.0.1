@@ -1961,6 +1961,13 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("行情來源 / 品質診斷")
             .setMessage(body)
+            .setNeutralButton("複製診斷") { _, _ ->
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(
+                    android.content.ClipData.newPlainText("SaiETF 行情診斷", body),
+                )
+                Toast.makeText(this, "行情診斷已複製", Toast.LENGTH_SHORT).show()
+            }
             .setNegativeButton("返回狀態") { _, _ ->
                 showSystemStatusDialog()
             }
