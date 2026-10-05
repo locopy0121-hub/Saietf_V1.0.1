@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第四十二階段 1.0.51｜個股走勢｜真實日 K 與一年歷史行情"
+    const val releaseLine = "第四十三階段 1.0.52｜技術分析｜MA / RSI / 成交量指標"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -59,7 +59,7 @@ object FirstVersionContract {
         LandingCard(
             title = "持股清單",
             body = "台股與 ETF 庫存由 Ledger 經 Finance Lock 投影",
-            status = "個股資訊頁已加入真實日 K 歷史層與 K 線視圖；公司基本資料仍使用 TWSE / TPEx 官方來源，歷史行情無資料時不產生模擬值",
+            status = "個股資訊頁以真實日 K 計算 MA5 / MA20 / MA60、RSI14 與 20 日均量；缺少足夠交易日即顯示 —，不補造指標",
         ),
         LandingCard(
             title = "行情牆",
