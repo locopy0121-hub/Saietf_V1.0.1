@@ -1108,15 +1108,15 @@ class MainActivity : Activity() {
             return
         }
 
-        val total = valuation.totalMarketValue
+        val total = valuation.totalMarketValue ?: return
         if (total <= 0L) {
             Toast.makeText(this, "目前沒有可分析的持股市值", Toast.LENGTH_SHORT).show()
             return
         }
 
         val rows = valuation.holdings
-            .filter { it.marketValue != null && it.marketValue > 0L }
-            .sortedByDescending { it.marketValue }
+            .filter { (it.marketValue ?: 0L) > 0L }
+            .sortedByDescending { it.marketValue ?: 0L }
 
         val weights = rows.map { row ->
             (row.marketValue ?: 0L).toDouble() / total.toDouble()
