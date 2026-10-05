@@ -1,6 +1,9 @@
 package tw.saietf.app
 
 import android.app.Application
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import tw.saietf.core.database.BackupRepository
 import tw.saietf.core.database.DividendRepository
 import tw.saietf.core.database.LedgerRepository
@@ -9,6 +12,8 @@ import tw.saietf.core.database.SaiEtfDatabase
 import tw.saietf.core.market.MarketDataCenter
 
 class SaiEtfApplication : Application() {
+    private val marketScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     val database: SaiEtfDatabase by lazy {
         SaiEtfDatabase.build(this)
     }
@@ -33,12 +38,30 @@ class SaiEtfApplication : Application() {
         YahooIntradayHistoryProvider()
     }
 
+    val fugleApiKeyStore: FugleApiKeyStore by lazy {
+        FugleApiKeyStore(this)
+    }
+
+    internal val fugleWebSocketProvider: FugleWebSocketProvider by lazy {
+        FugleWebSocketProvider(
+            apiKeyProvider = fugleApiKeyStore::load,
+        )
+    }
+
     val marketDataCenter: MarketDataCenter by lazy {
         MarketDataCenter(
             providers = listOf(
                 TwseMisQuoteProvider(),
                 YahooQuoteProvider(),
             ),
+        )
+    }
+
+    internal val fugleStreamingController: FugleStreamingController by lazy {
+        FugleStreamingController(
+            scope = marketScope,
+            provider = fugleWebSocketProvider,
+            marketDataCenter = marketDataCenter,
         )
     }
 
