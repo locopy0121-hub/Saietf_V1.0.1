@@ -44,6 +44,8 @@ class MarketProviderException(
 data class MarketQuote(
     val symbol: String,
     val name: String = symbol,
+    val exchange: String? = null,
+    val market: String? = null,
     val price: Double,
     val previousClose: Double? = null,
     val open: Double? = null,
@@ -62,6 +64,8 @@ data class MarketQuote(
     val sessionDate: String? = null,
     val fallbackLevel: Int = 0,
     val sequence: Long? = null,
+    val isTrial: Boolean = false,
+    val isClose: Boolean = false,
 )
 
 interface MarketQuoteProvider {
