@@ -98,8 +98,11 @@ class MainActivity : Activity() {
     }
 
     private enum class MarketWallMode(val label: String) {
-        COMPACT("精簡"),
-        DETAIL("詳細"),
+        DETAIL_LIST("詳細條列"),
+        LARGE_LIST("大字條列"),
+        GRID("簡易方格"),
+        MULTI_TREND("多筆走勢"),
+        TREND_SIGNAL("趨勢摘要"),
     }
 
     private enum class MarketWallSort(val label: String) {
@@ -113,7 +116,7 @@ class MainActivity : Activity() {
 
     private var marketWallDialog: AlertDialog? = null
     private var holdingDetailDialog: AlertDialog? = null
-    private var marketWallMode: MarketWallMode = MarketWallMode.COMPACT
+    private var marketWallMode: MarketWallMode = MarketWallMode.DETAIL_LIST
     private var marketWallSort: MarketWallSort = MarketWallSort.CHANGE_PCT
     private var marketWallDescending: Boolean = true
     private var marketWallRender: (() -> Unit)? = null
@@ -1534,7 +1537,11 @@ class MainActivity : Activity() {
             addView(
                 TextView(this@MainActivity).apply {
                     text = body
-                    textSize = 14f
+                    textSize = when (mode) {
+                        MarketWallMode.LARGE_LIST -> 20f
+                        MarketWallMode.GRID -> 16f
+                        else -> 14f
+                    }
                     setTextColor(Color.rgb(15, 23, 42))
                     setPadding(0, dp(10), 0, dp(10))
                 },
@@ -1752,25 +1759,99 @@ class MainActivity : Activity() {
             }
             val unchangedCount = rows.size - advancingCount - decliningCount
 
-            val body = rows.joinToString("\n\n") { quote ->
-                val previous = quote.previousClose
-                val change = previous?.let { quote.price - it }
-                val pct = previous
-                    ?.takeIf { it > 0.0 }
-                    ?.let { (quote.price - it) / it * 100.0 }
-                buildString {
-                    append("${quote.symbol} ${quote.name}")
-                    append("\n現價 ${"%.2f".format(Locale.US, quote.price)}")
-                    if (change != null && pct != null) {
-                        append("｜${if (change > 0) "+" else ""}${"%.2f".format(Locale.US, change)}")
-                        append(" (${if (pct > 0) "+" else ""}${"%.2f".format(Locale.US, pct)}%)")
-                    }
-                    if (mode == MarketWallMode.DETAIL) {
+            val body = when (mode) {
+                MarketWallMode.DETAIL_LIST -> rows.joinToString("\n\n") { quote ->
+                    val previous = quote.previousClose
+                    val change = previous?.let { quote.price - it }
+                    val pct = previous
+                        ?.takeIf { it > 0.0 }
+                        ?.let { (quote.price - it) / it * 100.0 }
+                    buildString {
+                        append("${quote.symbol} ${quote.name}")
+                        append("\n現價 ${"%.2f".format(Locale.US, quote.price)}")
+                        if (change != null && pct != null) {
+                            append("｜${if (change > 0) "+" else ""}${"%.2f".format(Locale.US, change)}")
+                            append(" (${if (pct > 0) "+" else ""}${"%.2f".format(Locale.US, pct)}%)")
+                        }
                         append("\n開 ${quote.open?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
                         append("｜高 ${quote.high?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
                         append("｜低 ${quote.low?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
                         append("\n來源 ${sourceName(quote.source)}｜品質 ${quote.quality.name}")
-                        append("｜時間 ${Instant.ofEpochMilli(quote.asOfEpochMillis).atZone(taipeiZone).toLocalTime()}")
+                    }
+                }
+
+                MarketWallMode.LARGE_LIST -> rows.joinToString("\n\n") { quote ->
+                    val previous = quote.previousClose
+                    val change = previous?.let { quote.price - it }
+                    val pct = previous
+                        ?.takeIf { it > 0.0 }
+                        ?.let { (quote.price - it) / it * 100.0 }
+                    buildString {
+                        append("${quote.name}  ${quote.symbol}")
+                        append("\n${"%.2f".format(Locale.US, quote.price)}")
+                        if (change != null && pct != null) {
+                            append("   ${if (change > 0) "+" else ""}${"%.2f".format(Locale.US, change)}")
+                            append("   ${if (pct > 0) "+" else ""}${"%.2f".format(Locale.US, pct)}%")
+                        }
+                    }
+                }
+
+                MarketWallMode.GRID -> rows.chunked(2).joinToString("\n────────────\n") { pair ->
+                    pair.joinToString("    │    ") { quote ->
+                        val pct = quote.previousClose
+                            ?.takeIf { it > 0.0 }
+                            ?.let { (quote.price - it) / it * 100.0 }
+                        buildString {
+                            append("${quote.symbol} ${quote.name}")
+                            append("\n${"%.2f".format(Locale.US, quote.price)}")
+                            pct?.let {
+                                append("  ${if (it > 0) "+" else ""}${"%.2f".format(Locale.US, it)}%")
+                            }
+                        }
+                    }
+                }
+
+                MarketWallMode.MULTI_TREND -> rows.joinToString("\n\n") { quote ->
+                    val open = quote.open
+                    val arrow = when {
+                        open == null -> "→"
+                        quote.price > open -> "↗"
+                        quote.price < open -> "↘"
+                        else -> "→"
+                    }
+                    buildString {
+                        append("${quote.symbol} ${quote.name}")
+                        append("\n${open?.let { "%.2f".format(Locale.US, it) } ?: "—"} $arrow ${"%.2f".format(Locale.US, quote.price)}")
+                        append("｜高 ${quote.high?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("｜低 ${quote.low?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                    }
+                }
+
+                MarketWallMode.TREND_SIGNAL -> rows.joinToString("\n\n") { quote ->
+                    val previous = quote.previousClose
+                    val pct = previous
+                        ?.takeIf { it > 0.0 }
+                        ?.let { (quote.price - it) / it * 100.0 }
+                    val intraday = quote.open?.let { open ->
+                        when {
+                            quote.price > open -> "盤中偏多"
+                            quote.price < open -> "盤中偏空"
+                            else -> "盤中中立"
+                        }
+                    } ?: "盤中待判"
+                    val position = if (quote.high != null && quote.low != null && quote.high > quote.low) {
+                        ((quote.price - quote.low) / (quote.high - quote.low) * 100.0)
+                            .coerceIn(0.0, 100.0)
+                    } else {
+                        null
+                    }
+                    buildString {
+                        append("${quote.symbol} ${quote.name}｜$intraday")
+                        pct?.let {
+                            append("\n漲跌 ${if (it > 0) "+" else ""}${"%.2f".format(Locale.US, it)}%")
+                        }
+                        append("｜日內位置 ${position?.let { "%.0f%%".format(Locale.US, it) } ?: "—"}")
+                        append("\n僅依即時 / OHLC 真實資料，不虛構多週期籌碼")
                     }
                 }
             }
@@ -1798,28 +1879,30 @@ class MainActivity : Activity() {
                 },
             )
 
-            val modeRow = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                MarketWallMode.entries.forEach { option ->
-                    addView(
-                        Button(this@MainActivity).apply {
-                            text = if (option == mode) "● ${option.label}" else option.label
-                            isEnabled = option != mode
-                            setOnClickListener {
-                                mode = option
-                                marketWallMode = option
-                                render()
-                            }
-                        },
-                        LinearLayout.LayoutParams(
-                            0,
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            1f,
-                        ),
-                    )
+            MarketWallMode.entries.chunked(3).forEach { modeGroup ->
+                val modeRow = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    modeGroup.forEach { option ->
+                        addView(
+                            Button(this@MainActivity).apply {
+                                text = if (option == mode) "● ${option.label}" else option.label
+                                isEnabled = option != mode
+                                setOnClickListener {
+                                    mode = option
+                                    marketWallMode = option
+                                    render()
+                                }
+                            },
+                            LinearLayout.LayoutParams(
+                                0,
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                                1f,
+                            ),
+                        )
+                    }
                 }
+                controls.addView(modeRow)
             }
-            controls.addView(modeRow)
 
             val sortRow = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
