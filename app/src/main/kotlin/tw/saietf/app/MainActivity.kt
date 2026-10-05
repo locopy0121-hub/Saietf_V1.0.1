@@ -263,22 +263,16 @@ class MainActivity : Activity() {
                         val raw = contentResolver.openInputStream(uri)?.bufferedReader()?.use {
                             it.readText()
                         } ?: error("無法讀取備份檔")
-                        backupRepository.restoreJson(raw)
-                    }.onSuccess { restored ->
-                        latestMarketBatch = null
+                        raw to backupRepository.inspectJson(raw)
+                    }.onSuccess { (raw, inspection) ->
                         runOnUiThread {
-                            Toast.makeText(
-                                this,
-                                "還原完成：交易 ${restored.ledgerCount}、股息 ${restored.dividendCount}",
-                                Toast.LENGTH_LONG,
-                            ).show()
-                            refreshDashboard()
+                            confirmBackupRestore(raw, inspection)
                         }
                     }.onFailure { error ->
                         runOnUiThread {
                             Toast.makeText(
                                 this,
-                                "還原失敗：${error.message ?: "未知錯誤"}",
+                                "備份檢查失敗：${error.message ?: "未知錯誤"}",
                                 Toast.LENGTH_LONG,
                             ).show()
                         }
@@ -761,6 +755,57 @@ class MainActivity : Activity() {
             chartEndLabel = if (range == TrendRange.YEAR) today.toString() else todayText.substring(5),
             summary = summary,
         )
+    }
+
+    private fun confirmBackupRestore(
+        raw: String,
+        inspection: BackupRepository.Inspection,
+    ) {
+        val createdAt = Instant.ofEpochMilli(inspection.createdAtEpochMillis)
+            .atZone(taipeiZone)
+            .toLocalDateTime()
+        val hashPreview = inspection.payloadSha256.take(12)
+        val message = buildString {
+            append("備份時間 $createdAt")
+            append("\n格式 v${inspection.formatVersion}｜DB v${inspection.databaseSchemaVersion}")
+            append("\nSHA-256 $hashPreview… 已驗證")
+            append("\n\n交易 ${inspection.ledgerCount} 筆")
+            append("｜每日快照 ${inspection.dailySnapshotCount} 筆")
+            append("\n盤中走勢 ${inspection.intradayPointCount} 點")
+            append("｜股息 ${inspection.dividendCount} 筆")
+            append("\n\n還原仍遵守不可變 Ledger 規則；目前帳務已有交易時會拒絕覆寫。")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("確認備份還原")
+            .setMessage(message)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("確認還原") { _, _ ->
+                ledgerExecutor.execute {
+                    runCatching { backupRepository.restoreJson(raw) }
+                        .onSuccess { restored ->
+                            latestMarketBatch = null
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "還原完成：交易 ${restored.ledgerCount}、股息 ${restored.dividendCount}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                                refreshDashboard()
+                            }
+                        }
+                        .onFailure { error ->
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "還原失敗：${error.message ?: "未知錯誤"}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }
+                }
+            }
+            .show()
     }
 
     private fun showBackupCenter() {
