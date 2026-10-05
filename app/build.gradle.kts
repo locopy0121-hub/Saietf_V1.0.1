@@ -53,5 +53,8 @@ dependencies {
     implementation(project(":core:finance"))
     implementation(project(":core:model"))
     implementation(project(":core:market"))
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.square.okhttp)
     testImplementation(libs.junit4)
 }
