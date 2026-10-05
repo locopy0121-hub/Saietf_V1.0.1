@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第四十九階段 1.0.58｜行情中心 V2｜Market Model + Provider + Memory SSOT"
-    const val phaseLine = "Market Data Center V2｜StateFlow Hot Store｜Provider Adapter｜Finance Lock 不變"
+    const val releaseLine = "第五十階段 1.0.59｜Fugle WebSocket｜重連・心跳・訂閱 Diff"
+    const val phaseLine = "Fugle WebSocket → TWSE MIS → Yahoo｜Memory SSOT｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
@@ -63,8 +63,8 @@ object FirstVersionContract {
         ),
         LandingCard(
             title = "行情牆",
-            body = "TWSE MIS 優先，Yahoo 無金鑰備援；盤中 1 秒更新",
-            status = "V2 已建立 Normalized MarketQuote、STREAM / POLL / BATCH Provider 抽象與 StateFlow Memory Hot Store；現有 TWSE MIS / Yahoo 維持運作並可透過 Polling Adapter 接入 V2",
+            body = "Fugle WebSocket 優先，TWSE MIS / Yahoo 自動備援；盤中 UI 1 秒同步",
+            status = "Fugle trades 推播先進 Memory Hot Store；新鮮串流直接供 UI，失聯或無新鮮行情才回落至既有 Polling Provider",
         ),
         LandingCard(
             title = "股息",
@@ -89,7 +89,12 @@ object FirstVersionContract {
         LandingCard(
             title = "系統狀態",
             body = "版本、Ledger、持股、行情覆蓋、資料來源與走勢點數",
-            status = "提供版本、新鮮度與逐檔來源 / 品質 / 距今秒數診斷；行情明細可一鍵複製",
+            status = "提供版本、新鮮度、Fugle WebSocket 健康狀態與逐檔來源 / 品質 / 距今秒數診斷",
+        ),
+        LandingCard(
+            title = "Fugle 即時行情",
+            body = "設定個人 Fugle API Key，啟用台股 WebSocket trades 即時推播",
+            status = "API Key 以 Android Keystore 加密儲存在本機；支援 30 秒 Heartbeat、Ping/Pong、斷線重連與訂閱差異更新",
         ),
         LandingCard(
             title = "立即更新行情",
