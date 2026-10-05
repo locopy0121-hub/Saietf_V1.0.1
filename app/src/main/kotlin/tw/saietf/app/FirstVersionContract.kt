@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第二十二階段 1.0.31｜版面設定｜卡片間距持久化"
+    const val releaseLine = "第二十三階段 1.0.32｜系統狀態｜版本與行情診斷"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -85,6 +85,11 @@ object FirstVersionContract {
             title = "卡片間距",
             body = "緊湊 / 標準 / 寬鬆三段卡片密度",
             status = "調整資產卡片與功能卡片的內距與卡片間距，設定保存在本機",
+        ),
+        LandingCard(
+            title = "系統狀態",
+            body = "版本、Ledger、持股、行情覆蓋、資料來源與走勢點數",
+            status = "提供執行中診斷資訊，並保留覆蓋安裝與 Room migration 升級保護",
         ),
     )
 
