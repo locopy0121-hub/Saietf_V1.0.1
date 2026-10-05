@@ -42,6 +42,10 @@ class SaiEtfApplication : Application() {
         FugleApiKeyStore(this)
     }
 
+    val shioajiGatewaySettingsStore: ShioajiGatewaySettingsStore by lazy {
+        ShioajiGatewaySettingsStore(this)
+    }
+
     internal val fugleWebSocketProvider: FugleWebSocketProvider by lazy {
         FugleWebSocketProvider(
             apiKeyProvider = fugleApiKeyStore::load,
@@ -73,6 +77,24 @@ class SaiEtfApplication : Application() {
         FugleStreamingController(
             scope = marketScope,
             provider = fugleWebSocketProvider,
+            marketDataCenter = marketDataCenter,
+        )
+    }
+
+    internal val shioajiSseGatewayProvider: ShioajiSseGatewayProvider by lazy {
+        ShioajiSseGatewayProvider(
+            endpointProvider = shioajiGatewaySettingsStore::url,
+            bearerTokenProvider = shioajiGatewaySettingsStore::bearerToken,
+        )
+    }
+
+    internal val realtimeStreamingController: RealtimeStreamingController by lazy {
+        RealtimeStreamingController(
+            scope = marketScope,
+            fugleController = fugleStreamingController,
+            fugleProvider = fugleWebSocketProvider,
+            shioajiProvider = shioajiSseGatewayProvider,
+            shioajiSettings = shioajiGatewaySettingsStore,
             marketDataCenter = marketDataCenter,
         )
     }
