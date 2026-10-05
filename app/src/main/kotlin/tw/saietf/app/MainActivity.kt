@@ -62,6 +62,15 @@ class MainActivity : Activity() {
             else -> 1.00f
         }
 
+    private val displaySpacingScale: Float
+        get() = when (
+            getSharedPreferences("saietf-display", MODE_PRIVATE).getString("spacing", "standard")
+        ) {
+            "tight" -> 0.75f
+            "roomy" -> 1.30f
+            else -> 1.00f
+        }
+
 
     private val repository: LedgerRepository
         get() = (application as SaiEtfApplication).ledgerRepository
@@ -1733,12 +1742,12 @@ class MainActivity : Activity() {
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)
-            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                bottomMargin = dp(10)
+                bottomMargin = displayDp(10)
             }
             addView(cardText(title, 15f, Color.rgb(71, 85, 105)))
             addView(valueView)
@@ -1751,12 +1760,12 @@ class MainActivity : Activity() {
         LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)
-            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                bottomMargin = dp(10)
+                bottomMargin = displayDp(10)
             }
             addView(cardText(card.title, 17f, Color.rgb(15, 23, 42)))
             addView(cardText(card.body, 14f, Color.rgb(51, 65, 85)))
@@ -1872,6 +1881,8 @@ class MainActivity : Activity() {
 
     private fun formatSignedTwd(value: Double): String =
         formatSignedTwd(value.toLong())
+
+    private fun displayDp(value: Int): Int = dp((value * displaySpacingScale).toInt().coerceAtLeast(1))
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
