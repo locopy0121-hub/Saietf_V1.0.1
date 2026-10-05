@@ -497,6 +497,123 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun showTransactionHistoryDialog(
+        pageIndex: Int = 0,
+        pageSize: Int = 10,
+    ) {
+        ledgerExecutor.execute {
+            val page = runCatching {
+                repository.transactionPage(pageIndex = pageIndex, pageSize = pageSize)
+            }.getOrElse { error ->
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "交易紀錄讀取失敗：${error.message ?: "未知錯誤"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+                return@execute
+            }
+
+            val body = if (page.rows.isEmpty()) {
+                "目前沒有交易紀錄。"
+            } else {
+                page.rows.joinToString("\n\n") { row ->
+                    val side = if (row.side == LedgerEntryKind.BUY) "買進" else "賣出"
+                    val mode = if (row.tradeMode == TradeMode.ROUND_LOT) "整股" else "零股"
+                    buildString {
+                        append("${row.tradeDateTaipei}｜$side｜${row.symbol}")
+                        append("\n${row.shares} 股 × ${"%.2f".format(Locale.US, row.price)}｜$mode")
+                        append("\n手續費 ${row.fee?.let(::formatTwd) ?: "—"}")
+                        if (row.side == LedgerEntryKind.SELL) {
+                            append("｜證交稅 ${row.tax?.let(::formatTwd) ?: "—"}")
+                        }
+                        row.note?.takeIf { it.isNotBlank() }?.let {
+                            append("\n備註 $it")
+                        }
+                    }
+                }
+            }
+
+            runOnUiThread {
+                val sizeSpinner = Spinner(this).apply {
+                    adapter = ArrayAdapter(
+                        this@MainActivity,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        listOf(10, 20, 50),
+                    )
+                    setSelection(listOf(10, 20, 50).indexOf(page.pageSize))
+                }
+                val content = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(18), dp(6), dp(18), 0)
+                    addView(
+                        TextView(this@MainActivity).apply {
+                            text = "第 ${page.pageIndex + 1} / ${page.totalPages} 頁｜共 ${page.totalCount} 筆"
+                            textSize = 14f
+                            setTextColor(Color.rgb(71, 85, 105))
+                        },
+                    )
+                    addView(sizeSpinner)
+                    addView(
+                        TextView(this@MainActivity).apply {
+                            text = body
+                            textSize = 14f
+                            setTextColor(Color.rgb(15, 23, 42))
+                            setPadding(0, dp(10), 0, dp(10))
+                        },
+                    )
+                }
+
+                val dialog = AlertDialog.Builder(this)
+                    .setTitle("交易紀錄")
+                    .setView(
+                        ScrollView(this).apply {
+                            addView(content)
+                        },
+                    )
+                    .setNeutralButton("上一頁") { _, _ ->
+                        showTransactionHistoryDialog(
+                            pageIndex = (page.pageIndex - 1).coerceAtLeast(0),
+                            pageSize = sizeSpinner.selectedItem as Int,
+                        )
+                    }
+                    .setNegativeButton("關閉", null)
+                    .setPositiveButton("下一頁") { _, _ ->
+                        showTransactionHistoryDialog(
+                            pageIndex = (page.pageIndex + 1).coerceAtMost(page.totalPages - 1),
+                            pageSize = sizeSpinner.selectedItem as Int,
+                        )
+                    }
+                    .create()
+
+                dialog.setOnShowListener {
+                    dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled = page.pageIndex > 0
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled =
+                        page.pageIndex + 1 < page.totalPages
+                    sizeSpinner.onItemSelectedListener =
+                        object : android.widget.AdapterView.OnItemSelectedListener {
+                            override fun onItemSelected(
+                                parent: android.widget.AdapterView<*>?,
+                                view: View?,
+                                position: Int,
+                                id: Long,
+                            ) {
+                                val selected = listOf(10, 20, 50)[position]
+                                if (selected != page.pageSize) {
+                                    dialog.dismiss()
+                                    showTransactionHistoryDialog(0, selected)
+                                }
+                            }
+
+                            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
+                        }
+                }
+                dialog.show()
+            }
+        }
+    }
+
     private fun showTradeDialog() {
         val sideSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(
