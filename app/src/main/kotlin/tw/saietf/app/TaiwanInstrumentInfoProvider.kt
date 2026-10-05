@@ -13,6 +13,10 @@ data class TaiwanInstrumentProfile(
     val market: String,
     val industry: String?,
     val paidInCapitalTwd: Long?,
+    val issuedCommonShares: Long?,
+    val englishShortName: String?,
+    val phone: String?,
+    val website: String?,
     val listingDate: String?,
     val parValueText: String?,
     val chairman: String?,
@@ -102,6 +106,13 @@ class TaiwanInstrumentInfoProvider {
                         industry = row.textOf("產業別")?.clean(),
                         paidInCapitalTwd = row.textOf("實收資本額")
                             ?.numericLongOrNull(),
+                        issuedCommonShares = row.textOf(
+                            "已發行普通股數或TDR原發行股數",
+                            "已發行普通股數",
+                        )?.numericLongOrNull(),
+                        englishShortName = row.textOf("英文簡稱")?.clean(),
+                        phone = row.textOf("總機電話", "電話")?.clean(),
+                        website = row.textOf("網址", "公司網址")?.clean(),
                         listingDate = row.textOf("上市日期", "上櫃日期")
                             ?.clean(),
                         parValueText = row.textOf("普通股每股面額")
