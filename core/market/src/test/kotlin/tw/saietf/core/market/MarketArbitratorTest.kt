@@ -78,6 +78,29 @@ class MarketArbitratorTest {
     }
 
     @Test
+    fun `equal timestamp and quality prefer lower fallback level`() {
+        val existing = quote(
+            source = MarketSource.TWSE_MIS,
+            price = 1425.0,
+            sourceTime = 12_000L,
+            sessionDate = "2026-10-05",
+            fallbackLevel = 2,
+        )
+        val candidate = quote(
+            source = MarketSource.SHIOAJI,
+            price = 1425.0,
+            sourceTime = 12_000L,
+            sessionDate = "2026-10-05",
+            fallbackLevel = 1,
+        )
+
+        val decision = arbitrator.decide(existing, candidate)
+
+        assertTrue(decision.accepted)
+        assertEquals(ArbitrationReason.ACCEPT_LOWER_FALLBACK_LEVEL, decision.reason)
+    }
+
+    @Test
     fun `equal timestamp prefers higher priority source`() {
         val existing = quote(
             source = MarketSource.YAHOO,
