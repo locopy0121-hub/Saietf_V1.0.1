@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第四十八階段 1.0.57｜行情同步｜1秒刷新與來源節流退避"
-    const val phaseLine = "同步行情中心｜TWSE MIS → Yahoo｜快取 / 限流退避 / Failover"
+    const val releaseLine = "第四十九階段 1.0.58｜行情中心 V2｜Market Model + Provider + Memory SSOT"
+    const val phaseLine = "Market Data Center V2｜StateFlow Hot Store｜Provider Adapter｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
@@ -64,7 +64,7 @@ object FirstVersionContract {
         LandingCard(
             title = "行情牆",
             body = "TWSE MIS 優先，Yahoo 無金鑰備援；盤中 1 秒更新",
-            status = "UI 盤中維持 1 秒同步刷新；外部來源由行情中心統一節流、同盤快取、429 / 403 / 網路錯誤退避與自動 fallback，避免各頁重複打 API",
+            status = "V2 已建立 Normalized MarketQuote、STREAM / POLL / BATCH Provider 抽象與 StateFlow Memory Hot Store；現有 TWSE MIS / Yahoo 維持運作並可透過 Polling Adapter 接入 V2",
         ),
         LandingCard(
             title = "股息",
