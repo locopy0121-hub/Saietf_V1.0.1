@@ -28,6 +28,12 @@ import java.time.YearMonth
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import tw.saietf.core.database.BackupRepository
 import tw.saietf.core.database.DividendRepository
 import tw.saietf.core.database.LedgerRepository
@@ -50,6 +56,7 @@ class MainActivity : Activity() {
 
     private val ledgerExecutor = Executors.newSingleThreadExecutor()
     private val marketScheduler = Executors.newSingleThreadScheduledExecutor()
+    private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val valuator = PortfolioMarketValuator()
     private val taiwanInstrumentInfoProvider = TaiwanInstrumentInfoProvider()
     private val taiwanDailyHistoryProvider = TaiwanDailyHistoryProvider()
@@ -87,6 +94,9 @@ class MainActivity : Activity() {
 
     private val fugleStreamingController: FugleStreamingController
         get() = (application as SaiEtfApplication).fugleStreamingController
+
+    private val marketPersistenceController: MarketPersistenceController
+        get() = (application as SaiEtfApplication).marketPersistenceController
 
     private val performanceHistoryRepository: PerformanceHistoryRepository
         get() = (application as SaiEtfApplication).performanceHistoryRepository
@@ -273,6 +283,8 @@ class MainActivity : Activity() {
             },
         )
 
+        marketPersistenceController
+        bindMarketStateFlow()
         refreshDashboard()
     }
 
@@ -337,6 +349,9 @@ class MainActivity : Activity() {
         marketPollingActive = false
         pollGeneration++
         fugleStreamingController.pause()
+        uiScope.launch(Dispatchers.IO) {
+            marketPersistenceController.flushNow()
+        }
         super.onPause()
     }
 
@@ -353,7 +368,68 @@ class MainActivity : Activity() {
         performanceDialogContent = null
         ledgerExecutor.shutdown()
         marketScheduler.shutdownNow()
+        uiScope.cancel()
         super.onDestroy()
+    }
+
+    private fun bindMarketStateFlow() {
+        uiScope.launch {
+            marketDataCenter.quotesState.collectLatest { state ->
+                if (!marketPollingActive || state.isEmpty()) return@collectLatest
+                val snapshot = latestLedgerSnapshot ?: return@collectLatest
+                val symbols = snapshot.holdings.map { it.symbol }.toSet()
+                if (symbols.isEmpty()) return@collectLatest
+
+                val now = System.currentTimeMillis()
+                val taipeiNow = Instant.ofEpochMilli(now).atZone(taipeiZone)
+                val currentTaipeiDate = taipeiNow.toLocalDate().toString()
+                val tradingSession =
+                    isTaipeiTradingSession(taipeiNow.dayOfWeek, taipeiNow.toLocalTime())
+
+                val requested = state.filterKeys { it in symbols }
+                if (requested.isEmpty()) return@collectLatest
+                val stale = requested.filterValues { quote ->
+                    quote.quality == QuoteQuality.STALE ||
+                        taipeiDateOf(quote.sourceTimestampEpochMillis) != currentTaipeiDate
+                }
+                val usable = requested.filterKeys { it !in stale.keys }
+                if (usable.isEmpty()) return@collectLatest
+
+                val batch = MarketBatch(
+                    quotes = usable,
+                    staleQuotes = stale,
+                    unresolvedSymbols = symbols - usable.keys,
+                    sourcesTried = emptyList(),
+                    refreshedAtEpochMillis = now,
+                    providerHealth = marketDataCenter.providerHealthSnapshot(now),
+                )
+                val valuation = valuator.value(
+                    holdings = snapshot.holdings.map {
+                        HoldingCost(
+                            symbol = it.symbol,
+                            shares = it.shares,
+                            investmentCost = it.investmentCost,
+                        )
+                    },
+                    quotes = batch.quotes,
+                )
+                latestMarketBatch = batch
+                latestValuation = valuation
+                val freshCurrentSession = valuation.isComplete &&
+                    batch.quotes.size == symbols.size &&
+                    batch.quotes.values.all { quote ->
+                        quote.quality == QuoteQuality.LIVE &&
+                            taipeiDateOf(quote.sourceTimestampEpochMillis) == currentTaipeiDate
+                    }
+
+                applyMarketValuation(
+                    batch = batch,
+                    valuation = valuation,
+                    tradingSession = tradingSession,
+                    freshCurrentSession = freshCurrentSession,
+                )
+            }
+        }
     }
 
     private fun refreshDashboard() {
