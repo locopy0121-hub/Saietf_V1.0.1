@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第三十六階段 1.0.45｜交易預檢｜賣出股數防超賣"
+    const val releaseLine = "第三十七階段 1.0.46｜每日損益｜走勢與逐日紀錄 UI"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -31,7 +31,7 @@ object FirstVersionContract {
         DashboardMetric(
             title = "昨日 / 今日 / 總損益",
             value = "— / — / —",
-            note = "昨日取上一交易日快照；今日與持有總損益分開計算",
+            note = "昨日取上一交易日快照；可點入日 / 週 / 月 / 年走勢與逐日損益紀錄",
         ),
         DashboardMetric(
             title = "持股檔數",
