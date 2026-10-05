@@ -2804,6 +2804,8 @@ class MainActivity : Activity() {
                 buildString {
                     append(sourceName(health.source))
                     append(" ")
+                    append(health.circuitState.name)
+                    append("/")
                     append(health.availability.name)
                     if (health.consecutiveFailures > 0) {
                         append(" fail=")
@@ -2830,6 +2832,8 @@ class MainActivity : Activity() {
             append("\nFugle WS ")
             append(if (fugleConfigured) "已設定" else "未設定")
             append("｜")
+            append(fugleHealth.circuitState.name)
+            append("/")
             append(fugleHealth.availability.name)
             if (fugleHealth.consecutiveFailures > 0) {
                 append(" fail=")
@@ -2870,6 +2874,9 @@ class MainActivity : Activity() {
                     append("｜來源 ${sourceName(quote.source)}")
                     append("\n品質 ${quote.quality.name}")
                     append("｜距今 ${ageSeconds}s")
+                    append("\n交易日 ${quote.sessionDate ?: taipeiDateOf(quote.sourceTimestampEpochMillis)}")
+                    append("｜Seq ${quote.sequence?.toString() ?: "—"}")
+                    append("｜Fallback ${quote.fallbackLevel}")
                 }
             }
 
