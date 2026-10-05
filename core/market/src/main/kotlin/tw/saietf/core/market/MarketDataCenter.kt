@@ -10,12 +10,12 @@ class MarketDataCenter(
     private val maxOfflineCacheAgeMillis: Long = 7L * 24L * 60L * 60L * 1_000L,
     private val providerPolicies: Map<MarketSource, MarketProviderPolicy> = defaultPolicies,
     private val hotStore: MemoryMarketStore = MemoryMarketStore(),
+    private val arbitrator: MarketArbitrator = MarketArbitrator(),
 ) {
     private data class ProviderRuntime(
         var lastAttemptEpochMillis: Long? = null,
         var lastSuccessEpochMillis: Long? = null,
-        var consecutiveFailures: Int = 0,
-        var cooldownUntilEpochMillis: Long = 0L,
+        val circuitBreaker: ProviderCircuitBreaker = ProviderCircuitBreaker(),
     )
 
     private val cache = linkedMapOf<String, MarketQuote>()
@@ -78,13 +78,19 @@ class MarketDataCenter(
             val result = try {
                 provider.fetch(pending.toSet()).also {
                     runtime.lastSuccessEpochMillis = nowEpochMillis
-                    runtime.consecutiveFailures = 0
-                    runtime.cooldownUntilEpochMillis = 0L
+                    runtime.circuitBreaker.recordSuccess(nowEpochMillis)
                 }
             } catch (error: Throwable) {
-                runtime.consecutiveFailures += 1
-                runtime.cooldownUntilEpochMillis =
-                    nowEpochMillis + backoffFor(error, runtime.consecutiveFailures, policy)
+                runtime.circuitBreaker.recordFailure(
+                    nowEpochMillis = nowEpochMillis,
+                    cooldownMillis = backoffFor(
+                        error = error,
+                        consecutiveFailures = runtime.circuitBreaker
+                            .snapshot(nowEpochMillis)
+                            .consecutiveFailures + 1,
+                        policy = policy,
+                    ),
+                )
                 emptyMap()
             }
 
@@ -93,15 +99,33 @@ class MarketDataCenter(
                 if (symbol !in pending) return@forEach
                 if (!raw.price.isFinite() || raw.price <= 0.0) return@forEach
 
+                val sourceTime = raw.sourceTimestampEpochMillis
+                    .takeIf { it > 0L }
+                    ?: raw.asOfEpochMillis
                 val normalized = raw.copy(
                     symbol = symbol,
-                    quality = qualityFor(raw.asOfEpochMillis, nowEpochMillis, currentTaipeiDate),
+                    asOfEpochMillis = sourceTime,
+                    sourceTimestampEpochMillis = sourceTime,
+                    receivedAtEpochMillis = raw.receivedAtEpochMillis
+                        .takeIf { it > 0L }
+                        ?: nowEpochMillis,
+                    sessionDate = raw.sessionDate
+                        ?.takeIf { it.isNotBlank() }
+                        ?: taipeiDate(sourceTime),
+                    quality = qualityFor(sourceTime, nowEpochMillis, currentTaipeiDate),
                 )
+
+                val existing = hotStore.snapshot(setOf(symbol))[symbol]
+                    ?: synchronized(cache) { cache[symbol] }
+                if (!arbitrator.decide(existing, normalized).accepted) {
+                    return@forEach
+                }
+
                 synchronized(cache) {
                     cache[symbol] = normalized
                 }
 
-                val sameSessionDate = taipeiDate(normalized.asOfEpochMillis) == currentTaipeiDate
+                val sameSessionDate = taipeiDate(normalized.sourceTimestampEpochMillis) == currentTaipeiDate
                 if (tradingSessionActive && !sameSessionDate) {
                     stale[symbol] = normalized.copy(quality = QuoteQuality.STALE)
                 } else {
@@ -156,9 +180,19 @@ class MarketDataCenter(
 
         val normalized = raw.copy(
             symbol = symbol,
+            asOfEpochMillis = sourceTime,
+            sourceTimestampEpochMillis = sourceTime,
+            receivedAtEpochMillis = raw.receivedAtEpochMillis
+                .takeIf { it > 0L }
+                ?: nowEpochMillis,
             quality = qualityFor(sourceTime, nowEpochMillis, currentTaipeiDate),
             sessionDate = currentTaipeiDate,
         )
+        val existing = hotStore.snapshot(setOf(symbol))[symbol]
+            ?: synchronized(cache) { cache[symbol] }
+        val decision = arbitrator.decide(existing, normalized)
+        if (!decision.accepted) return false
+
         synchronized(cache) {
             cache[symbol] = normalized
         }
@@ -173,19 +207,22 @@ class MarketDataCenter(
             val nextByInterval = runtime.lastAttemptEpochMillis
                 ?.plus(policy.minFetchIntervalMillis)
                 ?: 0L
-            val nextAllowed = maxOf(nextByInterval, runtime.cooldownUntilEpochMillis)
+            val breaker = runtime.circuitBreaker.snapshot(nowEpochMillis)
+            val nextAllowed = maxOf(nextByInterval, breaker.cooldownUntilEpochMillis)
             val availability = when {
-                nowEpochMillis < runtime.cooldownUntilEpochMillis -> ProviderAvailability.COOLDOWN
+                breaker.state == ProviderCircuitState.COOLDOWN -> ProviderAvailability.COOLDOWN
+                breaker.state == ProviderCircuitState.RECOVERING -> ProviderAvailability.THROTTLED
                 nowEpochMillis < nextByInterval -> ProviderAvailability.THROTTLED
                 else -> ProviderAvailability.READY
             }
             ProviderHealth(
                 source = provider.source,
                 availability = availability,
-                consecutiveFailures = runtime.consecutiveFailures,
+                consecutiveFailures = breaker.consecutiveFailures,
                 lastAttemptEpochMillis = runtime.lastAttemptEpochMillis,
                 lastSuccessEpochMillis = runtime.lastSuccessEpochMillis,
                 nextAllowedEpochMillis = nextAllowed,
+                circuitState = breaker.state,
             )
         }
 
@@ -204,7 +241,7 @@ class MarketDataCenter(
         policy: MarketProviderPolicy,
         nowEpochMillis: Long,
     ): Boolean {
-        if (nowEpochMillis < runtime.cooldownUntilEpochMillis) return false
+        if (!runtime.circuitBreaker.canAttempt(nowEpochMillis)) return false
         val lastAttempt = runtime.lastAttemptEpochMillis ?: return true
         return nowEpochMillis - lastAttempt >= policy.minFetchIntervalMillis
     }
