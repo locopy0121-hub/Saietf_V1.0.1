@@ -95,6 +95,12 @@ class MainActivity : Activity() {
     private val fugleStreamingController: FugleStreamingController
         get() = (application as SaiEtfApplication).fugleStreamingController
 
+    private val shioajiGatewaySettingsStore: ShioajiGatewaySettingsStore
+        get() = (application as SaiEtfApplication).shioajiGatewaySettingsStore
+
+    private val realtimeStreamingController: RealtimeStreamingController
+        get() = (application as SaiEtfApplication).realtimeStreamingController
+
     private val marketPersistenceController: MarketPersistenceController
         get() = (application as SaiEtfApplication).marketPersistenceController
 
@@ -348,7 +354,7 @@ class MainActivity : Activity() {
     override fun onPause() {
         marketPollingActive = false
         pollGeneration++
-        fugleStreamingController.pause()
+        realtimeStreamingController.pause()
         uiScope.launch(Dispatchers.IO) {
             marketPersistenceController.flushNow()
         }
@@ -502,7 +508,7 @@ class MainActivity : Activity() {
         latestLedgerSnapshot = snapshot
 
         val symbols = snapshot.holdings.map { it.symbol }.toSet()
-        fugleStreamingController.updateSymbols(symbols)
+        realtimeStreamingController.updateSymbols(symbols)
         if (symbols.isEmpty()) {
             runOnUiThread { applyLedgerSnapshot(snapshot) }
             scheduleMarketRefresh(30_000L, generation)
@@ -2731,6 +2737,7 @@ class MainActivity : Activity() {
                     "卡片間距" -> showSpacingSettingsDialog()
                     "系統狀態" -> showSystemStatusDialog()
                     "Fugle 即時行情" -> showFugleSettingsDialog()
+                    "Shioaji 備援" -> showShioajiSettingsDialog()
                     "立即更新行情" -> requestImmediateMarketRefresh()
                     "介面恢復標準" -> showResetDisplaySettingsConfirmation()
                 }
@@ -2817,7 +2824,7 @@ class MainActivity : Activity() {
             .setNegativeButton("取消", null)
             .setNeutralButton("清除") { _, _ ->
                 fugleApiKeyStore.clear()
-                fugleStreamingController.onCredentialChanged(currentSymbols)
+                realtimeStreamingController.onFugleCredentialChanged(currentSymbols)
                 Toast.makeText(this, "Fugle API Key 已清除", Toast.LENGTH_SHORT).show()
             }
             .setPositiveButton("儲存", null)
@@ -2833,7 +2840,7 @@ class MainActivity : Activity() {
                 runCatching {
                     fugleApiKeyStore.save(apiKey)
                 }.onSuccess {
-                    fugleStreamingController.onCredentialChanged(currentSymbols)
+                    realtimeStreamingController.onFugleCredentialChanged(currentSymbols)
                     Toast.makeText(
                         this,
                         "Fugle WebSocket 憑證已安全儲存並重新連線",
@@ -2844,6 +2851,81 @@ class MainActivity : Activity() {
                     Toast.makeText(
                         this,
                         "API Key 儲存失敗：${error.message ?: "未知錯誤"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun showShioajiSettingsDialog() {
+        val urlInput = EditText(this).apply {
+            hint = "https://your-gateway.example.com/quotes"
+            setText(shioajiGatewaySettingsStore.url().orEmpty())
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+        }
+        val tokenInput = EditText(this).apply {
+            hint = if (shioajiGatewaySettingsStore.bearerToken() != null) {
+                "已設定 Bearer Token；留白則保留目前 Token"
+            } else {
+                "Bearer Token（選填）"
+            }
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(4), dp(12), 0)
+            addView(TextView(this@MainActivity).apply {
+                text = "SSE Gateway URL"
+                textSize = 13f
+                setTextColor(Color.rgb(71, 85, 105))
+            })
+            addView(urlInput)
+            addView(TextView(this@MainActivity).apply {
+                text = "Authorization"
+                textSize = 13f
+                setTextColor(Color.rgb(71, 85, 105))
+                setPadding(0, dp(8), 0, 0)
+            })
+            addView(tokenInput)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Shioaji SSE 備援")
+            .setMessage(
+                "SaiETF 只連線到你配置的 HTTPS Gateway；Shioaji 帳密不放入 APK。" +
+                    "Fugle 不健康時才啟用 Secondary SSE。"
+            )
+            .setView(content)
+            .setNegativeButton("取消", null)
+            .setNeutralButton("清除") { _, _ ->
+                shioajiGatewaySettingsStore.clear()
+                realtimeStreamingController.onShioajiSettingsChanged()
+                Toast.makeText(this, "Shioaji Gateway 設定已清除", Toast.LENGTH_SHORT).show()
+            }
+            .setPositiveButton("儲存", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val url = urlInput.text?.toString()?.trim().orEmpty()
+                val typedToken = tokenInput.text?.toString()?.trim().orEmpty()
+                val token = typedToken.ifBlank { shioajiGatewaySettingsStore.bearerToken() }
+                runCatching {
+                    shioajiGatewaySettingsStore.save(url, token)
+                }.onSuccess {
+                    realtimeStreamingController.onShioajiSettingsChanged()
+                    Toast.makeText(
+                        this,
+                        "Shioaji SSE Gateway 已儲存；將在 Fugle 降級時自動接手",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    dialog.dismiss()
+                }.onFailure { error ->
+                    Toast.makeText(
+                        this,
+                        "Gateway 設定失敗：${error.message ?: "未知錯誤"}",
                         Toast.LENGTH_LONG,
                     ).show()
                 }
@@ -2873,7 +2955,9 @@ class MainActivity : Activity() {
             ?.joinToString(", ")
             ?.ifBlank { "無" }
             ?: "無"
-        val fugleHealth = fugleStreamingController.health()
+        val fugleHealth = realtimeStreamingController.fugleHealth()
+        val shioajiHealth = realtimeStreamingController.shioajiHealth()
+        val shioajiConfigured = shioajiGatewaySettingsStore.isConfigured()
         val fugleConfigured = fugleApiKeyStore.hasKey()
         val providerHealthText = batch?.providerHealth
             ?.joinToString("｜") { health ->
@@ -2915,7 +2999,17 @@ class MainActivity : Activity() {
                 append(" fail=")
                 append(fugleHealth.consecutiveFailures)
             }
-            append("\n\n同步策略：Fugle WebSocket 優先；UI 1 秒刷新；行情中心統一節流、快取、退避與來源切換")
+            append("\nShioaji SSE ")
+            append(if (shioajiConfigured) "已設定" else "未設定")
+            append("｜")
+            append(shioajiHealth.circuitState.name)
+            append("/")
+            append(shioajiHealth.availability.name)
+            if (shioajiHealth.consecutiveFailures > 0) {
+                append(" fail=")
+                append(shioajiHealth.consecutiveFailures)
+            }
+            append("\n\n同步策略：Fugle WebSocket → Shioaji SSE → TWSE MIS → Yahoo；UI 1 秒刷新；行情中心統一仲裁與備援")
             append("\n升級保護：固定 applicationId、固定開發簽章、versionCode 遞增、Room migration Gate")
         }
 
