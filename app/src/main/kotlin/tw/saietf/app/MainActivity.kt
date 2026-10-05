@@ -197,6 +197,8 @@ class MainActivity : Activity() {
     private lateinit var pageContent: LinearLayout
     private lateinit var bottomNavigation: LinearLayout
     private var selectedMainTab: MainTab = MainTab.HOME
+    private var homeHoldingsContainer: LinearLayout? = null
+    private var marketQuotesContainer: LinearLayout? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -277,6 +279,8 @@ class MainActivity : Activity() {
 
     private fun renderMainTab(tab: MainTab) {
         selectedMainTab = tab
+        homeHoldingsContainer = null
+        marketQuotesContainer = null
         pageContent.removeAllViews()
         when (tab) {
             MainTab.HOME -> renderHomePage()
@@ -384,6 +388,13 @@ class MainActivity : Activity() {
             ) { showMarketWall() },
         )
 
+        pageContent.addView(sectionTitle("持股快照"))
+        homeHoldingsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        pageContent.addView(homeHoldingsContainer)
+        renderHomeHoldingsInline()
+
         latestLedgerSnapshot?.let(::applyLedgerSnapshot)
     }
 
@@ -410,22 +421,146 @@ class MainActivity : Activity() {
                 description = "要求行情中心立即刷新；仍遵守來源限流與熔斷",
             ) { requestImmediateMarketRefresh() },
         )
-        val batch = latestMarketBatch
         pageContent.addView(sectionTitle("目前行情"))
-        if (batch == null || batch.quotes.isEmpty()) {
-            pageContent.addView(statusText("目前尚無可顯示行情"))
-        } else {
-            batch.quotes.values
+        pageContent.addView(buildInlineMarketSortBar())
+        marketQuotesContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        pageContent.addView(marketQuotesContainer)
+        renderMarketQuotesInline()
+    }
+
+    private fun renderHomeHoldingsInline() {
+        val container = homeHoldingsContainer ?: return
+        container.removeAllViews()
+        val valuation = latestValuation
+        val snapshot = latestLedgerSnapshot
+
+        if (snapshot == null || snapshot.holdings.isEmpty()) {
+            container.addView(statusText("目前沒有持股"))
+            return
+        }
+
+        if (valuation == null || valuation.holdings.isEmpty()) {
+            snapshot.holdings
                 .sortedBy { it.symbol }
-                .take(20)
-                .forEach { quote ->
-                    pageContent.addView(
+                .take(8)
+                .forEach { holding ->
+                    container.addView(
                         buildActionCard(
-                            title = "${quote.symbol}  ${quote.name}",
-                            description = "${String.format(Locale.US, "%.2f", quote.price)}｜${sourceName(quote.source)}｜${quote.quality.name}",
-                        ) { showHoldingDetailDialog(quote.symbol) },
+                            title = holding.symbol,
+                            description = "${holding.shares} 股｜成本 ${formatTwd(holding.investmentCost)}｜行情待更新",
+                        ) { showHoldingDetailDialog(holding.symbol) },
                     )
                 }
+            return
+        }
+
+        valuation.holdings
+            .sortedByDescending { it.marketValue ?: Long.MIN_VALUE }
+            .take(8)
+            .forEach { row ->
+                val quote = row.quote
+                val priceText = quote?.price
+                    ?.let { String.format(Locale.US, "%.2f", it) }
+                    ?: "—"
+                val marketValueText = row.marketValue?.let(::formatTwd) ?: "—"
+                val pnlText = row.totalPnl?.let(::formatSignedTwd) ?: "—"
+                container.addView(
+                    buildActionCard(
+                        title = "${row.symbol}  ${quote?.name ?: ""}",
+                        description = "${row.shares} 股｜現價 $priceText｜市值 $marketValueText｜總損益 $pnlText",
+                    ) { showHoldingDetailDialog(row.symbol) },
+                )
+            }
+    }
+
+    private fun buildInlineMarketSortBar(): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 0, 0, dp(8))
+            MarketWallSort.entries.forEach { option ->
+                addView(
+                    Button(this@MainActivity).apply {
+                        text = option.label
+                        isAllCaps = false
+                        textSize = 11f * displayScale
+                        setOnClickListener {
+                            if (marketWallSort == option) {
+                                marketWallDescending = !marketWallDescending
+                            } else {
+                                marketWallSort = option
+                                marketWallDescending = true
+                            }
+                            renderMarketQuotesInline()
+                            renderMainTab(MainTab.MARKET)
+                        }
+                        layoutParams = LinearLayout.LayoutParams(
+                            0,
+                            dp(44),
+                            1f,
+                        ).apply {
+                            marginEnd = dp(4)
+                        }
+                    },
+                )
+            }
+        }
+
+    private fun renderMarketQuotesInline() {
+        val container = marketQuotesContainer ?: return
+        container.removeAllViews()
+        val batch = latestMarketBatch
+        if (batch == null || batch.quotes.isEmpty()) {
+            container.addView(statusText("目前尚無可顯示行情"))
+            return
+        }
+
+        val rows = batch.quotes.values
+            .sortedWith(
+                Comparator { left, right ->
+                    val result = when (marketWallSort) {
+                        MarketWallSort.SYMBOL -> left.symbol.compareTo(right.symbol)
+                        MarketWallSort.PRICE -> left.price.compareTo(right.price)
+                        MarketWallSort.CHANGE_PCT -> {
+                            val leftPct = left.previousClose
+                                ?.takeIf { it > 0.0 }
+                                ?.let { (left.price - it) / it * 100.0 }
+                                ?: Double.NEGATIVE_INFINITY
+                            val rightPct = right.previousClose
+                                ?.takeIf { it > 0.0 }
+                                ?.let { (right.price - it) / it * 100.0 }
+                                ?: Double.NEGATIVE_INFINITY
+                            leftPct.compareTo(rightPct)
+                        }
+                    }
+                    if (marketWallDescending) -result else result
+                },
+            )
+
+        rows.take(30).forEach { quote ->
+            val changePct = quote.previousClose
+                ?.takeIf { it > 0.0 }
+                ?.let { (quote.price - it) / it * 100.0 }
+            val changeText = changePct
+                ?.let { String.format(Locale.US, "%+.2f%%", it) }
+                ?: "—"
+            val ageSeconds =
+                ((System.currentTimeMillis() - quote.receivedAtEpochMillis).coerceAtLeast(0L) / 1_000L)
+            container.addView(
+                buildActionCard(
+                    title = "${quote.symbol}  ${quote.name}  ${String.format(Locale.US, "%.2f", quote.price)}",
+                    description = "$changeText｜${sourceName(quote.source)}｜${quote.quality.name}｜${ageSeconds}s",
+                ) { showHoldingDetailDialog(quote.symbol) },
+            )
+        }
+    }
+
+    private fun refreshVisibleMarketSections() {
+        when (selectedMainTab) {
+            MainTab.HOME -> renderHomeHoldingsInline()
+            MainTab.MARKET -> renderMarketQuotesInline()
+            else -> Unit
         }
     }
 
@@ -663,6 +798,7 @@ class MainActivity : Activity() {
                     tradingSession = tradingSession,
                     freshCurrentSession = freshCurrentSession,
                 )
+                refreshVisibleMarketSections()
             }
         }
     }
@@ -711,6 +847,7 @@ class MainActivity : Activity() {
                 "${latestPreviousDayPnl?.let(::formatSignedTwd) ?: "—"} / — / —"
             marketStatusValue.text = "行情中心準備更新 ${snapshot.holdings.size} 檔持股"
         }
+        refreshVisibleMarketSections()
     }
 
     private fun scheduleMarketRefresh(delayMillis: Long, generation: Long) {
