@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五十階段 1.0.59｜Fugle WebSocket｜重連・心跳・訂閱 Diff"
-    const val phaseLine = "Fugle WebSocket → TWSE MIS → Yahoo｜Memory SSOT｜Finance Lock 不變"
+    const val releaseLine = "第五十一階段 1.0.60｜行情仲裁｜Session・Timestamp・Sequence・Circuit Breaker"
+    const val phaseLine = "Arbitration Engine｜Circuit Breaker｜Fugle → TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
@@ -64,7 +64,7 @@ object FirstVersionContract {
         LandingCard(
             title = "行情牆",
             body = "Fugle WebSocket 優先，TWSE MIS / Yahoo 自動備援；盤中 UI 1 秒同步",
-            status = "Fugle trades 推播先進 Memory Hot Store；新鮮串流直接供 UI，失聯或無新鮮行情才回落至既有 Polling Provider",
+            status = "行情寫入前先經 SessionDate / Timestamp / Sequence 仲裁；拒絕舊交易日與 Out-of-Order 覆寫，來源故障採 HEALTHY → DEGRADED → COOLDOWN → RECOVERING",
         ),
         LandingCard(
             title = "股息",
@@ -89,7 +89,7 @@ object FirstVersionContract {
         LandingCard(
             title = "系統狀態",
             body = "版本、Ledger、持股、行情覆蓋、資料來源與走勢點數",
-            status = "提供版本、新鮮度、Fugle WebSocket 健康狀態與逐檔來源 / 品質 / 距今秒數診斷",
+            status = "提供版本、新鮮度、Provider Circuit State、Fugle WebSocket 健康狀態與逐檔 Session / Sequence / Fallback 診斷",
         ),
         LandingCard(
             title = "Fugle 即時行情",
