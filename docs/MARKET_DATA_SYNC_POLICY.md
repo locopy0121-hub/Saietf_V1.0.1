@@ -94,7 +94,7 @@ If all live sources fail:
 ## V1.0.60 Arbitration and Circuit Breaker contract
 
 - Every candidate quote is normalized before it can replace the Memory Hot Store or same-session cache.
-- Arbitration order: session date → same-source sequence → source timestamp → quality → source priority → received-at.
+- Arbitration order: session date → same-source sequence → source timestamp → quality → fallback level → source priority → received-at.
 - A prior-session quote can never overwrite a newer session quote.
 - For the same streaming provider and session, a lower sequence is rejected even when it arrives later.
 - A fresher fallback quote may replace an older primary quote; fallback level does not imply stale quality.
