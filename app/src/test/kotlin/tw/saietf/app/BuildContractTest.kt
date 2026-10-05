@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.58", BuildConfig.VERSION_NAME)
-        assertEquals(10058, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.59", BuildConfig.VERSION_NAME)
+        assertEquals(10059, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1058 keeps market V2 hot store provider abstraction and upgrade contracts`() {
+    fun `v1059 keeps Fugle websocket hot store and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -53,6 +53,9 @@ class BuildContractTest {
         val marketProviderV2 = File("../core/market/src/main/kotlin/tw/saietf/core/market/MarketDataProviderV2.kt").readText()
         val hotStore = File("../core/market/src/main/kotlin/tw/saietf/core/market/MemoryMarketStore.kt").readText()
         val marketCenter = File("../core/market/src/main/kotlin/tw/saietf/core/market/MarketDataCenter.kt").readText()
+        val fugleProvider = File("src/main/kotlin/tw/saietf/app/FugleWebSocketProvider.kt").readText()
+        val fugleKeyStore = File("src/main/kotlin/tw/saietf/app/FugleApiKeyStore.kt").readText()
+        val fugleController = File("src/main/kotlin/tw/saietf/app/FugleStreamingController.kt").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
@@ -92,6 +95,22 @@ class BuildContractTest {
         assertTrue(hotStore.contains("MutableStateFlow"))
         assertTrue(hotStore.contains("StateFlow<Map<String, MarketQuote>>"))
         assertTrue(marketCenter.contains("val quotesState = hotStore.quotes"))
+        assertTrue(marketCenter.contains("acceptStreamingQuote"))
+        assertTrue(marketCenter.contains("MarketSource.FUGLE"))
+        assertTrue(fugleProvider.contains("wss://api.fugle.tw/marketdata/v1.0/stock/streaming"))
+        assertTrue(fugleProvider.contains("\"heartbeat\""))
+        assertTrue(fugleProvider.contains("\"ping\""))
+        assertTrue(fugleProvider.contains("\"subscribe\""))
+        assertTrue(fugleProvider.contains("\"unsubscribe\""))
+        assertTrue(fugleProvider.contains("replaceSubscriptions"))
+        assertTrue(fugleProvider.contains("HEARTBEAT_TIMEOUT_MILLIS"))
+        assertTrue(fugleProvider.contains("scheduleReconnect"))
+        assertTrue(fugleKeyStore.contains("AndroidKeyStore"))
+        assertTrue(fugleKeyStore.contains("AES/GCM/NoPadding"))
+        assertTrue(fugleController.contains("acceptStreamingQuote"))
+        assertTrue(activity.contains("showFugleSettingsDialog"))
+        assertTrue(activity.contains("fugleStreamingController.updateSymbols"))
+        assertTrue(activity.contains("fugleStreamingController.pause"))
         assertTrue(activity.contains("showDividendCenter"))
         assertTrue(activity.contains("DatePickerDialog"))
         assertTrue(activity.contains("showBackupCenter"))
@@ -230,14 +249,14 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第四十九階段 1.0.58｜行情中心 V2｜Market Model + Provider + Memory SSOT", FirstVersionContract.releaseLine)
-        assertEquals("Market Data Center V2｜StateFlow Hot Store｜Provider Adapter｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第五十階段 1.0.59｜Fugle WebSocket｜重連・心跳・訂閱 Diff", FirstVersionContract.releaseLine)
+        assertEquals("Fugle WebSocket → TWSE MIS → Yahoo｜Memory SSOT｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
         )
         assertEquals(
-            listOf("交易新增", "交易紀錄", "持股分析", "持股清單", "行情牆", "股息", "資料備份", "顯示設定", "卡片間距", "系統狀態", "立即更新行情", "介面恢復標準"),
+            listOf("交易新增", "交易紀錄", "持股分析", "持股清單", "行情牆", "股息", "資料備份", "顯示設定", "卡片間距", "系統狀態", "Fugle 即時行情", "立即更新行情", "介面恢復標準"),
             FirstVersionContract.landingCards.map { it.title },
         )
         assertTrue(
