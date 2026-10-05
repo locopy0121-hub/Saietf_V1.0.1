@@ -34,6 +34,7 @@ import tw.saietf.core.market.MarketProviderCapability
 import tw.saietf.core.market.MarketQuote
 import tw.saietf.core.market.MarketSource
 import tw.saietf.core.market.ProviderAvailability
+import tw.saietf.core.market.ProviderCircuitState
 import tw.saietf.core.market.ProviderHealth
 import tw.saietf.core.market.QuoteQuality
 
@@ -134,6 +135,8 @@ internal class FugleWebSocketProvider(
     private var credentialRejected: Boolean = false
     private var reconnectAttempt: Int = 0
     private var consecutiveFailures: Int = 0
+    private var hasAuthenticatedBefore: Boolean = false
+    private var recovering: Boolean = false
     private var lastAttemptEpochMillis: Long? = null
     private var lastSuccessEpochMillis: Long? = null
     private var lastMessageEpochMillis: Long? = null
@@ -206,12 +209,21 @@ internal class FugleWebSocketProvider(
     override fun health(nowEpochMillis: Long): ProviderHealth {
         val hasCredential = !apiKeyProvider().isNullOrBlank()
         return synchronized(lock) {
-            val availability = when {
-                !hasCredential || credentialRejected -> ProviderAvailability.COOLDOWN
-                authenticated && !heartbeatIsHealthy(nowEpochMillis) -> ProviderAvailability.COOLDOWN
-                authenticated -> ProviderAvailability.READY
-                socket != null || connecting -> ProviderAvailability.THROTTLED
-                else -> ProviderAvailability.COOLDOWN
+            val circuitState = when {
+                !hasCredential || credentialRejected -> ProviderCircuitState.COOLDOWN
+                authenticated && !heartbeatIsHealthy(nowEpochMillis) -> ProviderCircuitState.COOLDOWN
+                authenticated && recovering -> ProviderCircuitState.RECOVERING
+                authenticated -> ProviderCircuitState.HEALTHY
+                consecutiveFailures >= 2 -> ProviderCircuitState.COOLDOWN
+                consecutiveFailures == 1 || socket != null || connecting -> ProviderCircuitState.DEGRADED
+                else -> ProviderCircuitState.DEGRADED
+            }
+            val availability = when (circuitState) {
+                ProviderCircuitState.HEALTHY -> ProviderAvailability.READY
+                ProviderCircuitState.DEGRADED,
+                ProviderCircuitState.RECOVERING,
+                -> ProviderAvailability.THROTTLED
+                ProviderCircuitState.COOLDOWN -> ProviderAvailability.COOLDOWN
             }
             ProviderHealth(
                 source = source,
@@ -220,6 +232,7 @@ internal class FugleWebSocketProvider(
                 lastAttemptEpochMillis = lastAttemptEpochMillis,
                 lastSuccessEpochMillis = lastSuccessEpochMillis,
                 nextAllowedEpochMillis = nextReconnectEpochMillis,
+                circuitState = circuitState,
             )
         }
     }
@@ -337,6 +350,8 @@ internal class FugleWebSocketProvider(
                     authenticated = true
                     connecting = false
                     credentialRejected = false
+                    recovering = hasAuthenticatedBefore && (consecutiveFailures > 0 || reconnectAttempt > 0)
+                    hasAuthenticatedBefore = true
                     reconnectAttempt = 0
                     consecutiveFailures = 0
                     lastSuccessEpochMillis = now
@@ -350,6 +365,7 @@ internal class FugleWebSocketProvider(
                 synchronized(lock) {
                     lastHeartbeatEpochMillis = now
                     lastSuccessEpochMillis = now
+                    recovering = false
                 }
                 emitHealth()
             }
@@ -428,6 +444,7 @@ internal class FugleWebSocketProvider(
             latestQuotes[symbol] = quote
             lastSuccessEpochMillis = now
             consecutiveFailures = 0
+            recovering = false
         }
         _events.tryEmit(MarketEvent.Quote(quote))
         emitHealth()
@@ -466,6 +483,7 @@ internal class FugleWebSocketProvider(
             pendingSubscribeSymbols.clear()
             pendingUnsubscribeIds.clear()
             if (error != null) consecutiveFailures += 1
+            recovering = false
             !manualDisconnect && !credentialRejected && desiredSymbols.isNotEmpty()
         }
         if (shouldReconnect) scheduleReconnect()
@@ -572,6 +590,7 @@ internal class FugleWebSocketProvider(
                     authenticated = false
                     connecting = false
                     consecutiveFailures += 1
+                    recovering = false
                     activeChannelIds.clear()
                     pendingSubscribeSymbols.clear()
                     pendingUnsubscribeIds.clear()
