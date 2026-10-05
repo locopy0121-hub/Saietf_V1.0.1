@@ -45,7 +45,7 @@ class MarketStreamingPriorityTest {
     fun `aged stream allows polling fallback to verify current price`() {
         val old = epoch("2026-10-05", 9, 58)
         val now = epoch("2026-10-05", 10, 0)
-        val polling = CountingProvider()
+        val polling = CountingProvider(now)
         val center = MarketDataCenter(listOf(polling))
 
         center.acceptStreamingQuote(
