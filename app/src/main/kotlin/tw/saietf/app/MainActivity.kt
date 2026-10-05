@@ -52,6 +52,7 @@ class MainActivity : Activity() {
     private val marketScheduler = Executors.newSingleThreadScheduledExecutor()
     private val valuator = PortfolioMarketValuator()
     private val taiwanInstrumentInfoProvider = TaiwanInstrumentInfoProvider()
+    private val taiwanDailyHistoryProvider = TaiwanDailyHistoryProvider()
     private val taipeiZone = ZoneId.of("Asia/Taipei")
 
     private val displayScale: Float
@@ -1712,6 +1713,13 @@ class MainActivity : Activity() {
         var selectedTab = InstrumentInfoTab.DETAIL
         var instrumentProfile: TaiwanInstrumentProfile? = null
         var profileLoadFinished = false
+        var dailyBars: List<TaiwanDailyBar> = emptyList()
+        var historyLoadFinished = false
+        val chartHost = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            setPadding(0, dp(8), 0, dp(4))
+        }
 
         fun profileSummary(profile: TaiwanInstrumentProfile): String = buildString {
             append("${profile.market}｜${profile.industry ?: "產業別待資料源"}")
@@ -1723,6 +1731,8 @@ class MainActivity : Activity() {
         }
 
         fun renderTab() {
+            chartHost.removeAllViews()
+            chartHost.visibility = View.GONE
             tabContent.text = when (selectedTab) {
                 InstrumentInfoTab.DETAIL -> buildString {
                     append("持有 ${holding.shares} 股｜投入成本 ${formatTwd(holding.investmentCost)}")
@@ -1743,8 +1753,33 @@ class MainActivity : Activity() {
                         append("\n\n台股基本資料載入中…")
                     }
                 }
-                InstrumentInfoTab.TREND -> "走勢｜使用真實行情資料；日內走勢與長週期圖表會共用標的歷史資料層。"
-                InstrumentInfoTab.TECHNICAL -> "技術｜K 線、均線、成交量與技術指標區。僅在真實歷史資料可用時顯示。"
+                InstrumentInfoTab.TREND -> if (dailyBars.isNotEmpty()) {
+                    chartHost.visibility = View.VISIBLE
+                    chartHost.addView(
+                        TaiwanKLineView(this).apply { setBars(dailyBars) },
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(260),
+                        ),
+                    )
+                    val latestBar = dailyBars.last()
+                    "日 K｜近 1 年真實歷史資料｜${dailyBars.size} 根\n" +
+                        "最新 O ${"%.2f".format(Locale.US, latestBar.open)} " +
+                        "H ${"%.2f".format(Locale.US, latestBar.high)} " +
+                        "L ${"%.2f".format(Locale.US, latestBar.low)} " +
+                        "C ${"%.2f".format(Locale.US, latestBar.close)}｜量 ${latestBar.volume}"
+                } else if (!historyLoadFinished) {
+                    "走勢｜日 K 歷史行情載入中…"
+                } else {
+                    "走勢｜目前歷史行情來源未回傳此代號；不產生模擬 K 線。"
+                }
+                InstrumentInfoTab.TECHNICAL -> if (dailyBars.isNotEmpty()) {
+                    "技術｜已取得 ${dailyBars.size} 根日 K；均線與技術指標將由同一組真實 K 線計算。"
+                } else if (!historyLoadFinished) {
+                    "技術｜歷史 K 線載入中…"
+                } else {
+                    "技術｜無可核實歷史 K 線，不產生推估指標。"
+                }
                 InstrumentInfoTab.COMPONENTS -> instrumentProfile?.let { profile ->
                     "個股結構｜${profile.market}｜產業 ${profile.industry ?: "—"}\n" +
                         "公司 ${profile.shortName}；指數成分與同族群資料將只在可核實來源存在時顯示。"
@@ -1808,6 +1843,7 @@ class MainActivity : Activity() {
             }
             content.addView(row)
         }
+        content.addView(chartHost)
         content.addView(tabContent)
         renderTab()
 
@@ -1855,10 +1891,15 @@ class MainActivity : Activity() {
             val loadedProfile = runCatching {
                 taiwanInstrumentInfoProvider.fetchProfile(symbol)
             }.getOrNull()
+            val loadedBars = runCatching {
+                taiwanDailyHistoryProvider.fetch(symbol)
+            }.getOrDefault(emptyList())
             runOnUiThread {
                 if (holdingDetailDialog !== dialog || !dialog.isShowing) return@runOnUiThread
                 instrumentProfile = loadedProfile
                 profileLoadFinished = true
+                dailyBars = loadedBars
+                historyLoadFinished = true
                 renderTab()
             }
         }
