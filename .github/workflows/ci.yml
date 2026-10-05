@@ -31,6 +31,8 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: "platform-tools platforms;android-36 build-tools;36.0.0"
+      - name: Apply canonical app version
+        run: bash ./scripts/apply_release_version.sh
       - name: Verify frozen finance core lock
         run: ./scripts/verify_finance_lock.sh
       - name: Verify unit tests, lint, and debug APK
@@ -48,7 +50,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASELINE_COMMIT="$(sed -n 's/^previousVerifiedCommit=//p' app/upgrade-install-contract.properties | tail -n 1)"
+          BASELINE_COMMIT="$(sed -n 's/^previousVerifiedCommit=//p' app/upgrade-baseline.properties | tail -n 1)"
           test -n "$BASELINE_COMMIT"
           UPGRADE_DIR="$RUNNER_TEMP/saietf-upgrade"
           BASELINE_DIR="$RUNNER_TEMP/saietf-baseline"
@@ -118,10 +120,10 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.69 APK
+      - name: Upload V1.0.70 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.69-formal-ui-apk
+          name: SaiETF-V1.0.70-ui-theme-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publish Android CI commit status
