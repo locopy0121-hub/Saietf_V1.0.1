@@ -1,6 +1,5 @@
 package tw.saietf.app
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Intent
@@ -18,6 +17,8 @@ import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import java.text.NumberFormat
 import java.time.DayOfWeek
 import java.time.Instant
@@ -48,7 +49,7 @@ import tw.saietf.core.market.PortfolioMarketValuator
 import tw.saietf.core.market.QuoteQuality
 import tw.saietf.core.model.TradeMode
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     private companion object {
         const val REQUEST_EXPORT_BACKUP = 4101
         const val REQUEST_IMPORT_BACKUP = 4102
@@ -220,6 +221,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        installBackNavigation()
 
         window.statusBarColor = Color.WHITE
         window.navigationBarColor = Color.WHITE
@@ -916,20 +918,29 @@ class MainActivity : Activity() {
         }
     }
 
-    @Deprecated("Legacy back callback retained for Android navigation compatibility")
-    override fun onBackPressed() {
-        if (activeInstrumentSymbol != null) {
-            activeInstrumentSymbol = null
-            renderMainTab(instrumentReturnTab)
-            refreshDashboard()
-            return
-        }
-        if (selectedMainTab != MainTab.HOME) {
-            renderMainTab(MainTab.HOME)
-            refreshDashboard()
-            return
-        }
-        super.onBackPressed()
+    private fun installBackNavigation() {
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (activeInstrumentSymbol != null) {
+                        activeInstrumentSymbol = null
+                        renderMainTab(instrumentReturnTab)
+                        refreshDashboard()
+                        return
+                    }
+                    if (selectedMainTab != MainTab.HOME) {
+                        renderMainTab(MainTab.HOME)
+                        refreshDashboard()
+                        return
+                    }
+
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            },
+        )
     }
 
     override fun onResume() {
