@@ -48,6 +48,21 @@ interface DailySnapshotDao {
         """
         SELECT * FROM daily_snapshots
         WHERE portfolioId = :portfolioId
+          AND taipeiDate >= :startTaipeiDate
+          AND taipeiDate <= :endTaipeiDate
+        ORDER BY taipeiDate ASC, capturedAtEpochMillis ASC, id ASC
+        """,
+    )
+    fun rangeBlocking(
+        portfolioId: String,
+        startTaipeiDate: String,
+        endTaipeiDate: String,
+    ): List<DailySnapshotEntity>
+
+    @Query(
+        """
+        SELECT * FROM daily_snapshots
+        WHERE portfolioId = :portfolioId
         ORDER BY taipeiDate DESC, capturedAtEpochMillis DESC, id DESC
         LIMIT :limit
         """,
