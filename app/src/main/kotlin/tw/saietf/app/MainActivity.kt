@@ -1612,6 +1612,14 @@ class MainActivity : Activity() {
                     },
                 )
 
+            val advancingCount = rows.count { quote ->
+                quote.previousClose?.let { quote.price > it } == true
+            }
+            val decliningCount = rows.count { quote ->
+                quote.previousClose?.let { quote.price < it } == true
+            }
+            val unchangedCount = rows.size - advancingCount - decliningCount
+
             val body = rows.joinToString("\n\n") { quote ->
                 val previous = quote.previousClose
                 val change = previous?.let { quote.price - it }
@@ -1643,6 +1651,7 @@ class MainActivity : Activity() {
                 TextView(this).apply {
                     text = buildString {
                         append("行情 ${batch.quotes.size} 檔")
+                        append("｜漲 $advancingCount 跌 $decliningCount 平 $unchangedCount")
                         latestAsOf?.let {
                             append("｜更新 ")
                             append(Instant.ofEpochMilli(it).atZone(taipeiZone).toLocalTime())
