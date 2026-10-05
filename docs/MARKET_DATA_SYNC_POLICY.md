@@ -1,6 +1,6 @@
 # SaiETF Market Data Synchronization Policy
 
-Version line: V1.0.60
+Version line: V1.0.61
 
 ## Goal
 
@@ -103,3 +103,14 @@ If all live sources fail:
 - Two consecutive failures open the circuit by default; recovery requires two successful probes.
 - HTTP 429 honors Retry-After where available; HTTP 403 uses a longer cooldown; network/5xx backoff includes bounded jitter.
 - Fugle diagnostics expose HEALTHY / DEGRADED / COOLDOWN / RECOVERING separately from quote freshness.
+
+
+## V1.0.61 Room persistence and StateFlow contract
+
+- Memory Hot Store remains the intraday SSOT; UI subscribes directly to `StateFlow<Map<String, MarketQuote>>`.
+- Room is a persistence layer only, never the tick-by-tick SSOT.
+- Latest quote snapshots are persisted to `market_quote_snapshots`.
+- One-minute candles are persisted to `market_minute_candles`.
+- Persistence is throttled to a 5-second batch cadence and flushed when the Activity moves to background.
+- Room schema advances from v3 to v4 with an explicit 3→4 migration; destructive migration is not allowed.
+- The existing Finance Lock and append-only Ledger schema remain unchanged.
