@@ -571,6 +571,51 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun showBackupCenter() {
+        AlertDialog.Builder(this)
+            .setTitle("資料備份")
+            .setMessage(
+                "備份包含交易 Ledger、每日損益、盤中走勢與股息資料，" +
+                    "並附 SHA-256 校驗。為避免覆寫不可變帳務，還原僅允許沒有交易紀錄的帳務。",
+            )
+            .setNegativeButton("關閉", null)
+            .setNeutralButton("還原備份") { _, _ ->
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/json"
+                }
+                startActivityForResult(intent, REQUEST_IMPORT_BACKUP)
+            }
+            .setPositiveButton("匯出備份") { _, _ ->
+                ledgerExecutor.execute {
+                    runCatching { backupRepository.exportJson() }
+                        .onSuccess { json ->
+                            pendingBackupJson = json
+                            runOnUiThread {
+                                val fileName =
+                                    "SaiETF-backup-${LocalDate.now(taipeiZone)}.json"
+                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "application/json"
+                                    putExtra(Intent.EXTRA_TITLE, fileName)
+                                }
+                                startActivityForResult(intent, REQUEST_EXPORT_BACKUP)
+                            }
+                        }
+                        .onFailure { error ->
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "備份建立失敗：${error.message ?: "未知錯誤"}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }
+                }
+            }
+            .show()
+    }
+
     private fun showDividendCenter() {
         ledgerExecutor.execute {
             val rows = runCatching { dividendRepository.recent(30) }.getOrDefault(emptyList())
