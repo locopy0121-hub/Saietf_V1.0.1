@@ -3,6 +3,7 @@ set -euo pipefail
 
 APK_PATH="${1:-app/build/outputs/apk/debug/app-debug.apk}"
 CONTRACT_PATH="${2:-app/upgrade-install-contract.properties}"
+BASELINE_PATH="${3:-app/upgrade-baseline.properties}"
 AAPT="${ANDROID_HOME}/build-tools/36.0.0/aapt"
 APKSIGNER="${ANDROID_HOME}/build-tools/36.0.0/apksigner"
 
@@ -16,14 +17,24 @@ if [[ ! -f "${CONTRACT_PATH}" ]]; then
   exit 1
 fi
 
+if [[ ! -f "${BASELINE_PATH}" ]]; then
+  echo "upgrade-gate: baseline not found: ${BASELINE_PATH}" >&2
+  exit 1
+fi
+
 property() {
   local key="$1"
   sed -n "s/^${key}=//p" "${CONTRACT_PATH}" | tail -n 1
 }
 
+baseline_property() {
+  local key="$1"
+  sed -n "s/^${key}=//p" "${BASELINE_PATH}" | tail -n 1
+}
+
 EXPECTED_PACKAGE="$(property packageName)"
 EXPECTED_CERT_SHA256="$(property certificateSha256 | tr '[:lower:]' '[:upper:]')"
-PREVIOUS_VERSION_CODE="$(property previousVerifiedVersionCode)"
+PREVIOUS_VERSION_CODE="$(baseline_property previousVerifiedVersionCode)"
 
 BADGING="$("${AAPT}" dump badging "${APK_PATH}" | head -n 1)"
 ACTUAL_PACKAGE="$(printf '%s\n' "${BADGING}" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
