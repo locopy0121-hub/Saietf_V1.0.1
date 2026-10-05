@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第二十七階段 1.0.36｜交易紀錄｜分頁買賣統計"
+    const val releaseLine = "第二十八階段 1.0.37｜股息月曆｜確認與預告統計"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -69,7 +69,7 @@ object FirstVersionContract {
         LandingCard(
             title = "股息",
             body = "預告可先登錄；相同代號＋除息日可更新為已確認",
-            status = "月曆日期、日期順序驗證、持股股數與預估入金已實裝；可依月份前後切換查看股息事件",
+            status = "月曆可前後切換月份，並統計本月預估、已確認金額與預告 / 確認筆數",
         ),
         LandingCard(
             title = "資料備份",
