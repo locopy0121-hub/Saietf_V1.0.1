@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第六階段 1.0.13｜走勢圖｜30日損益統計"
+    const val releaseLine = "第七階段 1.0.14｜交易紀錄｜10/20/50 分頁"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -45,6 +45,11 @@ object FirstVersionContract {
             title = "交易新增",
             body = "買進 / 賣出 / 股數 / 成交價 / 手續費 / 證交稅實際值",
             status = "Ledger Repository + Room 已實裝",
+        ),
+        LandingCard(
+            title = "交易紀錄",
+            body = "不可變 Ledger 交易明細，支援 10 / 20 / 50 筆分頁",
+            status = "最新到最舊，可往前追溯第一筆交易",
         ),
         LandingCard(
             title = "持股清單",
