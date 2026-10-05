@@ -121,10 +121,9 @@ class MarketArbitrator(
     companion object {
         val defaultSourcePriority: Map<MarketSource, Int> = mapOf(
             MarketSource.FUGLE to 0,
-            MarketSource.SHIOAJI to 1,
-            MarketSource.TWSE_MIS to 2,
-            MarketSource.YAHOO to 3,
-            MarketSource.CACHE to 4,
+            MarketSource.TWSE_MIS to 1,
+            MarketSource.YAHOO to 2,
+            MarketSource.CACHE to 3,
         )
     }
 }
