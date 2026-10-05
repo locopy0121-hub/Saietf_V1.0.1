@@ -11,7 +11,7 @@ class MarketStreamingPriorityTest {
     @Test
     fun `fresh Fugle stream wins before polling fallback`() {
         val now = epoch("2026-10-05", 10, 0)
-        val polling = CountingProvider()
+        val polling = CountingProvider(now)
         val center = MarketDataCenter(listOf(polling))
 
         center.acceptStreamingQuote(
@@ -77,19 +77,22 @@ class MarketStreamingPriorityTest {
     private fun epoch(date: String, hour: Int, minute: Int): Long =
         LocalDate.parse(date).atTime(hour, minute).atZone(zone).toInstant().toEpochMilli()
 
-    private class CountingProvider : MarketQuoteProvider {
+    private class CountingProvider(
+        private val quoteTime: Long,
+    ) : MarketQuoteProvider {
         override val source = MarketSource.TWSE_MIS
         var fetchCount: Int = 0
 
         override fun fetch(symbols: Set<String>): Map<String, MarketQuote> {
             fetchCount += 1
-            val now = System.currentTimeMillis()
             return symbols.associateWith { symbol ->
                 MarketQuote(
                     symbol = symbol,
                     price = 1426.0,
-                    asOfEpochMillis = now,
+                    asOfEpochMillis = quoteTime,
                     source = source,
+                    sourceTimestampEpochMillis = quoteTime,
+                    receivedAtEpochMillis = quoteTime,
                 )
             }
         }
