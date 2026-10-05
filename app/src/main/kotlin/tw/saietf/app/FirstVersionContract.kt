@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五十七階段 1.0.66｜正式介面骨架｜五分頁 Bottom Navigation"
-    const val phaseLine = "首頁｜行情｜交易｜股息｜設定｜正式 App Shell｜Finance Lock 不變"
+    const val releaseLine = "第五十八階段 1.0.67｜首頁與行情｜持股快照・即時行情列表"
+    const val phaseLine = "首頁持股快照｜行情排序｜Source/Quality/Age｜StateFlow 即時刷新｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
