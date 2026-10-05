@@ -19,6 +19,14 @@ class PerformanceHistoryRepository(
         val lowMarketValue: Long?,
     )
 
+    data class DailyStats(
+        val sampleCount: Int,
+        val totalDailyPnl: Long,
+        val averageDailyPnl: Long,
+        val bestDayPnl: Long?,
+        val worstDayPnl: Long?,
+    )
+
     fun previousTradingDay(beforeTaipeiDate: String): DailySnapshotEntity? =
         database.dailySnapshotDao().latestBeforeBlocking(
             portfolioId = LedgerRepository.DEFAULT_PORTFOLIO_ID,
@@ -37,17 +45,32 @@ class PerformanceHistoryRepository(
             taipeiDate = taipeiDate,
         )
 
-    fun intradaySummary(taipeiDate: String): IntradaySummary {
-        val points = database.intradayPortfolioPointDao().listForDateBlocking(
+    fun intradayPoints(taipeiDate: String): List<IntradayPortfolioPointEntity> =
+        database.intradayPortfolioPointDao().listForDateBlocking(
             portfolioId = LedgerRepository.DEFAULT_PORTFOLIO_ID,
             taipeiDate = taipeiDate,
         )
+
+    fun intradaySummary(taipeiDate: String): IntradaySummary {
+        val points = intradayPoints(taipeiDate)
         return IntradaySummary(
             pointCount = points.size,
             openMarketValue = points.firstOrNull()?.totalMarketValue,
             latestMarketValue = points.lastOrNull()?.totalMarketValue,
             highMarketValue = points.maxOfOrNull { it.totalMarketValue },
             lowMarketValue = points.minOfOrNull { it.totalMarketValue },
+        )
+    }
+
+    fun dailyStats(limit: Int = 30): DailyStats {
+        val rows = recentDaily(limit)
+        val values = rows.map { it.dailyMarketPnL }
+        return DailyStats(
+            sampleCount = values.size,
+            totalDailyPnl = values.sum(),
+            averageDailyPnl = if (values.isEmpty()) 0L else values.sum() / values.size,
+            bestDayPnl = values.maxOrNull(),
+            worstDayPnl = values.minOrNull(),
         )
     }
 
