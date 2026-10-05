@@ -164,6 +164,8 @@ class BuildContractTest {
         assertTrue(technicalEngine.contains("fun macd"))
         assertTrue(activity.contains("private enum class MainTab"))
         assertTrue(activity.contains("buildBottomNavigation"))
+        assertTrue(activity.contains("OnBackPressedCallback"))
+        assertTrue(activity.contains("onBackPressedDispatcher.addCallback"))
         assertTrue(activity.contains("renderMainTab"))
         assertTrue(activity.contains("renderHomePage"))
         assertTrue(activity.contains("renderMarketPage"))
