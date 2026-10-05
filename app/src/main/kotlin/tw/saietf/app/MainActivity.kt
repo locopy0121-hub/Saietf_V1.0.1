@@ -112,6 +112,7 @@ class MainActivity : Activity() {
     private var marketPollingActive = false
 
     private var marketWallDialog: AlertDialog? = null
+    private var holdingDetailDialog: AlertDialog? = null
     private var marketWallMode: MarketWallMode = MarketWallMode.COMPACT
     private var marketWallSort: MarketWallSort = MarketWallSort.CHANGE_PCT
     private var marketWallDescending: Boolean = true
@@ -320,6 +321,8 @@ class MainActivity : Activity() {
         marketWallRender = null
         marketWallDialog?.dismiss()
         marketWallDialog = null
+        holdingDetailDialog?.dismiss()
+        holdingDetailDialog = null
         performanceDialog?.dismiss()
         performanceDialog = null
         performanceDialogContent = null
@@ -1501,6 +1504,9 @@ class MainActivity : Activity() {
     }
 
     private fun showHoldingDetailDialog(symbol: String) {
+        holdingDetailDialog?.dismiss()
+        holdingDetailDialog = null
+
         val holding = latestLedgerSnapshot
             ?.holdings
             ?.firstOrNull { it.symbol == symbol }
@@ -1560,6 +1566,12 @@ class MainActivity : Activity() {
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled =
                 currentIndex >= 0 && currentIndex + 1 < symbols.size
         }
+        dialog.setOnDismissListener {
+            if (holdingDetailDialog === dialog) {
+                holdingDetailDialog = null
+            }
+        }
+        holdingDetailDialog = dialog
         dialog.show()
     }
 
