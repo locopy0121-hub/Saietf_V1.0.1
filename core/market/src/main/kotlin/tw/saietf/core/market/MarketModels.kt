@@ -1,14 +1,18 @@
 package tw.saietf.core.market
 
 enum class MarketSource {
+    FUGLE,
+    SHIOAJI,
     TWSE_MIS,
     YAHOO,
+    CACHE,
 }
 
 enum class QuoteQuality {
     LIVE,
     DELAYED,
     STALE,
+    OFFLINE,
 }
 
 enum class ProviderAvailability {
@@ -48,6 +52,16 @@ data class MarketQuote(
     val asOfEpochMillis: Long,
     val source: MarketSource,
     val quality: QuoteQuality = QuoteQuality.LIVE,
+    val change: Double? = null,
+    val changePercent: Double? = null,
+    val volume: Long? = null,
+    val bid: Double? = null,
+    val ask: Double? = null,
+    val sourceTimestampEpochMillis: Long = asOfEpochMillis,
+    val receivedAtEpochMillis: Long = asOfEpochMillis,
+    val sessionDate: String? = null,
+    val fallbackLevel: Int = 0,
+    val sequence: Long? = null,
 )
 
 interface MarketQuoteProvider {
