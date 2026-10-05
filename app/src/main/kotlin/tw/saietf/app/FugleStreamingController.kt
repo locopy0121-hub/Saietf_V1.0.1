@@ -1,6 +1,7 @@
 package tw.saietf.app
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import tw.saietf.core.market.MarketDataCenter
@@ -13,7 +14,7 @@ internal class FugleStreamingController(
     private val marketDataCenter: MarketDataCenter,
 ) {
     init {
-        scope.launch {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             provider.events.collect { event ->
                 when (event) {
                     is MarketEvent.Quote -> {
