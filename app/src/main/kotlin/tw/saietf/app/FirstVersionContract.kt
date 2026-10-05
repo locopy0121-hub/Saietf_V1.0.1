@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五十五階段 1.0.64｜Broker-free 行情｜移除 Shioaji・保留開源設計精華"
-    const val phaseLine = "Fugle WebSocket → TWSE MIS → Yahoo｜Broker-free Market Data｜Finance Lock 不變"
+    const val releaseLine = "第五十六階段 1.0.65｜圖表基礎｜台股 Session Policy・技術指標引擎"
+    const val phaseLine = "Taiwan Session Window｜Minute Bucket｜SMA/EMA/RSI/MACD｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
