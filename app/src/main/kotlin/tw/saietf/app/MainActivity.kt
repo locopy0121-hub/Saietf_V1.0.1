@@ -1824,9 +1824,20 @@ class MainActivity : Activity() {
                     "顯示設定" -> showDisplaySettingsDialog()
                     "卡片間距" -> showSpacingSettingsDialog()
                     "系統狀態" -> showSystemStatusDialog()
+                    "立即更新行情" -> requestImmediateMarketRefresh()
                 }
             }
         }
+
+    private fun requestImmediateMarketRefresh() {
+        if (marketPollingActive) {
+            scheduleMarketRefresh(0L, pollGeneration)
+            Toast.makeText(this, "已要求行情中心立即更新", Toast.LENGTH_SHORT).show()
+        } else {
+            refreshDashboard()
+            Toast.makeText(this, "已重新整理帳務與行情狀態", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private fun showDisplaySettingsDialog() {
         val labels = listOf("精簡", "標準", "放大")
