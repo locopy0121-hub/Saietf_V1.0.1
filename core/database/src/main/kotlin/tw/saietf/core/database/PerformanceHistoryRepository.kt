@@ -36,8 +36,33 @@ class PerformanceHistoryRepository(
     fun recentDaily(limit: Int = 30): List<DailySnapshotEntity> =
         database.dailySnapshotDao().recentBlocking(
             portfolioId = LedgerRepository.DEFAULT_PORTFOLIO_ID,
-            limit = limit.coerceIn(1, 120),
+            limit = limit.coerceIn(1, 400),
         )
+
+    fun dailyRange(
+        startTaipeiDate: String,
+        endTaipeiDate: String,
+    ): List<DailySnapshotEntity> =
+        database.dailySnapshotDao().rangeBlocking(
+            portfolioId = LedgerRepository.DEFAULT_PORTFOLIO_ID,
+            startTaipeiDate = startTaipeiDate,
+            endTaipeiDate = endTaipeiDate,
+        )
+
+    fun dailyStats(
+        startTaipeiDate: String,
+        endTaipeiDate: String,
+    ): DailyStats {
+        val rows = dailyRange(startTaipeiDate, endTaipeiDate)
+        val values = rows.map { it.dailyMarketPnL }
+        return DailyStats(
+            sampleCount = values.size,
+            totalDailyPnl = values.sum(),
+            averageDailyPnl = if (values.isEmpty()) 0L else values.sum() / values.size,
+            bestDayPnl = values.maxOrNull(),
+            worstDayPnl = values.minOrNull(),
+        )
+    }
 
     fun intradayPointCount(taipeiDate: String): Int =
         database.intradayPortfolioPointDao().countForDateBlocking(
