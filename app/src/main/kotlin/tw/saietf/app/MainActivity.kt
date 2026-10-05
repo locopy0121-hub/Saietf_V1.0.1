@@ -1507,14 +1507,35 @@ class MainActivity : Activity() {
             }
         }
 
-        AlertDialog.Builder(this)
+        val symbols = latestLedgerSnapshot
+            ?.holdings
+            ?.map { it.symbol }
+            ?.sorted()
+            .orEmpty()
+        val currentIndex = symbols.indexOf(symbol)
+
+        val dialog = AlertDialog.Builder(this)
             .setTitle("持股明細｜$symbol")
             .setMessage(body)
-            .setNegativeButton("返回持股") { _, _ ->
-                showHoldingsDialog()
+            .setNegativeButton("上一檔") { _, _ ->
+                if (currentIndex > 0) {
+                    showHoldingDetailDialog(symbols[currentIndex - 1])
+                }
+            }
+            .setNeutralButton("下一檔") { _, _ ->
+                if (currentIndex >= 0 && currentIndex + 1 < symbols.size) {
+                    showHoldingDetailDialog(symbols[currentIndex + 1])
+                }
             }
             .setPositiveButton("關閉", null)
-            .show()
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).isEnabled = currentIndex > 0
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled =
+                currentIndex >= 0 && currentIndex + 1 < symbols.size
+        }
+        dialog.show()
     }
 
     private fun showMarketWall() {
