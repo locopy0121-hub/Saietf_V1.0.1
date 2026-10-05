@@ -1774,7 +1774,24 @@ class MainActivity : Activity() {
                     "走勢｜目前歷史行情來源未回傳此代號；不產生模擬 K 線。"
                 }
                 InstrumentInfoTab.TECHNICAL -> if (dailyBars.isNotEmpty()) {
-                    "技術｜已取得 ${dailyBars.size} 根日 K；均線與技術指標將由同一組真實 K 線計算。"
+                    chartHost.visibility = View.VISIBLE
+                    chartHost.addView(
+                        TaiwanKLineView(this).apply { setBars(dailyBars) },
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(260),
+                        ),
+                    )
+                    val indicators = TaiwanTechnicalIndicators.from(dailyBars)
+                    buildString {
+                        append("技術｜以同一組真實日 K 計算")
+                        append("\nMA5 ${indicators.sma5?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("｜MA20 ${indicators.sma20?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("｜MA60 ${indicators.sma60?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("\nRSI14 ${indicators.rsi14?.let { "%.1f".format(Locale.US, it) } ?: "—"}")
+                        append("｜20 日均量 ${indicators.averageVolume20 ?: "—"}")
+                        append("\n指標只使用已取得歷史 K 線，不補造缺失交易日。")
+                    }
                 } else if (!historyLoadFinished) {
                     "技術｜歷史 K 線載入中…"
                 } else {
