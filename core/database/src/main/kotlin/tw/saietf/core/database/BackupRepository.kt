@@ -21,7 +21,7 @@ class BackupRepository(
 
     fun exportJson(): String {
         ledgerRepository.loadDashboard()
-        val portfolioId = LedgerRepository.DEFAULT_PORTRemovedLIO_ID
+        val portfolioId = LedgerRepository.DEFAULT_PORTFOLIO_ID
         val payload = JSONObject().apply {
             put("databaseSchemaVersion", database.openHelper.readableDatabase.version)
             put("portfolioId", portfolioId)
@@ -67,7 +67,7 @@ class BackupRepository(
         }
 
         ledgerRepository.loadDashboard()
-        require(database.ledgerDao().countBlocking(LedgerRepository.DEFAULT_PORTRemovedLIO_ID) == 0L) {
+        require(database.ledgerDao().countBlocking(LedgerRepository.DEFAULT_PORTFOLIO_ID) == 0L) {
             "為避免覆寫不可變 Ledger，還原僅允許在沒有交易紀錄的帳務中執行"
         }
 
