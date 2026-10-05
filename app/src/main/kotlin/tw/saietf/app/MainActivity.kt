@@ -422,7 +422,7 @@ class MainActivity : Activity() {
                     pageContent.addView(
                         buildActionCard(
                             title = "${quote.symbol}  ${quote.name}",
-                            description = "${formatPrice(quote.price)}｜${sourceName(quote.source)}｜${quote.quality.name}",
+                            description = "${String.format(Locale.US, "%.2f", quote.price)}｜${sourceName(quote.source)}｜${quote.quality.name}",
                         ) { showHoldingDetailDialog(quote.symbol) },
                     )
                 }
@@ -468,7 +468,7 @@ class MainActivity : Activity() {
         )
         pageContent.addView(
             buildActionCard("股息月曆", "依月份查看預告與已確認股息") {
-                showDividendCalendarDialog(YearMonth.now(taipeiZone))
+                showDividendCalendarDialog()
             },
         )
     }
