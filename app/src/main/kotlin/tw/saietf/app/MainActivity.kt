@@ -414,22 +414,36 @@ class MainActivity : Activity() {
             val recent = runCatching {
                 performanceHistoryRepository.recentDaily(30)
             }.getOrDefault(emptyList())
+            val intradayPoints = runCatching {
+                performanceHistoryRepository.intradayPoints(today)
+            }.getOrDefault(emptyList())
             val intraday = runCatching {
                 performanceHistoryRepository.intradaySummary(today)
             }.getOrNull()
+            val stats = runCatching {
+                performanceHistoryRepository.dailyStats(30)
+            }.getOrNull()
 
-            val body = buildString {
+            val summary = buildString {
                 if (intraday != null && intraday.pointCount > 0) {
                     append("今日走勢：${intraday.pointCount} 點")
-                    append("\n開盤紀錄 ${intraday.openMarketValue?.let(::formatTwd) ?: "—"}")
+                    append("\n開盤 ${intraday.openMarketValue?.let(::formatTwd) ?: "—"}")
                     append("｜最新 ${intraday.latestMarketValue?.let(::formatTwd) ?: "—"}")
                     append("\n高 ${intraday.highMarketValue?.let(::formatTwd) ?: "—"}")
                     append("｜低 ${intraday.lowMarketValue?.let(::formatTwd) ?: "—"}")
-                    append("\n\n")
                 } else {
-                    append("今日尚無完整的新鮮行情走勢紀錄。\n\n")
+                    append("今日尚無完整的新鮮行情走勢紀錄。")
                 }
 
+                if (stats != null && stats.sampleCount > 0) {
+                    append("\n\n近 ${stats.sampleCount} 日統計")
+                    append("\n合計 ${formatSignedTwd(stats.totalDailyPnl)}")
+                    append("｜平均 ${formatSignedTwd(stats.averageDailyPnl)}")
+                    append("\n最佳 ${stats.bestDayPnl?.let(::formatSignedTwd) ?: "—"}")
+                    append("｜最差 ${stats.worstDayPnl?.let(::formatSignedTwd) ?: "—"}")
+                }
+
+                append("\n\n")
                 if (recent.isEmpty()) {
                     append("尚無每日損益快照。")
                 } else {
@@ -444,9 +458,38 @@ class MainActivity : Activity() {
             }
 
             runOnUiThread {
+                val content = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(16), dp(8), dp(16), 0)
+                    if (intradayPoints.size >= 2) {
+                        addView(
+                            IntradayTrendView(this@MainActivity).apply {
+                                setPadding(dp(6), dp(8), dp(6), dp(8))
+                                setPoints(intradayPoints.map { it.totalMarketValue })
+                            },
+                            LinearLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                dp(190),
+                            ),
+                        )
+                    }
+                    addView(
+                        TextView(this@MainActivity).apply {
+                            text = summary
+                            textSize = 14f
+                            setTextColor(Color.rgb(51, 65, 85))
+                            setPadding(0, dp(8), 0, dp(8))
+                        },
+                    )
+                }
+
                 AlertDialog.Builder(this)
                     .setTitle("每日損益 / 今日走勢")
-                    .setMessage(body)
+                    .setView(
+                        ScrollView(this).apply {
+                            addView(content)
+                        },
+                    )
                     .setPositiveButton("關閉", null)
                     .show()
             }
