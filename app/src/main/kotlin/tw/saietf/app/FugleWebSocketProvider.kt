@@ -208,7 +208,8 @@ internal class FugleWebSocketProvider(
         return synchronized(lock) {
             val availability = when {
                 !hasCredential || credentialRejected -> ProviderAvailability.COOLDOWN
-                authenticated && heartbeatIsHealthy(nowEpochMillis) -> ProviderAvailability.READY
+                authenticated && !heartbeatIsHealthy(nowEpochMillis) -> ProviderAvailability.COOLDOWN
+                authenticated -> ProviderAvailability.READY
                 socket != null || connecting -> ProviderAvailability.THROTTLED
                 else -> ProviderAvailability.COOLDOWN
             }
