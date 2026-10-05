@@ -2,6 +2,7 @@ package tw.saietf.app
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.DatePickerDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
@@ -25,6 +26,7 @@ import java.time.ZoneId
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import tw.saietf.core.database.DividendRepository
 import tw.saietf.core.database.LedgerRepository
 import tw.saietf.core.database.PerformanceHistoryRepository
 import tw.saietf.core.finance.LedgerEntryKind
@@ -51,6 +53,9 @@ class MainActivity : Activity() {
 
     private val performanceHistoryRepository: PerformanceHistoryRepository
         get() = (application as SaiEtfApplication).performanceHistoryRepository
+
+    private val dividendRepository: DividendRepository
+        get() = (application as SaiEtfApplication).dividendRepository
 
     private val intradayHistoryProvider: YahooIntradayHistoryProvider
         get() = (application as SaiEtfApplication).intradayHistoryProvider
@@ -992,7 +997,7 @@ class MainActivity : Activity() {
                     "交易紀錄" -> showTransactionHistoryDialog()
                     "持股清單" -> showHoldingsDialog()
                     "行情牆" -> showMarketWall()
-                    "股息" -> Toast.makeText(this@MainActivity, "股息資料源將於後續階段串接", Toast.LENGTH_SHORT).show()
+                    "股息" -> showDividendCenter()
                     "資料備份" -> Toast.makeText(this@MainActivity, "備份功能將在行情中心穩定後實裝", Toast.LENGTH_SHORT).show()
                 }
             }
