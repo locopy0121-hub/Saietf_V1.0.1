@@ -19,6 +19,46 @@ class BackupRepository(
         val dividendCount: Int,
     )
 
+    data class Inspection(
+        val formatVersion: Int,
+        val databaseSchemaVersion: Int,
+        val createdAtEpochMillis: Long,
+        val payloadSha256: String,
+        val ledgerCount: Int,
+        val dailySnapshotCount: Int,
+        val intradayPointCount: Int,
+        val dividendCount: Int,
+    )
+
+    fun inspectJson(raw: String): Inspection {
+        val envelope = JSONObject(raw)
+        val formatVersion = envelope.getInt("formatVersion")
+        require(formatVersion == FORMAT_VERSION) {
+            "不支援的備份格式"
+        }
+        val payloadText = envelope.getString("payload")
+        val expectedHash = envelope.getString("payloadSha256")
+        require(sha256(payloadText).equals(expectedHash, ignoreCase = true)) {
+            "備份檔校驗失敗"
+        }
+        val payload = JSONObject(payloadText)
+        val databaseSchemaVersion = payload.getInt("databaseSchemaVersion")
+        require(databaseSchemaVersion <= SaiEtfDatabase.SCHEMA_VERSION) {
+            "備份資料庫版本高於目前 App"
+        }
+
+        return Inspection(
+            formatVersion = formatVersion,
+            databaseSchemaVersion = databaseSchemaVersion,
+            createdAtEpochMillis = envelope.getLong("createdAtEpochMillis"),
+            payloadSha256 = expectedHash,
+            ledgerCount = payload.getJSONArray("ledger").length(),
+            dailySnapshotCount = payload.getJSONArray("dailySnapshots").length(),
+            intradayPointCount = payload.getJSONArray("intradayPoints").length(),
+            dividendCount = payload.getJSONArray("dividends").length(),
+        )
+    }
+
     fun exportJson(): String {
         ledgerRepository.loadDashboard()
         val portfolioId = LedgerRepository.DEFAULT_PORTFOLIO_ID
