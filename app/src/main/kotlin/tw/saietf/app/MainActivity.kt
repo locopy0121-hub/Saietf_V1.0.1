@@ -1859,8 +1859,42 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("系統狀態 / 診斷")
             .setMessage(body)
+            .setNeutralButton("行情明細") { _, _ ->
+                showQuoteDiagnosticsDialog()
+            }
             .setNegativeButton("重新整理") { _, _ ->
                 refreshDashboard()
+            }
+            .setPositiveButton("關閉", null)
+            .show()
+    }
+
+    private fun showQuoteDiagnosticsDialog() {
+        val batch = latestMarketBatch
+        if (batch == null || batch.quotes.isEmpty()) {
+            Toast.makeText(this, "目前沒有行情診斷資料", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val body = batch.quotes.values
+            .sortedBy { it.symbol }
+            .joinToString("\n\n") { quote ->
+                val ageSeconds = ((now - quote.asOfEpochMillis).coerceAtLeast(0L) / 1_000L)
+                buildString {
+                    append("${quote.symbol} ${quote.name}")
+                    append("\n現價 ${"%.2f".format(Locale.US, quote.price)}")
+                    append("｜來源 ${sourceName(quote.source)}")
+                    append("\n品質 ${quote.quality.name}")
+                    append("｜距今 ${ageSeconds}s")
+                }
+            }
+
+        AlertDialog.Builder(this)
+            .setTitle("行情來源 / 品質診斷")
+            .setMessage(body)
+            .setNegativeButton("返回狀態") { _, _ ->
+                showSystemStatusDialog()
             }
             .setPositiveButton("關閉", null)
             .show()
