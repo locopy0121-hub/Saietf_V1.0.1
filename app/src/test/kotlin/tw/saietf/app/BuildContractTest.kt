@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.49", BuildConfig.VERSION_NAME)
-        assertEquals(10049, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.50", BuildConfig.VERSION_NAME)
+        assertEquals(10050, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1049 keeps Taiwan stock profiles stock info tabs and upgrade contracts`() {
+    fun `v1050 keeps enriched Taiwan company profiles stock info tabs and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -121,6 +121,10 @@ class BuildContractTest {
         assertTrue(taiwanProfiles.contains("tpex.org.tw"))
         assertTrue(taiwanProfiles.contains("公司代號"))
         assertTrue(taiwanProfiles.contains("實收資本額"))
+        assertTrue(taiwanProfiles.contains("issuedCommonShares"))
+        assertTrue(taiwanProfiles.contains("已發行普通股數"))
+        assertTrue(activity.contains("已發行普通股"))
+        assertTrue(activity.contains("公司聯絡資料"))
         assertTrue(activity.contains("上一檔"))
         assertTrue(activity.contains("下一檔"))
         assertTrue(activity.contains("latestAsOf"))
@@ -168,7 +172,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第四十階段 1.0.49｜台股資訊｜上市櫃基本資料與資本資訊", FirstVersionContract.releaseLine)
+        assertEquals("第四十一階段 1.0.50｜台股資訊｜股本股數與公司資料深化", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
