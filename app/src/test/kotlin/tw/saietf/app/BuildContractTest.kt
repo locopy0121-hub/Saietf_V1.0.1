@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.39", BuildConfig.VERSION_NAME)
-        assertEquals(10039, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.40", BuildConfig.VERSION_NAME)
+        assertEquals(10040, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1039 keeps confirmed display reset and upgrade contracts`() {
+    fun `v1040 keeps copyable diagnostics and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -113,6 +113,8 @@ class BuildContractTest {
         assertTrue(activity.contains("staleSymbols"))
         assertTrue(activity.contains("showQuoteDiagnosticsDialog"))
         assertTrue(activity.contains("行情來源 / 品質診斷"))
+        assertTrue(activity.contains("複製診斷"))
+        assertTrue(activity.contains("setPrimaryClip"))
         assertTrue(!activity.contains("showMarketWall(option, sort, descending)"))
         assertTrue(activity.contains("listOf(10, 20, 50)"))
         assertTrue(providers.contains("YahooIntradayHistoryProvider"))
@@ -123,7 +125,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第三十階段 1.0.39｜介面設定｜二次確認恢復標準", FirstVersionContract.releaseLine)
+        assertEquals("第三十一階段 1.0.40｜系統診斷｜一鍵複製行情報告", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
