@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五十三階段 1.0.62｜Shioaji SSE｜Streaming Failover 整合"
-    const val phaseLine = "Fugle WebSocket → Shioaji SSE → TWSE MIS → Yahoo｜Streaming Failover｜Finance Lock 不變"
+    const val releaseLine = "第五十四階段 1.0.63｜個股資料中心｜Room Schema v5・Cache-First Repository"
+    const val phaseLine = "StockDetail Batch Pipeline｜Room v5｜Data Period / Lineage / Cache-First｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
@@ -59,7 +59,7 @@ object FirstVersionContract {
         LandingCard(
             title = "持股清單",
             body = "台股與 ETF 庫存由 Ledger 經 Finance Lock 投影",
-            status = "個股資訊頁新增公司市值（現價 × 官方已發行普通股）、每股實收資本、一年高低與一年報酬；衍生值明確標示公式",
+            status = "個股低頻資料新增 Room v5：法人、月營收、季財務、ETF 成分、股利參考、盤後；統一 dataDate / period / source / fetchedAt / quality / freshness / rawRevision",
         ),
         LandingCard(
             title = "行情牆",
