@@ -118,10 +118,10 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.42 APK
+      - name: Upload V1.0.43 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.42-dialog-lifecycle-hardening-apk
+          name: SaiETF-V1.0.43-input-validation-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publish Android CI commit status
@@ -138,7 +138,8 @@ jobs:
             STATE="success"
             DESCRIPTION="All gates passed and APK artifact uploaded"
           fi
-          PAYLOAD="$(printf '{"state":"%s","context":"saietf/android-ci","description":"%s"}' "$STATE" "$DESCRIPTION")"
+          TARGET_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          PAYLOAD="$(printf '{"state":"%s","context":"saietf/android-ci","description":"%s","target_url":"%s"}' "$STATE" "$DESCRIPTION" "$TARGET_URL")"
           curl --fail-with-body --silent --show-error \
             -X POST \
             -H "Accept: application/vnd.github+json" \
