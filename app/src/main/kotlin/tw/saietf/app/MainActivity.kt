@@ -1412,6 +1412,25 @@ class MainActivity : Activity() {
             dialog.setTitle("行情牆｜${mode.label}｜${sort.label}")
             controls.removeAllViews()
 
+            val latestAsOf = batch.quotes.values.maxOfOrNull { it.asOfEpochMillis }
+            controls.addView(
+                TextView(this).apply {
+                    text = buildString {
+                        append("行情 ${batch.quotes.size} 檔")
+                        latestAsOf?.let {
+                            append("｜更新 ")
+                            append(Instant.ofEpochMilli(it).atZone(taipeiZone).toLocalTime())
+                        }
+                        if (batch.staleQuotes.isNotEmpty()) {
+                            append("｜舊盤 ${batch.staleQuotes.size} 檔")
+                        }
+                    }
+                    textSize = 12f
+                    setTextColor(Color.rgb(100, 116, 139))
+                    setPadding(0, 0, 0, dp(6))
+                },
+            )
+
             val modeRow = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 MarketWallMode.entries.forEach { option ->
@@ -1462,6 +1481,21 @@ class MainActivity : Activity() {
                             descending = !descending
                             marketWallDescending = descending
                             render()
+                        }
+                    },
+                )
+                addView(
+                    Button(this@MainActivity).apply {
+                        text = "刷新"
+                        setOnClickListener {
+                            if (marketPollingActive) {
+                                scheduleMarketRefresh(0L, pollGeneration)
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "已要求行情中心立即刷新",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
                     },
                 )
