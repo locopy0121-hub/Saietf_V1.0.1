@@ -98,7 +98,7 @@ internal class OkHttpFugleSocketTransport(
     }
 }
 
-class FugleWebSocketProvider(
+internal class FugleWebSocketProvider(
     private val apiKeyProvider: () -> String?,
     private val transport: FugleSocketTransport = OkHttpFugleSocketTransport(),
     private val clockMillis: () -> Long = System::currentTimeMillis,
