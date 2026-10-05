@@ -25,6 +25,15 @@ interface IntradayPortfolioPointDao {
 
     @Query(
         """
+        SELECT * FROM intraday_portfolio_points
+        WHERE portfolioId = :portfolioId
+        ORDER BY taipeiDate ASC, bucketEpochMillis ASC, id ASC
+        """,
+    )
+    fun allBlocking(portfolioId: String): List<IntradayPortfolioPointEntity>
+
+    @Query(
+        """
         SELECT COUNT(*) FROM intraday_portfolio_points
         WHERE portfolioId = :portfolioId AND taipeiDate = :taipeiDate
         """,
