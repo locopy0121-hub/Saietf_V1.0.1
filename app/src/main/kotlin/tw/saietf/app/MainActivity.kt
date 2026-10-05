@@ -1322,9 +1322,7 @@ class MainActivity : Activity() {
         val tax = input("實際證交稅（賣出可留空）").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
         }
-        val tradeDate = input("交易日期 YYYY-MM-DD").apply {
-            setText(LocalDate.now(taipeiZone).toString())
-        }
+        val tradeDate = dateInput("交易日期", LocalDate.now(taipeiZone).toString())
 
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
