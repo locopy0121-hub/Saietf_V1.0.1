@@ -155,7 +155,7 @@ class BuildContractTest {
         assertTrue(stockDetailDao.contains("observeMonthlyRevenue"))
         assertTrue(stockDetailDao.contains("observeEtfComponents"))
         assertTrue(stockDetailDao.contains("observeDividendReference"))
-        assertTrue(sessionPolicy.contains("09"))
+        assertTrue(sessionPolicy.contains("LocalTime.of(9, 0)"))
         assertTrue(sessionPolicy.contains("minuteBucketEnd"))
         assertTrue(sessionPolicy.contains("closeGraceEndEpochMillis"))
         assertTrue(technicalEngine.contains("fun sma"))
