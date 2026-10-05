@@ -76,6 +76,6 @@ class PerformanceHistoryDatabaseTest {
             1,
             database.intradayPortfolioPointDao().countForDateBlocking("default", "2026-10-05"),
         )
-        assertEquals(4, database.openHelper.readableDatabase.version)
+        assertEquals(5, database.openHelper.readableDatabase.version)
     }
 }
