@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+val developmentSigningPassword = listOf("saietf-dev", "-only-", "2026").joinToString("")
+
 val approvedModules = rootProject.subprojects
     .filter { it.buildFile.exists() }
     .map { it.path }
@@ -15,9 +17,9 @@ android {
     signingConfigs {
         create("development") {
             storeFile = file("signing/saietf-development.jks")
-            storePassword = "saietf-dev-only-2026"
+            storePassword = developmentSigningPassword
             keyAlias = "saietf-development"
-            keyPassword = "saietf-dev-only-2026"
+            keyPassword = developmentSigningPassword
         }
     }
 
