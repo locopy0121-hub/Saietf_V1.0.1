@@ -317,6 +317,12 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         marketPollingActive = false
         pollGeneration++
+        marketWallRender = null
+        marketWallDialog?.dismiss()
+        marketWallDialog = null
+        performanceDialog?.dismiss()
+        performanceDialog = null
+        performanceDialogContent = null
         ledgerExecutor.shutdown()
         marketScheduler.shutdownNow()
         super.onDestroy()
