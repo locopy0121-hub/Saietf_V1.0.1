@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.67", BuildConfig.VERSION_NAME)
-        assertEquals(10067, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.68", BuildConfig.VERSION_NAME)
+        assertEquals(10068, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1067 keeps live home market UI and upgrade contracts`() {
+    fun `v1068 keeps formal instrument page live UI and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val application = File("src/main/kotlin/tw/saietf/app/SaiEtfApplication.kt").readText()
@@ -177,6 +177,15 @@ class BuildContractTest {
         assertTrue(activity.contains("buildInlineMarketSortBar"))
         assertTrue(activity.contains("renderMarketQuotesInline"))
         assertTrue(activity.contains("refreshVisibleMarketSections"))
+        assertTrue(activity.contains("showInstrumentPage"))
+        assertTrue(activity.contains("selectInstrumentPageTab"))
+        assertTrue(activity.contains("ensureInstrumentPageData"))
+        assertTrue(activity.contains("loadInstrumentProfileForPage"))
+        assertTrue(activity.contains("loadInstrumentHistoryForPage"))
+        assertTrue(activity.contains("loadInstrumentInstitutionalForPage"))
+        assertTrue(activity.contains("loadInstrumentRevenueForPage"))
+        assertTrue(activity.contains("renderInstrumentPageTab"))
+        assertTrue(activity.contains("TaiwanTechnicalEngine.macd"))
         assertTrue(activity.contains("receivedAtEpochMillis"))
         assertTrue(activity.contains("showFugleSettingsDialog"))
         assertTrue(activity.contains("fugleStreamingController.updateSymbols"))
@@ -319,8 +328,8 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第五十八階段 1.0.67｜首頁與行情｜持股快照・即時行情列表", FirstVersionContract.releaseLine)
-        assertEquals("首頁持股快照｜行情排序｜Source/Quality/Age｜StateFlow 即時刷新｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第五十九階段 1.0.68｜個股正式頁｜8 Tab Lazy Load・真實資料", FirstVersionContract.releaseLine)
+        assertEquals("明細｜走勢｜技術｜成分｜法人｜財務｜盤後｜數據｜Lazy Load｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
