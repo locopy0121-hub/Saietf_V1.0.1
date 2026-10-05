@@ -1783,6 +1783,7 @@ class MainActivity : Activity() {
                     "資料備份" -> showBackupCenter()
                     "顯示設定" -> showDisplaySettingsDialog()
                     "卡片間距" -> showSpacingSettingsDialog()
+                    "系統狀態" -> showSystemStatusDialog()
                 }
             }
         }
@@ -1816,6 +1817,39 @@ class MainActivity : Activity() {
                     .apply()
                 recreate()
             }
+            .show()
+    }
+
+    private fun showSystemStatusDialog() {
+        val snapshot = latestLedgerSnapshot
+        val valuation = latestValuation
+        val batch = latestMarketBatch
+        val sources = batch?.quotes?.values
+            ?.map { sourceName(it.source) }
+            ?.distinct()
+            ?.joinToString(" + ")
+            ?.ifBlank { "無" }
+            ?: "無"
+        val body = buildString {
+            append("版本 ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            append("\n套件 ${BuildConfig.APPLICATION_ID}")
+            append("\n\nLedger ${snapshot?.ledgerCount ?: 0} 筆")
+            append("｜持股 ${snapshot?.holdingCount ?: 0} 檔")
+            append("\n行情覆蓋 ${valuation?.quotedHoldingCount ?: 0}/${valuation?.expectedHoldingCount ?: 0}")
+            append("｜來源 $sources")
+            append("\n舊盤 ${batch?.staleQuotes?.size ?: 0} 檔")
+            append("｜今日走勢 $latestIntradayPointCount 點")
+            append("\n行情輪詢 ${if (marketPollingActive) "執行中" else "暫停"}")
+            append("\n\n升級保護：固定 applicationId、固定開發簽章、versionCode 遞增、Room migration Gate")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("系統狀態 / 診斷")
+            .setMessage(body)
+            .setNegativeButton("重新整理") { _, _ ->
+                refreshDashboard()
+            }
+            .setPositiveButton("關閉", null)
             .show()
     }
 
