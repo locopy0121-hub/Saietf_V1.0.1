@@ -1782,6 +1782,7 @@ class MainActivity : Activity() {
                     "股息" -> showDividendCenter()
                     "資料備份" -> showBackupCenter()
                     "顯示設定" -> showDisplaySettingsDialog()
+                    "卡片間距" -> showSpacingSettingsDialog()
                 }
             }
         }
