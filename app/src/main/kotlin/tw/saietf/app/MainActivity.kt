@@ -77,6 +77,17 @@ class MainActivity : Activity() {
         YEAR("年"),
     }
 
+    private enum class MarketWallMode(val label: String) {
+        COMPACT("精簡"),
+        DETAIL("詳細"),
+    }
+
+    private enum class MarketWallSort(val label: String) {
+        SYMBOL("代號"),
+        CHANGE_PCT("漲跌%"),
+        PRICE("價格"),
+    }
+
     @Volatile
     private var marketPollingActive = false
 
@@ -1213,32 +1224,129 @@ class MainActivity : Activity() {
             .show()
     }
 
-    private fun showMarketWall() {
+    private fun showMarketWall(
+        mode: MarketWallMode = MarketWallMode.COMPACT,
+        sort: MarketWallSort = MarketWallSort.CHANGE_PCT,
+        descending: Boolean = true,
+    ) {
         val batch = latestMarketBatch
         if (batch == null || batch.quotes.isEmpty()) {
             Toast.makeText(this, "目前沒有可顯示的行情", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val body = batch.quotes.toSortedMap().values.joinToString("\n\n") { quote ->
-            val change = quote.previousClose?.let { quote.price - it }
-            val pct = quote.previousClose
+        val rows = batch.quotes.values.toList()
+            .sortedWith(
+                Comparator { left, right ->
+                    val result = when (sort) {
+                        MarketWallSort.SYMBOL -> left.symbol.compareTo(right.symbol)
+                        MarketWallSort.PRICE -> left.price.compareTo(right.price)
+                        MarketWallSort.CHANGE_PCT -> {
+                            val leftPct = left.previousClose
+                                ?.takeIf { it > 0.0 }
+                                ?.let { (left.price - it) / it * 100.0 }
+                                ?: Double.NEGATIVE_INFINITY
+                            val rightPct = right.previousClose
+                                ?.takeIf { it > 0.0 }
+                                ?.let { (right.price - it) / it * 100.0 }
+                                ?: Double.NEGATIVE_INFINITY
+                            leftPct.compareTo(rightPct)
+                        }
+                    }
+                    if (descending) -result else result
+                },
+            )
+
+        val body = rows.joinToString("\n\n") { quote ->
+            val previous = quote.previousClose
+            val change = previous?.let { quote.price - it }
+            val pct = previous
                 ?.takeIf { it > 0.0 }
                 ?.let { (quote.price - it) / it * 100.0 }
             buildString {
-                append("${quote.symbol} ${quote.name}\n")
-                append("現價 ${quote.price}")
+                append("${quote.symbol} ${quote.name}")
+                append("\n現價 ${"%.2f".format(Locale.US, quote.price)}")
                 if (change != null && pct != null) {
                     append("｜${if (change > 0) "+" else ""}${"%.2f".format(Locale.US, change)}")
                     append(" (${if (pct > 0) "+" else ""}${"%.2f".format(Locale.US, pct)}%)")
                 }
-                append("\n來源 ${sourceName(quote.source)}｜品質 ${quote.quality.name}")
+                if (mode == MarketWallMode.DETAIL) {
+                    append("\n開 ${quote.open?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                    append("｜高 ${quote.high?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                    append("｜低 ${quote.low?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                    append("\n來源 ${sourceName(quote.source)}｜品質 ${quote.quality.name}")
+                    append("｜時間 ${Instant.ofEpochMilli(quote.asOfEpochMillis).atZone(taipeiZone).toLocalTime()}")
+                }
             }
         }
 
+        val controls = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val modeRow = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                MarketWallMode.entries.forEach { option ->
+                    addView(
+                        Button(this@MainActivity).apply {
+                            text = if (option == mode) "● ${option.label}" else option.label
+                            isEnabled = option != mode
+                            setOnClickListener {
+                                showMarketWall(option, sort, descending)
+                            }
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                }
+            }
+            addView(modeRow)
+            val sortRow = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                MarketWallSort.entries.forEach { option ->
+                    addView(
+                        Button(this@MainActivity).apply {
+                            text = if (option == sort) "● ${option.label}" else option.label
+                            isEnabled = option != sort
+                            setOnClickListener {
+                                showMarketWall(mode, option, descending)
+                            }
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                }
+                addView(
+                    Button(this@MainActivity).apply {
+                        text = if (descending) "↓" else "↑"
+                        setOnClickListener {
+                            showMarketWall(mode, sort, !descending)
+                        }
+                    },
+                )
+            }
+            addView(sortRow)
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = body
+                    textSize = 14f
+                    setTextColor(Color.rgb(15, 23, 42))
+                    setPadding(0, dp(10), 0, dp(10))
+                },
+            )
+        }
+
         AlertDialog.Builder(this)
-            .setTitle("行情牆")
-            .setMessage(body)
+            .setTitle("行情牆｜${mode.label}｜${sort.label}")
+            .setView(
+                ScrollView(this).apply {
+                    addView(controls)
+                },
+            )
             .setPositiveButton("關閉", null)
             .show()
     }
