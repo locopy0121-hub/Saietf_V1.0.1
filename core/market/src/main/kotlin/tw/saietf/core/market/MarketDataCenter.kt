@@ -52,7 +52,7 @@ class MarketDataCenter(
         val sourcesTried = mutableListOf<MarketSource>()
 
         hotStore.snapshot(pending.toSet()).values.forEach { raw ->
-            if (raw.source !in setOf(MarketSource.FUGLE, MarketSource.SHIOAJI)) return@forEach
+            if (raw.source != MarketSource.FUGLE) return@forEach
             val symbol = raw.symbol.trim().uppercase(Locale.US)
             if (symbol !in pending) return@forEach
             val normalized = raw.copy(
