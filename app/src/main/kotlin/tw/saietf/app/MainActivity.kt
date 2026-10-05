@@ -623,8 +623,8 @@ class MainActivity : ComponentActivity() {
 
     private fun renderTradePage() {
         addPageHeader(
-            "交易與持股",
-            "所有帳務寫入仍遵守 append-only Ledger 與 Finance Lock",
+            "帳務中心",
+            "Ledger 是帳務真值來源｜交易、持股與修正皆保留稽核軌跡",
         )
 
         val snapshot = latestLedgerSnapshot
@@ -672,9 +672,9 @@ class MainActivity : ComponentActivity() {
         }
         pageContent.addView(secondRow)
 
-        pageContent.addView(sectionTitle("操作"))
+        pageContent.addView(sectionTitle("快速建檔"))
         pageContent.addView(
-            buildActionCard("新增交易", "買進 / 賣出、整股 / 零股、日期與實際費稅") {
+            buildPrimaryActionCard("＋ 新增交易", "買進 / 賣出、整股 / 零股、日期與實際費稅") {
                 showTradeDialog()
             },
         )
@@ -877,6 +877,36 @@ class MainActivity : ComponentActivity() {
             showSystemStatusDialog()
         })
     }
+
+    private fun buildPrimaryActionCard(
+        title: String,
+        description: String,
+        action: () -> Unit,
+    ): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.rounded(
+                fill = SaiTheme.ACCENT,
+                radiusDp = 20f,
+                density = resources.displayMetrics.density,
+            )
+            elevation = dp(2).toFloat()
+            setPadding(displayDp(18), displayDp(16), displayDp(18), displayDp(16))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+            addView(cardText(title, 18f, Color.WHITE).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            addView(cardText(description, 13f, Color.rgb(237, 233, 254)))
+            isClickable = true
+            isFocusable = true
+            contentDescription = "$title，$description"
+            setOnClickListener { action() }
+        }
 
     private fun buildActionCard(
         title: String,
