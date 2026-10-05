@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五十九階段 1.0.68｜個股正式頁｜8 Tab Lazy Load・真實資料"
-    const val phaseLine = "明細｜走勢｜技術｜成分｜法人｜財務｜盤後｜數據｜Lazy Load｜Finance Lock 不變"
+    const val releaseLine = "第六十階段 1.0.69｜正式 UI 完整合流｜五大頁面・個股 8 Tab・即時狀態"
+    const val phaseLine = "首頁｜行情｜交易｜股息｜設定｜個股 8 Tab｜StateFlow｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
@@ -49,7 +49,7 @@ object FirstVersionContract {
         LandingCard(
             title = "交易紀錄",
             body = "不可變 Ledger 交易明細，支援 10 / 20 / 50 筆分頁",
-            status = "最新到最舊，支援 10 / 20 / 50 筆分頁；每筆可修改或刪除，底層採 append-only 修正紀錄保留原始 Ledger 稽核軌跡",
+            status = "正式交易頁新增帳務摘要與最近交易 Inline Preview；完整交易紀錄仍支援 10 / 20 / 50 分頁、修改與刪除修正軌跡",
         ),
         LandingCard(
             title = "持股分析",
@@ -69,7 +69,7 @@ object FirstVersionContract {
         LandingCard(
             title = "股息",
             body = "預告可先登錄；相同代號＋除息日可更新為已確認",
-            status = "月曆可前後切換月份；新增 / 更新會驗證股利金額、日期格式與日期先後順序",
+            status = "正式股息頁新增本月已確認 / 預告 / 年度已確認摘要與近期股息 Inline Preview；月曆與新增 / 更新流程保留",
         ),
         LandingCard(
             title = "資料備份",
@@ -79,7 +79,7 @@ object FirstVersionContract {
         LandingCard(
             title = "顯示設定",
             body = "精簡 / 標準 / 放大三段文字比例",
-            status = "設定保存在本機；套用或恢復標準後立即重建主畫面",
+            status = "設定頁正式分組為介面 / 行情 / 資料與系統；設定保存在本機並即時反映",
         ),
         LandingCard(
             title = "卡片間距",
