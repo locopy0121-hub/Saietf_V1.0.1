@@ -1717,6 +1717,9 @@ class MainActivity : Activity() {
             append("${profile.market}｜${profile.industry ?: "產業別待資料源"}")
             profile.listingDate?.let { append("｜掛牌 $it") }
             profile.paidInCapitalTwd?.let { append("\n實收資本額 ${formatTwd(it)}") }
+            profile.issuedCommonShares?.let {
+                append("｜已發行普通股 ${NumberFormat.getIntegerInstance(Locale.TAIWAN).format(it)} 股")
+            }
         }
 
         fun renderTab() {
@@ -1757,8 +1760,12 @@ class MainActivity : Activity() {
                         append("\n市場 ${profile.market}｜產業 ${profile.industry ?: "—"}")
                         append("\n實收資本額 ${profile.paidInCapitalTwd?.let(::formatTwd) ?: "—"}")
                         append("｜面額 ${profile.parValueText ?: "—"}")
+                        append("\n已發行普通股 ${profile.issuedCommonShares?.let { NumberFormat.getIntegerInstance(Locale.TAIWAN).format(it) + " 股" } ?: "—"}")
                         append("\n掛牌日期 ${profile.listingDate ?: "—"}")
+                        profile.englishShortName?.let { append("｜英文簡稱 $it") }
                         append("\n董事長 ${profile.chairman ?: "—"}｜總經理 ${profile.generalManager ?: "—"}")
+                        profile.phone?.let { append("\n電話 $it") }
+                        profile.website?.let { append("\n網站 $it") }
                         profile.address?.let { append("\n地址 $it") }
                     }
                 } ?: if (profileLoadFinished) {
@@ -1772,6 +1779,8 @@ class MainActivity : Activity() {
                     append("｜品質 ${quote?.quality?.name ?: "—"}")
                     instrumentProfile?.let {
                         append("\n基本資料來源 ${it.source}｜市場 ${it.market}")
+                        append("\n股本欄位：實收資本額 / 已發行普通股")
+                        if (it.website != null || it.phone != null) append("\n公司聯絡資料：已取得")
                     } ?: if (profileLoadFinished) {
                         append("\n基本資料來源：未取得")
                     } else {
