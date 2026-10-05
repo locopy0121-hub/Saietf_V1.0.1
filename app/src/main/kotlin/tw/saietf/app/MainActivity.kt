@@ -53,6 +53,7 @@ class MainActivity : Activity() {
     private val valuator = PortfolioMarketValuator()
     private val taiwanInstrumentInfoProvider = TaiwanInstrumentInfoProvider()
     private val taiwanDailyHistoryProvider = TaiwanDailyHistoryProvider()
+    private val taiwanInstitutionalProvider = TaiwanInstitutionalProvider()
     private val taipeiZone = ZoneId.of("Asia/Taipei")
 
     private val displayScale: Float
@@ -1715,6 +1716,8 @@ class MainActivity : Activity() {
         var profileLoadFinished = false
         var dailyBars: List<TaiwanDailyBar> = emptyList()
         var historyLoadFinished = false
+        var institutionalFlow: TaiwanInstitutionalFlow? = null
+        var institutionalLoadFinished = false
         val chartHost = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             visibility = View.GONE
@@ -1805,7 +1808,19 @@ class MainActivity : Activity() {
                 } else {
                     "成分｜台股標的資料載入中…"
                 }
-                InstrumentInfoTab.INSTITUTIONAL -> "法人｜外資、投信、自營商與融資融券資料區；無可核實資料時不產生推估值。"
+                InstrumentInfoTab.INSTITUTIONAL -> institutionalFlow?.let { flow ->
+                    buildString {
+                        append("三大法人｜${flow.taipeiDate}")
+                        append("\n外資 ${flow.foreignNetShares?.let(::formatSignedShares) ?: "—"}")
+                        append("｜投信 ${flow.investmentTrustNetShares?.let(::formatSignedShares) ?: "—"}")
+                        append("｜自營商 ${flow.dealerNetShares?.let(::formatSignedShares) ?: "—"}")
+                        append("\n來源 ${flow.source}｜單位：股")
+                    }
+                } ?: if (!institutionalLoadFinished) {
+                    "法人｜TWSE / TPEx 三大法人資料載入中…"
+                } else {
+                    "法人｜最近交易日未取得可核實的官方三大法人明細；不產生推估值。"
+                }
                 InstrumentInfoTab.FINANCIAL -> instrumentProfile?.let { profile ->
                     buildString {
                         append("${profile.companyName}（${profile.shortName}）")
@@ -1911,12 +1926,17 @@ class MainActivity : Activity() {
             val loadedBars = runCatching {
                 taiwanDailyHistoryProvider.fetch(symbol)
             }.getOrDefault(emptyList())
+            val loadedInstitutional = runCatching {
+                taiwanInstitutionalProvider.fetchLatest(symbol)
+            }.getOrNull()
             runOnUiThread {
                 if (holdingDetailDialog !== dialog || !dialog.isShowing) return@runOnUiThread
                 instrumentProfile = loadedProfile
                 profileLoadFinished = true
                 dailyBars = loadedBars
                 historyLoadFinished = true
+                institutionalFlow = loadedInstitutional
+                institutionalLoadFinished = true
                 renderTab()
             }
         }
@@ -2538,6 +2558,11 @@ class MainActivity : Activity() {
 
     private fun formatSignedTwd(value: Double): String =
         formatSignedTwd(value.toLong())
+
+    private fun formatSignedShares(value: Long): String {
+        val sign = if (value > 0L) "+" else ""
+        return sign + NumberFormat.getIntegerInstance(Locale.TAIWAN).format(value) + " 股"
+    }
 
     private fun displayDp(value: Int): Int = dp((value * displaySpacingScale).toInt().coerceAtLeast(1))
 
