@@ -223,13 +223,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         installBackNavigation()
 
-        window.statusBarColor = Color.WHITE
-        window.navigationBarColor = Color.WHITE
+        window.statusBarColor = SaiTheme.PAGE_BACKGROUND
+        window.navigationBarColor = SaiTheme.CARD
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
         val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(248, 250, 252))
+            setBackgroundColor(SaiTheme.PAGE_BACKGROUND)
             fitsSystemWindows = true
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -239,7 +239,7 @@ class MainActivity : ComponentActivity() {
 
         pageContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(18), dp(18), dp(20))
+            setPadding(dp(20), dp(18), dp(20), dp(24))
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -269,9 +269,9 @@ class MainActivity : ComponentActivity() {
     private fun buildBottomNavigation(): LinearLayout =
         LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(Color.WHITE)
-            setPadding(dp(8), dp(6), dp(8), dp(8))
-            elevation = dp(8).toFloat()
+            setBackgroundColor(SaiTheme.CARD)
+            setPadding(dp(8), dp(7), dp(8), dp(9))
+            elevation = dp(12).toFloat()
             MainTab.entries.forEach { tab ->
                 addView(
                     Button(this@MainActivity).apply {
@@ -321,11 +321,13 @@ class MainActivity : ComponentActivity() {
             val button = bottomNavigation.getChildAt(index) as? Button ?: return@forEachIndexed
             val active = tab == selectedMainTab
             button.setTextColor(
-                if (active) Color.rgb(15, 23, 42) else Color.rgb(100, 116, 139),
+                if (active) SaiTheme.BRAND else SaiTheme.MUTED,
             )
             button.isSelected = active
-            button.setBackgroundColor(
-                if (active) Color.rgb(226, 232, 240) else Color.WHITE,
+            button.background = SaiTheme.rounded(
+                fill = if (active) SaiTheme.BRAND_SOFT else SaiTheme.CARD,
+                radiusDp = 16f,
+                density = resources.displayMetrics.density,
             )
         }
     }
@@ -337,16 +339,17 @@ class MainActivity : ComponentActivity() {
         pageContent.addView(
             TextView(this).apply {
                 text = title
-                textSize = 26f * displayScale
-                setTextColor(Color.rgb(15, 23, 42))
+                textSize = 28f * displayScale
+                setTextColor(SaiTheme.TEXT)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
             },
         )
         pageContent.addView(
             TextView(this).apply {
                 text = subtitle
                 textSize = 13f * displayScale
-                setTextColor(Color.rgb(100, 116, 139))
-                setPadding(0, dp(3), 0, dp(16))
+                setTextColor(SaiTheme.MUTED)
+                setPadding(0, dp(4), 0, dp(18))
             },
         )
     }
@@ -853,16 +856,19 @@ class MainActivity : ComponentActivity() {
     ): LinearLayout =
         LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
-            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            background = SaiTheme.card(resources.displayMetrics.density)
+            elevation = dp(1).toFloat()
+            setPadding(displayDp(16), displayDp(15), displayDp(16), displayDp(15))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            addView(cardText(title, 17f, Color.rgb(15, 23, 42)))
-            addView(cardText(description, 13f, Color.rgb(100, 116, 139)))
+            addView(cardText(title, 17f, SaiTheme.TEXT).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            addView(cardText(description, 13f, SaiTheme.MUTED))
             isClickable = true
             isFocusable = true
             setOnClickListener { action() }
@@ -3430,10 +3436,12 @@ class MainActivity : ComponentActivity() {
         value: String,
     ): LinearLayout = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setBackgroundColor(Color.rgb(241, 245, 249))
-        setPadding(dp(12), dp(10), dp(12), dp(10))
-        addView(cardText(title, 13f, Color.rgb(100, 116, 139)))
-        addView(cardText(value, 18f, Color.rgb(15, 23, 42)))
+        background = SaiTheme.softCard(resources.displayMetrics.density)
+        setPadding(dp(12), dp(11), dp(12), dp(11))
+        addView(cardText(title, 13f, SaiTheme.MUTED))
+        addView(cardText(value, 18f, SaiTheme.TEXT).apply {
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
     }
 
     private fun showMarketWall() {
@@ -3733,15 +3741,16 @@ class MainActivity : ComponentActivity() {
 
     private fun sectionTitle(textValue: String): TextView = TextView(this).apply {
         text = textValue
-        textSize = 18f * displayScale
-        setTextColor(Color.rgb(15, 23, 42))
-        setPadding(0, dp(6), 0, dp(8))
+        textSize = 19f * displayScale
+        setTextColor(SaiTheme.TEXT)
+        setTypeface(typeface, android.graphics.Typeface.BOLD)
+        setPadding(0, dp(8), 0, dp(10))
     }
 
     private fun statusText(value: String): TextView = TextView(this).apply {
         text = value
         textSize = 13f * displayScale
-        setTextColor(Color.rgb(100, 116, 139))
+        setTextColor(SaiTheme.MUTED)
         setPadding(0, 0, 0, dp(8))
     }
 
@@ -3750,20 +3759,23 @@ class MainActivity : ComponentActivity() {
         value: String,
         note: String,
     ): Pair<LinearLayout, TextView> {
-        val valueView = cardText(value, 24f, Color.rgb(15, 23, 42))
+        val valueView = cardText(value, 24f, SaiTheme.TEXT).apply {
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
-            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            background = SaiTheme.card(resources.displayMetrics.density)
+            elevation = dp(1).toFloat()
+            setPadding(displayDp(16), displayDp(15), displayDp(16), displayDp(15))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            addView(cardText(title, 15f, Color.rgb(71, 85, 105)))
+            addView(cardText(title, 15f, SaiTheme.MUTED))
             addView(valueView)
-            addView(cardText(note, 13f, Color.rgb(100, 116, 139)))
+            addView(cardText(note, 13f, SaiTheme.MUTED))
         }
         return card to valueView
     }
@@ -3771,17 +3783,20 @@ class MainActivity : ComponentActivity() {
     private fun buildLandingCard(card: FirstVersionContract.LandingCard): LinearLayout =
         LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
-            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            background = SaiTheme.card(resources.displayMetrics.density)
+            elevation = dp(1).toFloat()
+            setPadding(displayDp(16), displayDp(15), displayDp(16), displayDp(15))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            addView(cardText(card.title, 17f, Color.rgb(15, 23, 42)))
-            addView(cardText(card.body, 14f, Color.rgb(51, 65, 85)))
-            addView(cardText(card.status, 13f, Color.rgb(100, 116, 139)))
+            addView(cardText(card.title, 17f, SaiTheme.TEXT).apply {
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            addView(cardText(card.body, 14f, SaiTheme.TEXT_SECONDARY))
+            addView(cardText(card.status, 13f, SaiTheme.MUTED))
             isClickable = true
             isFocusable = true
             setOnClickListener {
