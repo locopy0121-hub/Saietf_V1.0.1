@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第三十五階段 1.0.44｜交易日期｜月曆輸入一致化"
+    const val releaseLine = "第三十六階段 1.0.45｜交易預檢｜賣出股數防超賣"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -44,7 +44,7 @@ object FirstVersionContract {
         LandingCard(
             title = "交易新增",
             body = "買進 / 賣出 / 股數 / 成交價 / 手續費 / 證交稅實際值",
-            status = "Ledger Repository + Room 已實裝；交易日期改用月曆選擇，驗證通過才寫入",
+            status = "Ledger Repository + Room 已實裝；賣出前先比對目前持股，核心 projector 仍保留第二道檢查",
         ),
         LandingCard(
             title = "交易紀錄",
