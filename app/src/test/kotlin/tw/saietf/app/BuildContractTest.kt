@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.61", BuildConfig.VERSION_NAME)
-        assertEquals(10061, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.62", BuildConfig.VERSION_NAME)
+        assertEquals(10062, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1061 keeps StateFlow Room market persistence and upgrade contracts`() {
+    fun `v1062 keeps Shioaji streaming failover and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -62,6 +62,9 @@ class BuildContractTest {
         val persistenceController = File("src/main/kotlin/tw/saietf/app/MarketPersistenceController.kt").readText()
         val database = File("../core/database/src/main/kotlin/tw/saietf/core/database/SaiEtfDatabase.kt").readText()
         val marketCacheDao = File("../core/database/src/main/kotlin/tw/saietf/core/database/dao/MarketCacheDao.kt").readText()
+        val shioajiProvider = File("src/main/kotlin/tw/saietf/app/ShioajiSseGatewayProvider.kt").readText()
+        val shioajiSettings = File("src/main/kotlin/tw/saietf/app/ShioajiGatewaySettingsStore.kt").readText()
+        val realtimeController = File("src/main/kotlin/tw/saietf/app/RealtimeStreamingController.kt").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
@@ -137,9 +140,18 @@ class BuildContractTest {
         assertTrue(database.contains("MIGRATION_3_4"))
         assertTrue(marketCacheDao.contains("upsertSnapshots"))
         assertTrue(marketCacheDao.contains("upsertCandles"))
+        assertTrue(shioajiProvider.contains("text/event-stream"))
+        assertTrue(shioajiProvider.contains("fallbackLevel = 1"))
+        assertTrue(shioajiProvider.contains("MarketSource.SHIOAJI"))
+        assertTrue(shioajiSettings.contains("AndroidKeyStore"))
+        assertTrue(shioajiSettings.contains("startsWith(\"https://\")"))
+        assertTrue(realtimeController.contains("reconcileSecondary"))
+        assertTrue(realtimeController.contains("ProviderCircuitState.HEALTHY"))
+        assertTrue(activity.contains("showShioajiSettingsDialog"))
+        assertTrue(activity.contains("Shioaji SSE"))
         assertTrue(activity.contains("showFugleSettingsDialog"))
-        assertTrue(activity.contains("fugleStreamingController.updateSymbols"))
-        assertTrue(activity.contains("fugleStreamingController.pause"))
+        assertTrue(activity.contains("realtimeStreamingController.updateSymbols"))
+        assertTrue(activity.contains("realtimeStreamingController.pause"))
         assertTrue(activity.contains("showDividendCenter"))
         assertTrue(activity.contains("DatePickerDialog"))
         assertTrue(activity.contains("showBackupCenter"))
@@ -278,14 +290,14 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第五十二階段 1.0.61｜行情持久化｜Room Snapshot・1m K・StateFlow UI", FirstVersionContract.releaseLine)
-        assertEquals("Memory Hot Store → StateFlow UI｜Room Snapshot / 1m K 節流落盤｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第五十三階段 1.0.62｜Shioaji SSE｜Streaming Failover 整合", FirstVersionContract.releaseLine)
+        assertEquals("Fugle WebSocket → Shioaji SSE → TWSE MIS → Yahoo｜Streaming Failover｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
         )
         assertEquals(
-            listOf("交易新增", "交易紀錄", "持股分析", "持股清單", "行情牆", "股息", "資料備份", "顯示設定", "卡片間距", "系統狀態", "Fugle 即時行情", "立即更新行情", "介面恢復標準"),
+            listOf("交易新增", "交易紀錄", "持股分析", "持股清單", "行情牆", "股息", "資料備份", "顯示設定", "卡片間距", "系統狀態", "Fugle 即時行情", "Shioaji 備援", "立即更新行情", "介面恢復標準"),
             FirstVersionContract.landingCards.map { it.title },
         )
         assertTrue(
