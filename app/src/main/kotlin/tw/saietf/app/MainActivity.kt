@@ -54,6 +54,7 @@ class MainActivity : Activity() {
     private val taiwanInstrumentInfoProvider = TaiwanInstrumentInfoProvider()
     private val taiwanDailyHistoryProvider = TaiwanDailyHistoryProvider()
     private val taiwanInstitutionalProvider = TaiwanInstitutionalProvider()
+    private val taiwanRevenueProvider = TaiwanRevenueProvider()
     private val taipeiZone = ZoneId.of("Asia/Taipei")
 
     private val displayScale: Float
@@ -1718,6 +1719,8 @@ class MainActivity : Activity() {
         var historyLoadFinished = false
         var institutionalFlow: TaiwanInstitutionalFlow? = null
         var institutionalLoadFinished = false
+        var revenueSnapshot: TaiwanRevenueSnapshot? = null
+        var revenueLoadFinished = false
         val chartHost = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             visibility = View.GONE
@@ -1834,6 +1837,18 @@ class MainActivity : Activity() {
                         profile.phone?.let { append("\n電話 $it") }
                         profile.website?.let { append("\n網站 $it") }
                         profile.address?.let { append("\n地址 $it") }
+                        val revenue = revenueSnapshot
+                        if (revenue != null) {
+                            append("\n\n月營收｜${revenue.yearMonth ?: "最新"}")
+                            append("\n當月 ${revenue.currentMonthRevenueTwd?.let(::formatTwd) ?: "—"}")
+                            append("｜上月 ${revenue.previousMonthRevenueTwd?.let(::formatTwd) ?: "—"}")
+                            append("\n年增 ${revenue.yearOverYearPct?.let { "%.2f%%".format(Locale.US, it) } ?: "—"}")
+                            append("｜月增 ${revenue.monthOverMonthPct?.let { "%.2f%%".format(Locale.US, it) } ?: "—"}")
+                            append("\n累計 ${revenue.accumulatedRevenueTwd?.let(::formatTwd) ?: "—"}")
+                            append("｜來源 ${revenue.source}")
+                        } else if (!revenueLoadFinished) {
+                            append("\n\n月營收資料載入中…")
+                        }
                     }
                 } ?: if (profileLoadFinished) {
                     "財務 / 資本｜目前公開公司基本資料來源未回傳此代號；不以估算值冒充官方資料。"
@@ -1848,6 +1863,7 @@ class MainActivity : Activity() {
                         append("\n基本資料來源 ${it.source}｜市場 ${it.market}")
                         append("\n股本欄位：實收資本額 / 已發行普通股")
                         if (it.website != null || it.phone != null) append("\n公司聯絡資料：已取得")
+                        revenueSnapshot?.let { revenue -> append("\n月營收來源 ${revenue.source}") }
                     } ?: if (profileLoadFinished) {
                         append("\n基本資料來源：未取得")
                     } else {
@@ -1929,6 +1945,9 @@ class MainActivity : Activity() {
             val loadedInstitutional = runCatching {
                 taiwanInstitutionalProvider.fetchLatest(symbol)
             }.getOrNull()
+            val loadedRevenue = runCatching {
+                taiwanRevenueProvider.fetch(symbol)
+            }.getOrNull()
             runOnUiThread {
                 if (holdingDetailDialog !== dialog || !dialog.isShowing) return@runOnUiThread
                 instrumentProfile = loadedProfile
@@ -1937,6 +1956,8 @@ class MainActivity : Activity() {
                 historyLoadFinished = true
                 institutionalFlow = loadedInstitutional
                 institutionalLoadFinished = true
+                revenueSnapshot = loadedRevenue
+                revenueLoadFinished = true
                 renderTab()
             }
         }
