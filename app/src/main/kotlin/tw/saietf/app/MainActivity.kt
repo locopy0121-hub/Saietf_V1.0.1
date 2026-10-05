@@ -1772,6 +1772,7 @@ class MainActivity : Activity() {
                     "行情牆" -> showMarketWall()
                     "股息" -> showDividendCenter()
                     "資料備份" -> showBackupCenter()
+                    "顯示設定" -> showDisplaySettingsDialog()
                 }
             }
         }
