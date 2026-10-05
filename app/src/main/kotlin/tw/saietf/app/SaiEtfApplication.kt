@@ -57,6 +57,18 @@ class SaiEtfApplication : Application() {
         )
     }
 
+    val marketPersistenceRepository: MarketPersistenceRepository by lazy {
+        MarketPersistenceRepository(database)
+    }
+
+    internal val marketPersistenceController: MarketPersistenceController by lazy {
+        MarketPersistenceController(
+            scope = marketScope,
+            marketDataCenter = marketDataCenter,
+            repository = marketPersistenceRepository,
+        )
+    }
+
     internal val fugleStreamingController: FugleStreamingController by lazy {
         FugleStreamingController(
             scope = marketScope,
