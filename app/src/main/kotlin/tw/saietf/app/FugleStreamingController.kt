@@ -28,6 +28,9 @@ internal class FugleStreamingController(
     fun updateSymbols(symbols: Set<String>) {
         scope.launch {
             provider.replaceSubscriptions(symbols)
+            if (symbols.isEmpty()) {
+                provider.disconnect()
+            }
         }
     }
 
