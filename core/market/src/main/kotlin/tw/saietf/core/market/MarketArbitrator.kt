@@ -9,6 +9,7 @@ enum class ArbitrationReason {
     ACCEPT_NEWER_SEQUENCE,
     ACCEPT_NEWER_TIMESTAMP,
     ACCEPT_BETTER_QUALITY,
+    ACCEPT_LOWER_FALLBACK_LEVEL,
     ACCEPT_HIGHER_SOURCE_PRIORITY,
     ACCEPT_NEWER_RECEIVED_AT,
     REJECT_INVALID,
@@ -76,6 +77,13 @@ class MarketArbitrator(
             return ArbitrationResult(true, ArbitrationReason.ACCEPT_BETTER_QUALITY)
         }
         if (candidateQuality < existingQuality) {
+            return ArbitrationResult(false, ArbitrationReason.KEEP_EXISTING)
+        }
+
+        if (candidate.fallbackLevel < existing.fallbackLevel) {
+            return ArbitrationResult(true, ArbitrationReason.ACCEPT_LOWER_FALLBACK_LEVEL)
+        }
+        if (candidate.fallbackLevel > existing.fallbackLevel) {
             return ArbitrationResult(false, ArbitrationReason.KEEP_EXISTING)
         }
 
