@@ -646,6 +646,123 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun showDividendCenter() {
+        ledgerExecutor.execute {
+            val rows = runCatching { dividendRepository.recent(30) }.getOrDefault(emptyList())
+            val body = if (rows.isEmpty()) {
+                "目前沒有股息紀錄。可先登錄預告，待資訊確定後用相同代號與除息日更新。"
+            } else {
+                rows.joinToString("\n\n") { row ->
+                    val status = if (row.status == DividendRepository.Status.CONFIRMED) {
+                        "已確認"
+                    } else {
+                        "預告"
+                    }
+                    buildString {
+                        append("${row.symbol}｜$status｜除息 ${row.exDateTaipei}")
+                        append("\n每股 ${"%.4f".format(Locale.US, row.cashPerShare)}")
+                        append("｜持股 ${row.sharesAtEntry} 股")
+                        append("｜估算 ${formatTwd(row.estimatedCash)}")
+                        row.recordDateTaipei?.let { append("\n股權登記 $it") }
+                        row.paymentDateTaipei?.let { append("｜發放 $it") }
+                    }
+                }
+            }
+
+            runOnUiThread {
+                AlertDialog.Builder(this)
+                    .setTitle("股息中心")
+                    .setMessage(body)
+                    .setNegativeButton("關閉", null)
+                    .setPositiveButton("新增 / 更新") { _, _ ->
+                        showDividendEntryDialog()
+                    }
+                    .show()
+            }
+        }
+    }
+
+    private fun showDividendEntryDialog() {
+        val statusSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                listOf("預告", "已確認"),
+            )
+        }
+        val symbol = input("代號，例如 0050")
+        val cashPerShare = input("每股現金股利").apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+        }
+        val exDate = dateInput("除息日", LocalDate.now(taipeiZone).toString())
+        val recordDate = dateInput("股權登記日（可留空）", "")
+        val paymentDate = dateInput("發放日（可留空）", "")
+
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), 0)
+            addView(label("狀態"))
+            addView(statusSpinner)
+            addView(symbol)
+            addView(cashPerShare)
+            addView(exDate)
+            addView(recordDate)
+            addView(paymentDate)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("股息新增 / 更新")
+            .setView(form)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("儲存") { _, _ ->
+                val command = runCatching {
+                    DividendRepository.UpsertCommand(
+                        symbol = symbol.text.toString(),
+                        exDateTaipei = exDate.text.toString().trim(),
+                        recordDateTaipei = recordDate.text.toString().trim().takeIf { it.isNotEmpty() },
+                        paymentDateTaipei = paymentDate.text.toString().trim().takeIf { it.isNotEmpty() },
+                        cashPerShare = cashPerShare.text.toString().trim().toDouble(),
+                        status = if (statusSpinner.selectedItemPosition == 0) {
+                            DividendRepository.Status.ANNOUNCED
+                        } else {
+                            DividendRepository.Status.CONFIRMED
+                        },
+                    )
+                }.getOrElse { error ->
+                    Toast.makeText(
+                        this,
+                        "股息欄位格式錯誤：${error.message ?: "未知錯誤"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                    return@setPositiveButton
+                }
+
+                ledgerExecutor.execute {
+                    runCatching { dividendRepository.upsert(command) }
+                        .onSuccess {
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "股息資料已儲存，可用相同代號與除息日再次更新",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                                showDividendCenter()
+                            }
+                        }
+                        .onFailure { error ->
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "股息未儲存：${error.message ?: "未知錯誤"}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }
+                }
+            }
+            .show()
+    }
+
     private fun showTransactionHistoryDialog(
         pageIndex: Int = 0,
         pageSize: Int = 10,
@@ -1002,6 +1119,34 @@ class MainActivity : Activity() {
                 }
             }
         }
+
+    private fun dateInput(
+        hintValue: String,
+        initialValue: String,
+    ): EditText = input(hintValue).apply {
+        setText(initialValue)
+        isFocusable = false
+        isClickable = true
+        setOnClickListener {
+            val seed = text.toString().trim()
+                .takeIf { it.isNotEmpty() }
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                ?: LocalDate.now(taipeiZone)
+            DatePickerDialog(
+                this@MainActivity,
+                { _, year, month, day ->
+                    setText(LocalDate.of(year, month + 1, day).toString())
+                },
+                seed.year,
+                seed.monthValue - 1,
+                seed.dayOfMonth,
+            ).show()
+        }
+        setOnLongClickListener {
+            setText("")
+            true
+        }
+    }
 
     private fun input(hintValue: String): EditText = EditText(this).apply {
         hint = hintValue
