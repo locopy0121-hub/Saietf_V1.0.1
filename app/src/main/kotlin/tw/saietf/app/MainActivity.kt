@@ -93,6 +93,10 @@ class MainActivity : Activity() {
 
     private var marketWallDialog: AlertDialog? = null
 
+    private var performanceDialog: AlertDialog? = null
+    private var performanceDialogContent: LinearLayout? = null
+    private var performanceRange: TrendRange = TrendRange.DAY
+
     @Volatile
     private var pollGeneration = 0L
 
@@ -510,159 +514,77 @@ class MainActivity : Activity() {
         showPerformanceDialog(TrendRange.DAY)
     }
 
+    private data class PerformanceRender(
+        val range: TrendRange,
+        val series: List<PortfolioTrendPoint>,
+        val chartStart: Long,
+        val chartEnd: Long,
+        val chartStartLabel: String,
+        val chartEndLabel: String,
+        val summary: String,
+    )
+
     private fun showPerformanceDialog(range: TrendRange) {
-        ledgerExecutor.execute {
-            val today = LocalDate.now(taipeiZone)
-            val todayText = today.toString()
-            val sessionStart = today
-                .atTime(9, 0)
-                .atZone(taipeiZone)
-                .toInstant()
-                .toEpochMilli()
-            val sessionEnd = today
-                .atTime(13, 30)
-                .atZone(taipeiZone)
-                .toInstant()
-                .toEpochMilli()
+        performanceRange = range
 
-            val series: List<PortfolioTrendPoint>
-            val chartStart: Long
-            val chartEnd: Long
-            val chartStartLabel: String
-            val chartEndLabel: String
-            val summary: String
+        val existing = performanceDialog
+        if (existing?.isShowing == true) {
+            refreshPerformanceDialog(existing)
+            return
+        }
 
-            if (range == TrendRange.DAY) {
-                val holdings = (latestLedgerSnapshot ?: repository.loadDashboard())
-                    .holdings
-                    .associate { it.symbol to it.shares }
-                val marketHistory = runCatching {
-                    intradayHistoryProvider.fetchPortfolioSeries(
-                        holdings = holdings,
-                        taipeiDate = todayText,
-                    )
-                }.getOrDefault(emptyList())
-                val localHistory = runCatching {
-                    performanceHistoryRepository.intradayPoints(todayText)
-                }.getOrDefault(emptyList())
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(8), dp(16), 0)
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("資產走勢 / 損益統計")
+            .setView(
+                ScrollView(this).apply {
+                    addView(content)
+                },
+            )
+            .setPositiveButton("關閉", null)
+            .create()
 
-                val sourceLabel: String
-                series = if (marketHistory.size >= 2) {
-                    sourceLabel = "Yahoo 1 分行情"
-                    marketHistory.map {
-                        PortfolioTrendPoint(
-                            epochMillis = it.epochMillis,
-                            value = it.totalMarketValue,
-                        )
-                    }
-                } else {
-                    sourceLabel = "本機盤中紀錄"
-                    localHistory.map {
-                        PortfolioTrendPoint(
-                            epochMillis = it.bucketEpochMillis,
-                            value = it.totalMarketValue,
-                        )
-                    }
-                }.filter { it.epochMillis in sessionStart..sessionEnd }
-
-                chartStart = sessionStart
-                chartEnd = sessionEnd
-                chartStartLabel = "09:00"
-                chartEndLabel = "13:30"
-
-                val values = series.map { it.value }
-                val open = values.firstOrNull()
-                val latest = values.lastOrNull()
-                val high = values.maxOrNull()
-                val low = values.minOrNull()
-                val daySnapshot = runCatching {
-                    performanceHistoryRepository.dailyRange(todayText, todayText).lastOrNull()
-                }.getOrNull()
-
-                summary = buildString {
-                    append("日｜台股交易時段 09:00–13:30")
-                    append("\n資料：$sourceLabel｜${series.size} 點")
-                    append("\n開盤 ${open?.let(::formatTwd) ?: "—"}")
-                    append("｜最新 ${latest?.let(::formatTwd) ?: "—"}")
-                    append("\n高 ${high?.let(::formatTwd) ?: "—"}")
-                    append("｜低 ${low?.let(::formatTwd) ?: "—"}")
-                    daySnapshot?.let {
-                        append("\n\n$todayText｜當日 ${formatSignedTwd(it.dailyMarketPnL)}")
-                        append("\n總市值 ${formatTwd(it.totalMarketValue)}")
-                        append("｜持有總損益 ${formatSignedTwd(it.totalUnrealizedProfit)}")
-                    }
-                }
-            } else {
-                val startDate = when (range) {
-                    TrendRange.WEEK -> today.minusDays(6)
-                    TrendRange.MONTH -> today.minusMonths(1).plusDays(1)
-                    TrendRange.YEAR -> today.minusYears(1).plusDays(1)
-                    TrendRange.DAY -> today
-                }
-                val startText = startDate.toString()
-                val rows = runCatching {
-                    performanceHistoryRepository.dailyRange(startText, todayText)
-                }.getOrDefault(emptyList())
-                val stats = runCatching {
-                    performanceHistoryRepository.dailyStats(startText, todayText)
-                }.getOrNull()
-
-                series = rows.map { row ->
-                    val epoch = LocalDate.parse(row.taipeiDate)
-                        .atTime(13, 30)
-                        .atZone(taipeiZone)
-                        .toInstant()
-                        .toEpochMilli()
-                    PortfolioTrendPoint(
-                        epochMillis = epoch,
-                        value = row.totalMarketValue,
-                    )
-                }
-                chartStart = startDate
-                    .atStartOfDay(taipeiZone)
-                    .toInstant()
-                    .toEpochMilli()
-                chartEnd = today
-                    .plusDays(1)
-                    .atStartOfDay(taipeiZone)
-                    .toInstant()
-                    .toEpochMilli() - 1L
-                chartStartLabel = when (range) {
-                    TrendRange.WEEK -> startDate.toString().substring(5)
-                    TrendRange.MONTH -> startDate.toString().substring(5)
-                    TrendRange.YEAR -> startDate.toString()
-                    TrendRange.DAY -> ""
-                }
-                chartEndLabel = if (range == TrendRange.YEAR) today.toString() else todayText.substring(5)
-
-                val values = series.map { it.value }
-                summary = buildString {
-                    append("${range.label}｜$startText ～ $todayText")
-                    append("\n交易日紀錄 ${rows.size} 天")
-                    append("\n起點 ${values.firstOrNull()?.let(::formatTwd) ?: "—"}")
-                    append("｜最新 ${values.lastOrNull()?.let(::formatTwd) ?: "—"}")
-                    append("\n高 ${values.maxOrNull()?.let(::formatTwd) ?: "—"}")
-                    append("｜低 ${values.minOrNull()?.let(::formatTwd) ?: "—"}")
-                    if (stats != null && stats.sampleCount > 0) {
-                        append("\n\n期間損益統計")
-                        append("\n合計 ${formatSignedTwd(stats.totalDailyPnl)}")
-                        append("｜平均 ${formatSignedTwd(stats.averageDailyPnl)}")
-                        append("\n最佳 ${stats.bestDayPnl?.let(::formatSignedTwd) ?: "—"}")
-                        append("｜最差 ${stats.worstDayPnl?.let(::formatSignedTwd) ?: "—"}")
-                    }
-                }
+        dialog.setOnDismissListener {
+            if (performanceDialog === dialog) {
+                performanceDialog = null
+                performanceDialogContent = null
             }
+        }
+        performanceDialog = dialog
+        performanceDialogContent = content
+        dialog.show()
+        refreshPerformanceDialog(dialog)
+    }
 
+    private fun refreshPerformanceDialog(dialog: AlertDialog) {
+        val requestedRange = performanceRange
+        ledgerExecutor.execute {
+            val render = buildPerformanceRender(requestedRange)
             runOnUiThread {
+                if (performanceDialog !== dialog || !dialog.isShowing) return@runOnUiThread
+                if (performanceRange != render.range) {
+                    refreshPerformanceDialog(dialog)
+                    return@runOnUiThread
+                }
+
+                val content = performanceDialogContent ?: return@runOnUiThread
+                content.removeAllViews()
+
                 val rangeRow = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER
                     TrendRange.entries.forEach { option ->
                         addView(
                             Button(this@MainActivity).apply {
-                                text = if (option == range) "● ${option.label}" else option.label
-                                isEnabled = option != range
-                                tag = option
+                                text = if (option == render.range) "● ${option.label}" else option.label
+                                isEnabled = option != render.range
+                                setOnClickListener {
+                                    performanceRange = option
+                                    refreshPerformanceDialog(dialog)
+                                }
                             },
                             LinearLayout.LayoutParams(
                                 0,
@@ -673,59 +595,166 @@ class MainActivity : Activity() {
                     }
                 }
 
-                val content = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(dp(16), dp(8), dp(16), 0)
-                    addView(rangeRow)
-                    addView(
-                        PortfolioTrendView(this@MainActivity).apply {
-                            setPadding(dp(6), dp(10), dp(6), dp(4))
-                            setSeries(
-                                values = series,
-                                startEpochMillis = chartStart,
-                                endEpochMillis = chartEnd,
-                                startLabel = chartStartLabel,
-                                endLabel = chartEndLabel,
-                            )
-                        },
-                        LinearLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            dp(230),
-                        ),
-                    )
-                    addView(
-                        TextView(this@MainActivity).apply {
-                            text = summary
-                            textSize = 14f
-                            setTextColor(Color.rgb(51, 65, 85))
-                            setPadding(0, dp(8), 0, dp(8))
-                        },
-                    )
-                }
-
-                val dialog = AlertDialog.Builder(this)
-                    .setTitle("資產走勢 / 損益統計")
-                    .setView(
-                        ScrollView(this).apply {
-                            addView(content)
-                        },
-                    )
-                    .setPositiveButton("關閉", null)
-                    .create()
-
-                for (index in 0 until rangeRow.childCount) {
-                    val button = rangeRow.getChildAt(index) as Button
-                    val option = button.tag as TrendRange
-                    if (option != range) {
-                        button.setOnClickListener {
-                            dialog.dismiss()
-                            showPerformanceDialog(option)
-                        }
-                    }
-                }
-                dialog.show()
+                content.addView(rangeRow)
+                content.addView(
+                    PortfolioTrendView(this@MainActivity).apply {
+                        setPadding(dp(6), dp(10), dp(6), dp(4))
+                        setSeries(
+                            values = render.series,
+                            startEpochMillis = render.chartStart,
+                            endEpochMillis = render.chartEnd,
+                            startLabel = render.chartStartLabel,
+                            endLabel = render.chartEndLabel,
+                        )
+                    },
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(230),
+                    ),
+                )
+                content.addView(
+                    TextView(this@MainActivity).apply {
+                        text = render.summary
+                        textSize = 14f
+                        setTextColor(Color.rgb(51, 65, 85))
+                        setPadding(0, dp(8), 0, dp(8))
+                    },
+                )
+                dialog.setTitle("資產走勢 / 損益統計｜${render.range.label}")
             }
         }
+    }
+
+    private fun buildPerformanceRender(range: TrendRange): PerformanceRender {
+        val today = LocalDate.now(taipeiZone)
+        val todayText = today.toString()
+        val sessionStart = today
+            .atTime(9, 0)
+            .atZone(taipeiZone)
+            .toInstant()
+            .toEpochMilli()
+        val sessionEnd = today
+            .atTime(13, 30)
+            .atZone(taipeiZone)
+            .toInstant()
+            .toEpochMilli()
+
+        if (range == TrendRange.DAY) {
+            val holdings = (latestLedgerSnapshot ?: repository.loadDashboard())
+                .holdings
+                .associate { it.symbol to it.shares }
+            val marketHistory = runCatching {
+                intradayHistoryProvider.fetchPortfolioSeries(
+                    holdings = holdings,
+                    taipeiDate = todayText,
+                )
+            }.getOrDefault(emptyList())
+            val localHistory = runCatching {
+                performanceHistoryRepository.intradayPoints(todayText)
+            }.getOrDefault(emptyList())
+
+            val sourceLabel: String
+            val series = if (marketHistory.size >= 2) {
+                sourceLabel = "Yahoo 1 分行情"
+                marketHistory.map {
+                    PortfolioTrendPoint(
+                        epochMillis = it.epochMillis,
+                        value = it.totalMarketValue,
+                    )
+                }
+            } else {
+                sourceLabel = "本機盤中紀錄"
+                localHistory.map {
+                    PortfolioTrendPoint(
+                        epochMillis = it.bucketEpochMillis,
+                        value = it.totalMarketValue,
+                    )
+                }
+            }.filter { it.epochMillis in sessionStart..sessionEnd }
+
+            val values = series.map { it.value }
+            val open = values.firstOrNull()
+            val latest = values.lastOrNull()
+            val high = values.maxOrNull()
+            val low = values.minOrNull()
+            val daySnapshot = runCatching {
+                performanceHistoryRepository.dailyRange(todayText, todayText).lastOrNull()
+            }.getOrNull()
+
+            val summary = buildString {
+                append("日｜台股交易時段 09:00–13:30")
+                append("\n資料：$sourceLabel｜${series.size} 點")
+                append("\n開盤 ${open?.let(::formatTwd) ?: "—"}")
+                append("｜最新 ${latest?.let(::formatTwd) ?: "—"}")
+                append("\n高 ${high?.let(::formatTwd) ?: "—"}")
+                append("｜低 ${low?.let(::formatTwd) ?: "—"}")
+                daySnapshot?.let {
+                    append("\n\n$todayText｜當日 ${formatSignedTwd(it.dailyMarketPnL)}")
+                    append("\n總市值 ${formatTwd(it.totalMarketValue)}")
+                    append("｜持有總損益 ${formatSignedTwd(it.totalUnrealizedProfit)}")
+                }
+            }
+            return PerformanceRender(
+                range = range,
+                series = series,
+                chartStart = sessionStart,
+                chartEnd = sessionEnd,
+                chartStartLabel = "09:00",
+                chartEndLabel = "13:30",
+                summary = summary,
+            )
+        }
+
+        val startDate = when (range) {
+            TrendRange.WEEK -> today.minusDays(6)
+            TrendRange.MONTH -> today.minusMonths(1).plusDays(1)
+            TrendRange.YEAR -> today.minusYears(1).plusDays(1)
+            TrendRange.DAY -> today
+        }
+        val startText = startDate.toString()
+        val rows = runCatching {
+            performanceHistoryRepository.dailyRange(startText, todayText)
+        }.getOrDefault(emptyList())
+        val stats = runCatching {
+            performanceHistoryRepository.dailyStats(startText, todayText)
+        }.getOrNull()
+        val series = rows.map { row ->
+            val epoch = LocalDate.parse(row.taipeiDate)
+                .atTime(13, 30)
+                .atZone(taipeiZone)
+                .toInstant()
+                .toEpochMilli()
+            PortfolioTrendPoint(
+                epochMillis = epoch,
+                value = row.totalMarketValue,
+            )
+        }
+        val values = series.map { it.value }
+        val summary = buildString {
+            append("${range.label}｜$startText ～ $todayText")
+            append("\n資料：每日收盤快照｜交易日 ${rows.size} 天")
+            append("\n起點 ${values.firstOrNull()?.let(::formatTwd) ?: "—"}")
+            append("｜最新 ${values.lastOrNull()?.let(::formatTwd) ?: "—"}")
+            append("\n高 ${values.maxOrNull()?.let(::formatTwd) ?: "—"}")
+            append("｜低 ${values.minOrNull()?.let(::formatTwd) ?: "—"}")
+            if (stats != null && stats.sampleCount > 0) {
+                append("\n\n期間損益統計")
+                append("\n合計 ${formatSignedTwd(stats.totalDailyPnl)}")
+                append("｜平均 ${formatSignedTwd(stats.averageDailyPnl)}")
+                append("\n最佳 ${stats.bestDayPnl?.let(::formatSignedTwd) ?: "—"}")
+                append("｜最差 ${stats.worstDayPnl?.let(::formatSignedTwd) ?: "—"}")
+            }
+        }
+
+        return PerformanceRender(
+            range = range,
+            series = series,
+            chartStart = startDate.atStartOfDay(taipeiZone).toInstant().toEpochMilli(),
+            chartEnd = today.plusDays(1).atStartOfDay(taipeiZone).toInstant().toEpochMilli() - 1L,
+            chartStartLabel = if (range == TrendRange.YEAR) startDate.toString() else startDate.toString().substring(5),
+            chartEndLabel = if (range == TrendRange.YEAR) today.toString() else todayText.substring(5),
+            summary = summary,
+        )
     }
 
     private fun showBackupCenter() {
