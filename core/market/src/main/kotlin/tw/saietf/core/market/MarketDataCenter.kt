@@ -262,7 +262,8 @@ class MarketDataCenter(
         }
         val exponent = (consecutiveFailures - 1).coerceIn(0, 6)
         val delay = 2_000L shl exponent
-        return delay.coerceAtMost(policy.maxBackoffMillis)
+        val jitter = (consecutiveFailures * 137L) % 750L
+        return (delay + jitter).coerceAtMost(policy.maxBackoffMillis)
     }
 
     private fun qualityFor(
