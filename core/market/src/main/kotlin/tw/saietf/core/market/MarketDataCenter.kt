@@ -51,6 +51,21 @@ class MarketDataCenter(
         val pending = requested.toMutableSet()
         val sourcesTried = mutableListOf<MarketSource>()
 
+        hotStore.snapshot(pending.toSet()).values.forEach { raw ->
+            if (raw.source !in setOf(MarketSource.FUGLE, MarketSource.SHIOAJI)) return@forEach
+            val symbol = raw.symbol.trim().uppercase(Locale.US)
+            if (symbol !in pending) return@forEach
+            val normalized = raw.copy(
+                symbol = symbol,
+                quality = qualityFor(raw.sourceTimestampEpochMillis, nowEpochMillis, currentTaipeiDate),
+            )
+            val sameSessionDate = taipeiDate(normalized.sourceTimestampEpochMillis) == currentTaipeiDate
+            if (sameSessionDate && normalized.quality == QuoteQuality.LIVE) {
+                accepted[symbol] = normalized
+                pending.remove(symbol)
+            }
+        }
+
         providers.forEach { provider ->
             if (pending.isEmpty()) return@forEach
             val runtime = providerRuntime.getOrPut(provider.source) { ProviderRuntime() }
@@ -125,6 +140,30 @@ class MarketDataCenter(
             refreshedAtEpochMillis = nowEpochMillis,
             providerHealth = providerHealthSnapshot(nowEpochMillis),
         )
+    }
+
+    fun acceptStreamingQuote(
+        raw: MarketQuote,
+        nowEpochMillis: Long = System.currentTimeMillis(),
+        currentTaipeiDate: String = taipeiDate(System.currentTimeMillis()),
+    ): Boolean {
+        val symbol = raw.symbol.trim().uppercase(Locale.US)
+        if (symbol.isBlank() || !raw.price.isFinite() || raw.price <= 0.0) return false
+        if (raw.isTrial) return false
+
+        val sourceTime = raw.sourceTimestampEpochMillis
+        if (taipeiDate(sourceTime) != currentTaipeiDate) return false
+
+        val normalized = raw.copy(
+            symbol = symbol,
+            quality = qualityFor(sourceTime, nowEpochMillis, currentTaipeiDate),
+            sessionDate = currentTaipeiDate,
+        )
+        synchronized(cache) {
+            cache[symbol] = normalized
+        }
+        hotStore.publish(listOf(normalized))
+        return true
     }
 
     fun providerHealthSnapshot(nowEpochMillis: Long): List<ProviderHealth> =
