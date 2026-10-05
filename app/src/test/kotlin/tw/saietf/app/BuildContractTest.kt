@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.37", BuildConfig.VERSION_NAME)
-        assertEquals(10037, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.38", BuildConfig.VERSION_NAME)
+        assertEquals(10038, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1037 keeps dividend status summary and upgrade contracts`() {
+    fun `v1038 keeps immediate market refresh and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -103,6 +103,8 @@ class BuildContractTest {
         assertTrue(activity.contains("displaySpacingScale"))
         assertTrue(activity.contains("displayDp"))
         assertTrue(activity.contains("showSystemStatusDialog"))
+        assertTrue(activity.contains("requestImmediateMarketRefresh"))
+        assertTrue(activity.contains("已要求行情中心立即更新"))
         assertTrue(activity.contains("系統狀態 / 診斷"))
         assertTrue(activity.contains("行情覆蓋"))
         assertTrue(activity.contains("quoteAgeSeconds"))
@@ -119,14 +121,14 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第二十八階段 1.0.37｜股息月曆｜確認與預告統計", FirstVersionContract.releaseLine)
+        assertEquals("第二十九階段 1.0.38｜行情中心｜首頁立即更新", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
         )
         assertEquals(
-            listOf("交易新增", "交易紀錄", "持股分析", "持股清單", "行情牆", "股息", "資料備份", "顯示設定", "卡片間距", "系統狀態"),
+            listOf("交易新增", "交易紀錄", "持股分析", "持股清單", "行情牆", "股息", "資料備份", "顯示設定", "卡片間距", "系統狀態", "立即更新行情"),
             FirstVersionContract.landingCards.map { it.title },
         )
         assertTrue(
