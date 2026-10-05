@@ -1075,37 +1075,75 @@ class MainActivity : Activity() {
             addView(paymentDate)
         }
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("股息新增 / 更新")
             .setView(form)
             .setNegativeButton("取消", null)
-            .setPositiveButton("儲存") { _, _ ->
-                val command = runCatching {
-                    DividendRepository.UpsertCommand(
-                        symbol = symbol.text.toString(),
-                        exDateTaipei = exDate.text.toString().trim(),
-                        recordDateTaipei = recordDate.text.toString().trim().takeIf { it.isNotEmpty() },
-                        paymentDateTaipei = paymentDate.text.toString().trim().takeIf { it.isNotEmpty() },
-                        cashPerShare = cashPerShare.text.toString().trim().toDouble(),
-                        status = if (statusSpinner.selectedItemPosition == 0) {
-                            DividendRepository.Status.ANNOUNCED
-                        } else {
-                            DividendRepository.Status.CONFIRMED
-                        },
-                    )
-                }.getOrElse { error ->
-                    Toast.makeText(
-                        this,
-                        "股息欄位格式錯誤：${error.message ?: "未知錯誤"}",
-                        Toast.LENGTH_LONG,
-                    ).show()
-                    return@setPositiveButton
+            .setPositiveButton("儲存", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            saveButton.setOnClickListener {
+                val symbolValue = symbol.text.toString().trim()
+                val cashValue = cashPerShare.text.toString().trim().toDoubleOrNull()
+                val exDateText = exDate.text.toString().trim()
+                val recordDateText = recordDate.text.toString().trim()
+                val paymentDateText = paymentDate.text.toString().trim()
+                val exDateValue = runCatching { LocalDate.parse(exDateText) }.getOrNull()
+                val recordDateValue = recordDateText
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                val paymentDateValue = paymentDateText
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+                val validationError = when {
+                    symbolValue.isEmpty() -> "請輸入 ETF / 股票代號"
+                    cashValue == null || !cashValue.isFinite() || cashValue <= 0.0 ->
+                        "每股現金股利必須大於 0"
+                    exDateValue == null -> "除息日格式必須為 YYYY-MM-DD"
+                    recordDateText.isNotEmpty() && recordDateValue == null ->
+                        "股權登記日格式必須為 YYYY-MM-DD"
+                    paymentDateText.isNotEmpty() && paymentDateValue == null ->
+                        "發放日格式必須為 YYYY-MM-DD"
+                    recordDateValue != null && exDateValue != null &&
+                        recordDateValue.isBefore(exDateValue) ->
+                        "股權登記日不可早於除息日"
+                    paymentDateValue != null && exDateValue != null &&
+                        paymentDateValue.isBefore(exDateValue) ->
+                        "發放日不可早於除息日"
+                    recordDateValue != null && paymentDateValue != null &&
+                        paymentDateValue.isBefore(recordDateValue) ->
+                        "發放日不可早於股權登記日"
+                    else -> null
+                }
+                if (validationError != null) {
+                    Toast.makeText(this, validationError, Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
                 }
 
+                val validCash = cashValue ?: return@setOnClickListener
+                val validExDate = exDateValue ?: return@setOnClickListener
+                val command = DividendRepository.UpsertCommand(
+                    symbol = symbolValue,
+                    exDateTaipei = validExDate.toString(),
+                    recordDateTaipei = recordDateValue?.toString(),
+                    paymentDateTaipei = paymentDateValue?.toString(),
+                    cashPerShare = validCash,
+                    status = if (statusSpinner.selectedItemPosition == 0) {
+                        DividendRepository.Status.ANNOUNCED
+                    } else {
+                        DividendRepository.Status.CONFIRMED
+                    },
+                )
+
+                saveButton.isEnabled = false
                 ledgerExecutor.execute {
                     runCatching { dividendRepository.upsert(command) }
                         .onSuccess {
                             runOnUiThread {
+                                dialog.dismiss()
                                 Toast.makeText(
                                     this,
                                     "股息資料已儲存，可用相同代號與除息日再次更新",
@@ -1116,6 +1154,7 @@ class MainActivity : Activity() {
                         }
                         .onFailure { error ->
                             runOnUiThread {
+                                saveButton.isEnabled = true
                                 Toast.makeText(
                                     this,
                                     "股息未儲存：${error.message ?: "未知錯誤"}",
@@ -1125,9 +1164,9 @@ class MainActivity : Activity() {
                         }
                 }
             }
-            .show()
+        }
+        dialog.show()
     }
-
     private fun showTransactionHistoryDialog(
         pageIndex: Int = 0,
         pageSize: Int = 10,
@@ -1302,41 +1341,74 @@ class MainActivity : Activity() {
             addView(tradeDate)
         }
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("新增交易")
             .setView(form)
             .setNegativeButton("取消", null)
-            .setPositiveButton("寫入 Ledger") { _, _ ->
-                val command = runCatching {
-                    LedgerRepository.AddTradeCommand(
-                        side = if (sideSpinner.selectedItemPosition == 0) {
-                            LedgerEntryKind.BUY
-                        } else {
-                            LedgerEntryKind.SELL
-                        },
-                        symbol = symbol.text.toString(),
-                        shares = shares.text.toString().trim().toLong(),
-                        price = price.text.toString().trim().toDouble(),
-                        tradeMode = if (modeSpinner.selectedItemPosition == 0) {
-                            TradeMode.ROUND_LOT
-                        } else {
-                            TradeMode.ODD_LOT
-                        },
-                        tradeDateTaipei = tradeDate.text.toString().trim(),
-                        actualFee = fee.text.toString().trim().takeIf { it.isNotEmpty() }?.toLong(),
-                        actualTax = tax.text.toString().trim().takeIf { it.isNotEmpty() }?.toLong(),
-                    )
-                }.getOrElse { error ->
-                    Toast.makeText(this, "欄位格式錯誤：${error.message}", Toast.LENGTH_LONG).show()
-                    return@setPositiveButton
+            .setPositiveButton("寫入 Ledger", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            saveButton.setOnClickListener {
+                val symbolValue = symbol.text.toString().trim()
+                val sharesValue = shares.text.toString().trim().toLongOrNull()
+                val priceValue = price.text.toString().trim().toDoubleOrNull()
+                val feeText = fee.text.toString().trim()
+                val taxText = tax.text.toString().trim()
+                val feeValue = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val taxValue = taxText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val tradeDateText = tradeDate.text.toString().trim()
+                val tradeDateValue = runCatching { LocalDate.parse(tradeDateText) }.getOrNull()
+
+                val validationError = when {
+                    symbolValue.isEmpty() -> "請輸入 ETF / 股票代號"
+                    sharesValue == null || sharesValue <= 0L -> "股數必須為大於 0 的整數"
+                    priceValue == null || !priceValue.isFinite() || priceValue <= 0.0 ->
+                        "成交價必須大於 0"
+                    feeText.isNotEmpty() && feeValue == null -> "手續費必須為整數"
+                    feeValue != null && feeValue < 0L -> "手續費不可小於 0"
+                    taxText.isNotEmpty() && taxValue == null -> "證交稅必須為整數"
+                    taxValue != null && taxValue < 0L -> "證交稅不可小於 0"
+                    tradeDateValue == null -> "交易日期格式必須為 YYYY-MM-DD"
+                    tradeDateValue.isAfter(LocalDate.now(taipeiZone)) -> "交易日期不可晚於今天"
+                    else -> null
+                }
+                if (validationError != null) {
+                    Toast.makeText(this, validationError, Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
                 }
 
+                val validShares = sharesValue ?: return@setOnClickListener
+                val validPrice = priceValue ?: return@setOnClickListener
+                val validTradeDate = tradeDateValue ?: return@setOnClickListener
+                val command = LedgerRepository.AddTradeCommand(
+                    side = if (sideSpinner.selectedItemPosition == 0) {
+                        LedgerEntryKind.BUY
+                    } else {
+                        LedgerEntryKind.SELL
+                    },
+                    symbol = symbolValue,
+                    shares = validShares,
+                    price = validPrice,
+                    tradeMode = if (modeSpinner.selectedItemPosition == 0) {
+                        TradeMode.ROUND_LOT
+                    } else {
+                        TradeMode.ODD_LOT
+                    },
+                    tradeDateTaipei = validTradeDate.toString(),
+                    actualFee = feeValue,
+                    actualTax = taxValue,
+                )
+
+                saveButton.isEnabled = false
                 ledgerExecutor.execute {
                     runCatching { repository.addTrade(command) }
                         .onSuccess { snapshot ->
                             latestLedgerSnapshot = snapshot
                             latestMarketBatch = null
                             runOnUiThread {
+                                dialog.dismiss()
                                 applyLedgerSnapshot(snapshot)
                                 Toast.makeText(this, "交易已寫入不可變 Ledger", Toast.LENGTH_SHORT).show()
                             }
@@ -1346,6 +1418,7 @@ class MainActivity : Activity() {
                         }
                         .onFailure { error ->
                             runOnUiThread {
+                                saveButton.isEnabled = true
                                 Toast.makeText(
                                     this,
                                     "交易未寫入：${error.message ?: "未知錯誤"}",
@@ -1355,9 +1428,9 @@ class MainActivity : Activity() {
                         }
                 }
             }
-            .show()
+        }
+        dialog.show()
     }
-
     private fun showHoldingsAnalysisDialog() {
         val valuation = latestValuation
         if (valuation == null || !valuation.isComplete || valuation.totalMarketValue == null) {
