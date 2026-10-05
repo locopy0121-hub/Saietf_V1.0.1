@@ -1537,11 +1537,7 @@ class MainActivity : Activity() {
             addView(
                 TextView(this@MainActivity).apply {
                     text = body
-                    textSize = when (mode) {
-                        MarketWallMode.LARGE_LIST -> 20f
-                        MarketWallMode.GRID -> 16f
-                        else -> 14f
-                    }
+                    textSize = 14f
                     setTextColor(Color.rgb(15, 23, 42))
                     setPadding(0, dp(10), 0, dp(10))
                 },
@@ -1839,8 +1835,10 @@ class MainActivity : Activity() {
                             else -> "盤中中立"
                         }
                     } ?: "盤中待判"
-                    val position = if (quote.high != null && quote.low != null && quote.high > quote.low) {
-                        ((quote.price - quote.low) / (quote.high - quote.low) * 100.0)
+                    val high = quote.high
+                    val low = quote.low
+                    val position = if (high != null && low != null && high > low) {
+                        ((quote.price - low) / (high - low) * 100.0)
                             .coerceIn(0.0, 100.0)
                     } else {
                         null
@@ -1954,7 +1952,11 @@ class MainActivity : Activity() {
             controls.addView(
                 TextView(this).apply {
                     text = body
-                    textSize = 14f
+                    textSize = when (mode) {
+                        MarketWallMode.LARGE_LIST -> 20f
+                        MarketWallMode.GRID -> 16f
+                        else -> 14f
+                    }
                     setTextColor(Color.rgb(15, 23, 42))
                     setPadding(0, dp(10), 0, dp(10))
                 },
