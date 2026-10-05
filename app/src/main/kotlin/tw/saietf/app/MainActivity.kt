@@ -1777,6 +1777,38 @@ class MainActivity : Activity() {
             }
         }
 
+    private fun showDisplaySettingsDialog() {
+        val labels = listOf("精簡", "標準", "放大")
+        val keys = listOf("compact", "standard", "large")
+        val preferences = getSharedPreferences("saietf-display", MODE_PRIVATE)
+        val currentKey = preferences.getString("scale", "standard") ?: "standard"
+        val spinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                labels,
+            )
+            setSelection(keys.indexOf(currentKey).coerceAtLeast(0))
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("顯示設定")
+            .setMessage("調整共用標題與卡片文字比例；套用後立即重建畫面。")
+            .setView(spinner)
+            .setNegativeButton("取消", null)
+            .setNeutralButton("恢復標準") { _, _ ->
+                preferences.edit().putString("scale", "standard").apply()
+                recreate()
+            }
+            .setPositiveButton("套用") { _, _ ->
+                preferences.edit()
+                    .putString("scale", keys[spinner.selectedItemPosition])
+                    .apply()
+                recreate()
+            }
+            .show()
+    }
+
     private fun dateInput(
         hintValue: String,
         initialValue: String,
