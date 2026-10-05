@@ -525,8 +525,11 @@ class MainActivity : Activity() {
             .distinct()
             .joinToString(" + ") {
                 when (it) {
+                    MarketSource.FUGLE -> "Fugle"
+                    MarketSource.SHIOAJI -> "Shioaji"
                     MarketSource.TWSE_MIS -> "TWSE MIS"
                     MarketSource.YAHOO -> "Yahoo"
+                    MarketSource.CACHE -> "Cache"
                 }
             }
             .ifBlank { "無可用來源" }
@@ -2571,8 +2574,11 @@ class MainActivity : Activity() {
 
     private fun sourceName(source: MarketSource): String =
         when (source) {
+            MarketSource.FUGLE -> "Fugle"
+            MarketSource.SHIOAJI -> "Shioaji"
             MarketSource.TWSE_MIS -> "TWSE MIS"
             MarketSource.YAHOO -> "Yahoo"
+            MarketSource.CACHE -> "Cache"
         }
 
     private fun sectionTitle(textValue: String): TextView = TextView(this).apply {
