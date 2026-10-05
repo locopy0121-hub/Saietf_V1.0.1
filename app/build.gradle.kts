@@ -53,6 +53,7 @@ dependencies {
     implementation(project(":core:finance"))
     implementation(project(":core:model"))
     implementation(project(":core:market"))
+    implementation(libs.androidx.activity)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
