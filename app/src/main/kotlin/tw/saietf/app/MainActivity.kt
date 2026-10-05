@@ -52,6 +52,16 @@ class MainActivity : Activity() {
     private val performanceHistoryRepository: PerformanceHistoryRepository
         get() = (application as SaiEtfApplication).performanceHistoryRepository
 
+    private val intradayHistoryProvider: YahooIntradayHistoryProvider
+        get() = (application as SaiEtfApplication).intradayHistoryProvider
+
+    private enum class TrendRange(val label: String) {
+        DAY("日"),
+        WEEK("週"),
+        MONTH("月"),
+        YEAR("年"),
+    }
+
     @Volatile
     private var marketPollingActive = false
 
@@ -410,70 +420,192 @@ class MainActivity : Activity() {
     }
 
     private fun showDailyPerformanceDialog() {
+        showPerformanceDialog(TrendRange.DAY)
+    }
+
+    private fun showPerformanceDialog(range: TrendRange) {
         ledgerExecutor.execute {
-            val today = LocalDate.now(taipeiZone).toString()
-            val recent = runCatching {
-                performanceHistoryRepository.recentDaily(30)
-            }.getOrDefault(emptyList())
-            val intradayPoints = runCatching {
-                performanceHistoryRepository.intradayPoints(today)
-            }.getOrDefault(emptyList())
-            val intraday = runCatching {
-                performanceHistoryRepository.intradaySummary(today)
-            }.getOrNull()
-            val stats = runCatching {
-                performanceHistoryRepository.dailyStats(30)
-            }.getOrNull()
+            val today = LocalDate.now(taipeiZone)
+            val todayText = today.toString()
+            val sessionStart = today
+                .atTime(9, 0)
+                .atZone(taipeiZone)
+                .toInstant()
+                .toEpochMilli()
+            val sessionEnd = today
+                .atTime(13, 30)
+                .atZone(taipeiZone)
+                .toInstant()
+                .toEpochMilli()
 
-            val summary = buildString {
-                if (intraday != null && intraday.pointCount > 0) {
-                    append("今日走勢：${intraday.pointCount} 點")
-                    append("\n開盤 ${intraday.openMarketValue?.let(::formatTwd) ?: "—"}")
-                    append("｜最新 ${intraday.latestMarketValue?.let(::formatTwd) ?: "—"}")
-                    append("\n高 ${intraday.highMarketValue?.let(::formatTwd) ?: "—"}")
-                    append("｜低 ${intraday.lowMarketValue?.let(::formatTwd) ?: "—"}")
-                } else {
-                    append("今日尚無完整的新鮮行情走勢紀錄。")
-                }
+            val series: List<PortfolioTrendPoint>
+            val chartStart: Long
+            val chartEnd: Long
+            val chartStartLabel: String
+            val chartEndLabel: String
+            val summary: String
 
-                if (stats != null && stats.sampleCount > 0) {
-                    append("\n\n近 ${stats.sampleCount} 日統計")
-                    append("\n合計 ${formatSignedTwd(stats.totalDailyPnl)}")
-                    append("｜平均 ${formatSignedTwd(stats.averageDailyPnl)}")
-                    append("\n最佳 ${stats.bestDayPnl?.let(::formatSignedTwd) ?: "—"}")
-                    append("｜最差 ${stats.worstDayPnl?.let(::formatSignedTwd) ?: "—"}")
-                }
-
-                append("\n\n")
-                if (recent.isEmpty()) {
-                    append("尚無每日損益快照。")
-                } else {
-                    append(
-                        recent.joinToString("\n\n") { row ->
-                            "${row.taipeiDate}｜當日 ${formatSignedTwd(row.dailyMarketPnL)}\n" +
-                                "總市值 ${formatTwd(row.totalMarketValue)}｜" +
-                                "持有總損益 ${formatSignedTwd(row.totalUnrealizedProfit)}"
-                        },
+            if (range == TrendRange.DAY) {
+                val holdings = (latestLedgerSnapshot ?: repository.loadDashboard())
+                    .holdings
+                    .associate { it.symbol to it.shares }
+                val marketHistory = runCatching {
+                    intradayHistoryProvider.fetchPortfolioSeries(
+                        holdings = holdings,
+                        taipeiDate = todayText,
                     )
+                }.getOrDefault(emptyList())
+                val localHistory = runCatching {
+                    performanceHistoryRepository.intradayPoints(todayText)
+                }.getOrDefault(emptyList())
+
+                val sourceLabel: String
+                series = if (marketHistory.size >= 2) {
+                    sourceLabel = "Yahoo 1 分行情"
+                    marketHistory.map {
+                        PortfolioTrendPoint(
+                            epochMillis = it.epochMillis,
+                            value = it.totalMarketValue,
+                        )
+                    }
+                } else {
+                    sourceLabel = "本機盤中紀錄"
+                    localHistory.map {
+                        PortfolioTrendPoint(
+                            epochMillis = it.bucketEpochMillis,
+                            value = it.totalMarketValue,
+                        )
+                    }
+                }.filter { it.epochMillis in sessionStart..sessionEnd }
+
+                chartStart = sessionStart
+                chartEnd = sessionEnd
+                chartStartLabel = "09:00"
+                chartEndLabel = "13:30"
+
+                val values = series.map { it.value }
+                val open = values.firstOrNull()
+                val latest = values.lastOrNull()
+                val high = values.maxOrNull()
+                val low = values.minOrNull()
+                val daySnapshot = runCatching {
+                    performanceHistoryRepository.dailyRange(todayText, todayText).lastOrNull()
+                }.getOrNull()
+
+                summary = buildString {
+                    append("日｜台股交易時段 09:00–13:30")
+                    append("\n資料：$sourceLabel｜${series.size} 點")
+                    append("\n開盤 ${open?.let(::formatTwd) ?: "—"}")
+                    append("｜最新 ${latest?.let(::formatTwd) ?: "—"}")
+                    append("\n高 ${high?.let(::formatTwd) ?: "—"}")
+                    append("｜低 ${low?.let(::formatTwd) ?: "—"}")
+                    daySnapshot?.let {
+                        append("\n\n$todayText｜當日 ${formatSignedTwd(it.dailyMarketPnL)}")
+                        append("\n總市值 ${formatTwd(it.totalMarketValue)}")
+                        append("｜持有總損益 ${formatSignedTwd(it.totalUnrealizedProfit)}")
+                    }
+                }
+            } else {
+                val startDate = when (range) {
+                    TrendRange.WEEK -> today.minusDays(6)
+                    TrendRange.MONTH -> today.minusMonths(1).plusDays(1)
+                    TrendRange.YEAR -> today.minusYears(1).plusDays(1)
+                    TrendRange.DAY -> today
+                }
+                val startText = startDate.toString()
+                val rows = runCatching {
+                    performanceHistoryRepository.dailyRange(startText, todayText)
+                }.getOrDefault(emptyList())
+                val stats = runCatching {
+                    performanceHistoryRepository.dailyStats(startText, todayText)
+                }.getOrNull()
+
+                series = rows.map { row ->
+                    val epoch = LocalDate.parse(row.taipeiDate)
+                        .atTime(13, 30)
+                        .atZone(taipeiZone)
+                        .toInstant()
+                        .toEpochMilli()
+                    PortfolioTrendPoint(
+                        epochMillis = epoch,
+                        value = row.totalMarketValue,
+                    )
+                }
+                chartStart = startDate
+                    .atStartOfDay(taipeiZone)
+                    .toInstant()
+                    .toEpochMilli()
+                chartEnd = today
+                    .plusDays(1)
+                    .atStartOfDay(taipeiZone)
+                    .toInstant()
+                    .toEpochMilli() - 1L
+                chartStartLabel = when (range) {
+                    TrendRange.WEEK -> startDate.toString().substring(5)
+                    TrendRange.MONTH -> startDate.toString().substring(5)
+                    TrendRange.YEAR -> startDate.toString()
+                    TrendRange.DAY -> ""
+                }
+                chartEndLabel = if (range == TrendRange.YEAR) today.toString() else todayText.substring(5)
+
+                val values = series.map { it.value }
+                summary = buildString {
+                    append("${range.label}｜$startText ～ $todayText")
+                    append("\n交易日紀錄 ${rows.size} 天")
+                    append("\n起點 ${values.firstOrNull()?.let(::formatTwd) ?: "—"}")
+                    append("｜最新 ${values.lastOrNull()?.let(::formatTwd) ?: "—"}")
+                    append("\n高 ${values.maxOrNull()?.let(::formatTwd) ?: "—"}")
+                    append("｜低 ${values.minOrNull()?.let(::formatTwd) ?: "—"}")
+                    if (stats != null && stats.sampleCount > 0) {
+                        append("\n\n期間損益統計")
+                        append("\n合計 ${formatSignedTwd(stats.totalDailyPnl)}")
+                        append("｜平均 ${formatSignedTwd(stats.averageDailyPnl)}")
+                        append("\n最佳 ${stats.bestDayPnl?.let(::formatSignedTwd) ?: "—"}")
+                        append("｜最差 ${stats.worstDayPnl?.let(::formatSignedTwd) ?: "—"}")
+                    }
                 }
             }
 
             runOnUiThread {
-                val content = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(dp(16), dp(8), dp(16), 0)
-                    if (intradayPoints.size >= 2) {
+                val rangeRow = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    TrendRange.entries.forEach { option ->
                         addView(
-                            IntradayTrendView(this@MainActivity).apply {
-                                setPadding(dp(6), dp(8), dp(6), dp(8))
-                                setPoints(intradayPoints.map { it.totalMarketValue })
+                            Button(this@MainActivity).apply {
+                                text = if (option == range) "● ${option.label}" else option.label
+                                isEnabled = option != range
+                                tag = option
                             },
                             LinearLayout.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                dp(190),
+                                0,
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                                1f,
                             ),
                         )
                     }
+                }
+
+                val content = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(16), dp(8), dp(16), 0)
+                    addView(rangeRow)
+                    addView(
+                        PortfolioTrendView(this@MainActivity).apply {
+                            setPadding(dp(6), dp(10), dp(6), dp(4))
+                            setSeries(
+                                values = series,
+                                startEpochMillis = chartStart,
+                                endEpochMillis = chartEnd,
+                                startLabel = chartStartLabel,
+                                endLabel = chartEndLabel,
+                            )
+                        },
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(230),
+                        ),
+                    )
                     addView(
                         TextView(this@MainActivity).apply {
                             text = summary
@@ -484,15 +616,27 @@ class MainActivity : Activity() {
                     )
                 }
 
-                AlertDialog.Builder(this)
-                    .setTitle("每日損益 / 今日走勢")
+                val dialog = AlertDialog.Builder(this)
+                    .setTitle("資產走勢 / 損益統計")
                     .setView(
                         ScrollView(this).apply {
                             addView(content)
                         },
                     )
                     .setPositiveButton("關閉", null)
-                    .show()
+                    .create()
+
+                for (index in 0 until rangeRow.childCount) {
+                    val button = rangeRow.getChildAt(index) as Button
+                    val option = button.tag as TrendRange
+                    if (option != range) {
+                        button.setOnClickListener {
+                            dialog.dismiss()
+                            showPerformanceDialog(option)
+                        }
+                    }
+                }
+                dialog.show()
             }
         }
     }
