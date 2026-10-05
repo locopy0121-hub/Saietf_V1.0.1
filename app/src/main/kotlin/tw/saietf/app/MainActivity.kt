@@ -1825,9 +1825,26 @@ class MainActivity : Activity() {
                     "卡片間距" -> showSpacingSettingsDialog()
                     "系統狀態" -> showSystemStatusDialog()
                     "立即更新行情" -> requestImmediateMarketRefresh()
+                    "介面恢復標準" -> showResetDisplaySettingsConfirmation()
                 }
             }
         }
+
+    private fun showResetDisplaySettingsConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle("恢復介面標準設定")
+            .setMessage("將文字比例與卡片間距恢復為標準值。此動作需要再次確認。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("確認恢復") { _, _ ->
+                getSharedPreferences("saietf-display", MODE_PRIVATE)
+                    .edit()
+                    .remove("scale")
+                    .remove("spacing")
+                    .apply()
+                recreate()
+            }
+            .show()
+    }
 
     private fun requestImmediateMarketRefresh() {
         if (marketPollingActive) {
