@@ -550,6 +550,7 @@ class MainActivity : Activity() {
         val chartStartLabel: String,
         val chartEndLabel: String,
         val summary: String,
+        val records: List<String>,
     )
 
     private fun showPerformanceDialog(range: TrendRange) {
@@ -648,6 +649,24 @@ class MainActivity : Activity() {
                         setPadding(0, dp(8), 0, dp(8))
                     },
                 )
+                content.addView(cardText("每日損益紀錄", 16f, Color.rgb(15, 23, 42)))
+                if (render.records.isEmpty()) {
+                    content.addView(
+                        cardText(
+                            "目前沒有可顯示的每日紀錄",
+                            13f,
+                            Color.rgb(100, 116, 139),
+                        ),
+                    )
+                } else {
+                    render.records.forEach { row ->
+                        content.addView(
+                            cardText(row, 13f, Color.rgb(51, 65, 85)).apply {
+                                setPadding(0, dp(6), 0, dp(6))
+                            },
+                        )
+                    }
+                }
                 dialog.setTitle("資產走勢 / 損益統計｜${render.range.label}")
             }
         }
@@ -730,6 +749,13 @@ class MainActivity : Activity() {
                 chartStartLabel = "09:00",
                 chartEndLabel = "13:30",
                 summary = summary,
+                records = daySnapshot?.let {
+                    listOf(
+                        "${it.taipeiDate}｜今日 ${formatSignedTwd(it.dailyMarketPnL)}" +
+                            "｜總損益 ${formatSignedTwd(it.totalUnrealizedProfit)}" +
+                            "｜市值 ${formatTwd(it.totalMarketValue)}",
+                    )
+                }.orEmpty(),
             )
         }
 
@@ -782,6 +808,14 @@ class MainActivity : Activity() {
             chartStartLabel = if (range == TrendRange.YEAR) startDate.toString() else startDate.toString().substring(5),
             chartEndLabel = if (range == TrendRange.YEAR) today.toString() else todayText.substring(5),
             summary = summary,
+            records = rows
+                .takeLast(12)
+                .asReversed()
+                .map {
+                    "${it.taipeiDate}｜今日 ${formatSignedTwd(it.dailyMarketPnL)}" +
+                        "｜總損益 ${formatSignedTwd(it.totalUnrealizedProfit)}" +
+                        "｜市值 ${formatTwd(it.totalMarketValue)}"
+                },
         )
     }
 
