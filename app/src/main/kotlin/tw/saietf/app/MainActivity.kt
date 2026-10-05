@@ -1256,6 +1256,77 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("持股清單")
             .setMessage(body)
+            .setNeutralButton("個股明細") { _, _ ->
+                showHoldingSelectorDialog()
+            }
+            .setPositiveButton("關閉", null)
+            .show()
+    }
+
+    private fun showHoldingSelectorDialog() {
+        val snapshot = latestLedgerSnapshot
+        if (snapshot == null || snapshot.holdings.isEmpty()) {
+            Toast.makeText(this, "目前沒有可查看的持股", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val symbols = snapshot.holdings.map { it.symbol }.sorted()
+        val spinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                symbols,
+            )
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("選擇持股")
+            .setView(spinner)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("查看") { _, _ ->
+                showHoldingDetailDialog(spinner.selectedItem.toString())
+            }
+            .show()
+    }
+
+    private fun showHoldingDetailDialog(symbol: String) {
+        val holding = latestLedgerSnapshot
+            ?.holdings
+            ?.firstOrNull { it.symbol == symbol }
+        if (holding == null) {
+            Toast.makeText(this, "找不到 $symbol 的持股資料", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val market = latestValuation
+            ?.holdings
+            ?.firstOrNull { it.symbol == symbol }
+        val quote = market?.quote
+
+        val body = buildString {
+            append("$symbol｜${holding.shares} 股")
+            append("\n投入成本 ${formatTwd(holding.investmentCost)}")
+            if (holding.shares > 0L) {
+                append("\n平均成本 ${formatTwd(holding.investmentCost / holding.shares.toDouble())}")
+            }
+            if (quote != null) {
+                append("\n\n現價 ${"%.2f".format(Locale.US, quote.price)}")
+                append("｜來源 ${sourceName(quote.source)}")
+                append("\n市值 ${market.marketValue?.let(::formatTwd) ?: "—"}")
+                append("\n今日損益 ${market.todayPnl?.let(::formatSignedTwd) ?: "—"}")
+                append("｜持有總損益 ${market.totalPnl?.let(::formatSignedTwd) ?: "—"}")
+                append("\n品質 ${quote.quality.name}")
+                append("｜時間 ${Instant.ofEpochMilli(quote.asOfEpochMillis).atZone(taipeiZone).toLocalTime()}")
+            } else {
+                append("\n\n行情待更新")
+            }
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("持股明細｜$symbol")
+            .setMessage(body)
+            .setNegativeButton("返回持股") { _, _ ->
+                showHoldingsDialog()
+            }
             .setPositiveButton("關閉", null)
             .show()
     }
