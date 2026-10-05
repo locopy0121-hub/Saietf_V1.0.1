@@ -3,6 +3,7 @@ package tw.saietf.app
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
@@ -26,6 +27,7 @@ import java.time.ZoneId
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import tw.saietf.core.database.BackupRepository
 import tw.saietf.core.database.DividendRepository
 import tw.saietf.core.database.LedgerRepository
 import tw.saietf.core.database.PerformanceHistoryRepository
@@ -40,6 +42,11 @@ import tw.saietf.core.market.QuoteQuality
 import tw.saietf.core.model.TradeMode
 
 class MainActivity : Activity() {
+    private companion object {
+        const val REQUEST_EXPORT_BACKUP = 4101
+        const val REQUEST_IMPORT_BACKUP = 4102
+    }
+
     private val ledgerExecutor = Executors.newSingleThreadExecutor()
     private val marketScheduler = Executors.newSingleThreadScheduledExecutor()
     private val valuator = PortfolioMarketValuator()
@@ -56,6 +63,9 @@ class MainActivity : Activity() {
 
     private val dividendRepository: DividendRepository
         get() = (application as SaiEtfApplication).dividendRepository
+
+    private val backupRepository: BackupRepository
+        get() = (application as SaiEtfApplication).backupRepository
 
     private val intradayHistoryProvider: YahooIntradayHistoryProvider
         get() = (application as SaiEtfApplication).intradayHistoryProvider
@@ -90,6 +100,9 @@ class MainActivity : Activity() {
 
     @Volatile
     private var lastHistoryWriteEpochMillis: Long = 0L
+
+    @Volatile
+    private var pendingBackupJson: String? = null
 
     private lateinit var totalAssetValue: TextView
     private lateinit var investmentCostValue: TextView
@@ -1115,7 +1128,7 @@ class MainActivity : Activity() {
                     "持股清單" -> showHoldingsDialog()
                     "行情牆" -> showMarketWall()
                     "股息" -> showDividendCenter()
-                    "資料備份" -> Toast.makeText(this@MainActivity, "備份功能將在行情中心穩定後實裝", Toast.LENGTH_SHORT).show()
+                    "資料備份" -> showBackupCenter()
                 }
             }
         }
