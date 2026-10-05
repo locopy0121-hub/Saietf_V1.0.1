@@ -587,6 +587,53 @@ class MainActivity : Activity() {
             "交易與持股",
             "所有帳務寫入仍遵守 append-only Ledger 與 Finance Lock",
         )
+
+        val snapshot = latestLedgerSnapshot
+        pageContent.addView(sectionTitle("帳務摘要"))
+        val firstRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(
+                buildInstrumentMetricCard(
+                    "有效交易",
+                    snapshot?.ledgerCount?.let { "$it 筆" } ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            addView(
+                buildInstrumentMetricCard(
+                    "持股",
+                    snapshot?.holdingCount?.let { "$it 檔" } ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(8)
+                },
+            )
+        }
+        pageContent.addView(firstRow)
+
+        val secondRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, dp(8), 0, dp(12))
+            addView(
+                buildInstrumentMetricCard(
+                    "投入成本",
+                    snapshot?.totalInvestmentCost?.let(::formatTwd) ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            addView(
+                buildInstrumentMetricCard(
+                    "已實現損益",
+                    snapshot?.realizedNetPnL?.let(::formatSignedTwd) ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(8)
+                },
+            )
+        }
+        pageContent.addView(secondRow)
+
+        pageContent.addView(sectionTitle("操作"))
         pageContent.addView(
             buildActionCard("新增交易", "買進 / 賣出、整股 / 零股、日期與實際費稅") {
                 showTradeDialog()
@@ -607,6 +654,51 @@ class MainActivity : Activity() {
                 showHoldingsAnalysisDialog()
             },
         )
+
+        pageContent.addView(sectionTitle("最近交易"))
+        val preview = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(statusText("最近交易載入中…"))
+        }
+        pageContent.addView(preview)
+        loadTradePreview(preview)
+    }
+
+    private fun loadTradePreview(container: LinearLayout) {
+        ledgerExecutor.execute {
+            val page = runCatching { repository.transactionPage(0, 10) }.getOrNull()
+            runOnUiThread {
+                if (selectedMainTab != MainTab.TRADE) return@runOnUiThread
+                container.removeAllViews()
+                val rows = page?.rows.orEmpty().take(5)
+                if (rows.isEmpty()) {
+                    container.addView(statusText("目前沒有交易紀錄"))
+                    return@runOnUiThread
+                }
+                rows.forEach { row ->
+                    val side = if (row.side == LedgerEntryKind.BUY) "買進" else "賣出"
+                    val edited = if (row.isEdited) "｜已修改" else ""
+                    container.addView(
+                        buildActionCard(
+                            title = "${row.tradeDateTaipei}  ${row.symbol}  $side",
+                            description =
+                                "${row.shares} 股 × " +
+                                    String.format(Locale.US, "%.2f", row.price) +
+                                    "｜${row.tradeMode.name}$edited",
+                        ) {
+                            showTransactionHistoryDialog()
+                        },
+                    )
+                }
+                if ((page?.totalCount ?: 0L) > rows.size) {
+                    container.addView(
+                        statusText(
+                            "顯示最近 ${rows.size} 筆，共 ${page?.totalCount ?: 0L} 筆；點交易紀錄可完整分頁查看",
+                        ),
+                    )
+                }
+            }
+        }
     }
 
     private fun renderDividendPage() {
@@ -614,6 +706,16 @@ class MainActivity : Activity() {
             "股息",
             "預告可先登錄，待公告確定後更新",
         )
+
+        pageContent.addView(sectionTitle("本月摘要"))
+        val monthValue = TextView(this).apply {
+            text = "股息摘要載入中…"
+            textSize = 14f * displayScale
+            setTextColor(Color.rgb(71, 85, 105))
+            setPadding(0, 0, 0, dp(10))
+        }
+        pageContent.addView(monthValue)
+
         pageContent.addView(
             buildActionCard("股息中心", "新增 / 更新、月份統計與股息紀錄") {
                 showDividendCenter()
@@ -624,6 +726,74 @@ class MainActivity : Activity() {
                 showDividendCalendarDialog()
             },
         )
+
+        pageContent.addView(sectionTitle("近期股息"))
+        val preview = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(statusText("近期股息載入中…"))
+        }
+        pageContent.addView(preview)
+        loadDividendPreview(monthValue, preview)
+    }
+
+    private fun loadDividendPreview(
+        monthValue: TextView,
+        container: LinearLayout,
+    ) {
+        ledgerExecutor.execute {
+            val rows = runCatching { dividendRepository.recent(120) }.getOrDefault(emptyList())
+            val currentMonth = YearMonth.now(taipeiZone)
+            val currentYear = currentMonth.year.toString()
+            val monthRows = rows.filter { row ->
+                val paymentMonth = row.paymentDateTaipei?.take(7)
+                val effectiveMonth = paymentMonth ?: row.exDateTaipei.take(7)
+                effectiveMonth == currentMonth.toString()
+            }
+            val monthConfirmedCash = monthRows
+                .filter { it.status == DividendRepository.Status.CONFIRMED }
+                .sumOf { it.estimatedCash }
+            val monthAnnouncedCash = monthRows
+                .filter { it.status == DividendRepository.Status.ANNOUNCED }
+                .sumOf { it.estimatedCash }
+            val yearConfirmedCash = rows
+                .filter {
+                    it.status == DividendRepository.Status.CONFIRMED &&
+                        (it.paymentDateTaipei ?: it.exDateTaipei).startsWith(currentYear)
+                }
+                .sumOf { it.estimatedCash }
+
+            runOnUiThread {
+                if (selectedMainTab != MainTab.DIVIDEND) return@runOnUiThread
+                monthValue.text =
+                    "${currentMonth}｜已確認 ${formatTwd(monthConfirmedCash)}｜預告 ${formatTwd(monthAnnouncedCash)}" +
+                        "\n今年已確認 ${formatTwd(yearConfirmedCash)}｜本月 ${monthRows.size} 筆"
+
+                container.removeAllViews()
+                val recent = rows.take(6)
+                if (recent.isEmpty()) {
+                    container.addView(statusText("目前沒有股息事件"))
+                    return@runOnUiThread
+                }
+                recent.forEach { row ->
+                    val status = if (row.status == DividendRepository.Status.CONFIRMED) {
+                        "已確認"
+                    } else {
+                        "預告"
+                    }
+                    val payment = row.paymentDateTaipei ?: "待公告"
+                    container.addView(
+                        buildActionCard(
+                            title = "${row.symbol}  $status  ${formatTwd(row.estimatedCash)}",
+                            description =
+                                "除息 ${row.exDateTaipei}｜發放 $payment｜每股 " +
+                                    String.format(Locale.US, "%.4f", row.cashPerShare),
+                        ) {
+                            showDividendCenter()
+                        },
+                    )
+                }
+            }
+        }
     }
 
     private fun renderSettingsPage() {
@@ -631,26 +801,41 @@ class MainActivity : Activity() {
             "設定",
             "介面、行情、資料備份與系統診斷",
         )
+
+        val fugleHealth = fugleStreamingController.health()
+        pageContent.addView(
+            statusText(
+                "版本 ${BuildConfig.VERSION_NAME}｜Room v5｜Fugle " +
+                    (if (fugleApiKeyStore.hasKey()) "已設定" else "未設定") +
+                    "｜${fugleHealth.circuitState.name}/${fugleHealth.availability.name}",
+            ),
+        )
+
+        pageContent.addView(sectionTitle("介面"))
         pageContent.addView(buildActionCard("顯示設定", "調整全域文字比例") {
             showDisplaySettingsDialog()
         })
         pageContent.addView(buildActionCard("卡片間距", "緊湊 / 標準 / 寬鬆") {
             showSpacingSettingsDialog()
         })
+        pageContent.addView(buildActionCard("恢復介面標準", "清除顯示比例與間距偏好") {
+            showResetDisplaySettingsConfirmation()
+        })
+
+        pageContent.addView(sectionTitle("行情"))
         pageContent.addView(buildActionCard("Fugle 即時行情", "安全設定或更換 API Key") {
             showFugleSettingsDialog()
         })
+        pageContent.addView(buildActionCard("立即更新行情", "立即要求行情中心同步") {
+            requestImmediateMarketRefresh()
+        })
+
+        pageContent.addView(sectionTitle("資料與系統"))
         pageContent.addView(buildActionCard("資料備份", "匯出 / 還原本機 JSON 備份") {
             showBackupCenter()
         })
         pageContent.addView(buildActionCard("系統狀態", "行情來源、品質、延遲與 Provider Health") {
             showSystemStatusDialog()
-        })
-        pageContent.addView(buildActionCard("立即更新行情", "立即要求行情中心同步") {
-            requestImmediateMarketRefresh()
-        })
-        pageContent.addView(buildActionCard("恢復介面標準", "清除顯示比例與間距偏好") {
-            showResetDisplaySettingsConfirmation()
         })
     }
 
