@@ -40,6 +40,7 @@ class BuildContractTest {
     fun `v1064 keeps broker-free market data StockDetail schema and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
+        val application = File("src/main/kotlin/tw/saietf/app/SaiEtfApplication.kt").readText()
         val gradle = File("build.gradle.kts").readText()
         val providers = File("src/main/kotlin/tw/saietf/app/AndroidMarketProviders.kt").readText()
         val taiwanProfiles = File("src/main/kotlin/tw/saietf/app/TaiwanInstrumentInfoProvider.kt").readText()
@@ -96,6 +97,9 @@ class BuildContractTest {
         assertTrue(marketModels.contains("MarketSource.FUGLE") || marketModels.contains("FUGLE"))
         assertTrue(!marketModels.contains("SHIOAJI"))
         assertTrue(!activity.contains("Shioaji"))
+        assertTrue(application.contains("removeRetiredShioajiSecrets"))
+        assertTrue(application.contains("saietf-shioaji-gateway"))
+        assertTrue(application.contains("deleteEntry(\"saietf-shioaji-gateway-token-v1\")"))
         assertTrue(marketModels.contains("QuoteQuality"))
         assertTrue(marketModels.contains("fallbackLevel"))
         assertTrue(marketModels.contains("sourceTimestampEpochMillis"))
