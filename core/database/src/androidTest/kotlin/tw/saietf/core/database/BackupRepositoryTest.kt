@@ -26,7 +26,7 @@ class BackupRepositoryTest {
             assertEquals(0, result.intradayPointCount)
             assertEquals(0, result.dividendCount)
 
-            val invalidVersion = raw.replace(""formatVersion": 1", ""formatVersion": 9")
+            val invalidVersion = raw.replace("""formatVersion": 1""", """formatVersion": 9""")
             assertThrows(IllegalArgumentException::class.java) {
                 targetBackup.restoreJson(invalidVersion)
             }
