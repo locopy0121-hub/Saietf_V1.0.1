@@ -3782,10 +3782,24 @@ class MainActivity : ComponentActivity() {
 
     private fun sectionTitle(textValue: String): TextView = TextView(this).apply {
         text = textValue
-        textSize = 19f * displayScale
-        setTextColor(SaiTheme.TEXT)
+        textSize = 16f * displayScale
+        setTextColor(SaiTheme.BRAND)
         setTypeface(typeface, android.graphics.Typeface.BOLD)
-        setPadding(0, dp(8), 0, dp(10))
+        background = SaiTheme.rounded(
+            fill = SaiTheme.BRAND_SOFT,
+            radiusDp = 14f,
+            density = resources.displayMetrics.density,
+            strokeColor = SaiTheme.BORDER,
+            strokeDp = 1,
+        )
+        setPadding(displayDp(14), displayDp(10), displayDp(14), displayDp(10))
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            topMargin = displayDp(6)
+            bottomMargin = displayDp(10)
+        }
     }
 
     private fun statusText(value: String): TextView = TextView(this).apply {
