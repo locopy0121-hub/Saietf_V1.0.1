@@ -88,3 +88,4 @@ If all live sources fail:
 - Trial messages are not accepted into portfolio valuation.
 
 - Android WebSocket transport uses OkHttp 5.3.2, selected to keep the current compileSdk 36 contract intact.
+- Provider health is considered unhealthy after 75 seconds without a server message; the watchdog then reconnects instead of treating a quiet symbol as a provider failure.
