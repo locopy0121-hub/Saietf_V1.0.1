@@ -65,6 +65,10 @@ class SaiEtfApplication : Application() {
         MarketPersistenceRepository(database)
     }
 
+    val stockDetailRepository: StockDetailRepository by lazy {
+        StockDetailRepository(database)
+    }
+
     internal val marketPersistenceController: MarketPersistenceController by lazy {
         MarketPersistenceController(
             scope = marketScope,
