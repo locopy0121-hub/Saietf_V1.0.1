@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.68", BuildConfig.VERSION_NAME)
-        assertEquals(10068, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.69", BuildConfig.VERSION_NAME)
+        assertEquals(10069, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1068 keeps formal instrument page live UI and upgrade contracts`() {
+    fun `v1069 keeps completed formal UI instrument page and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val application = File("src/main/kotlin/tw/saietf/app/SaiEtfApplication.kt").readText()
@@ -170,6 +170,13 @@ class BuildContractTest {
         assertTrue(activity.contains("renderTradePage"))
         assertTrue(activity.contains("renderDividendPage"))
         assertTrue(activity.contains("renderSettingsPage"))
+        assertTrue(activity.contains("loadTradePreview"))
+        assertTrue(activity.contains("最近交易"))
+        assertTrue(activity.contains("loadDividendPreview"))
+        assertTrue(activity.contains("本月摘要"))
+        assertTrue(activity.contains("今年已確認"))
+        assertTrue(activity.contains("資料與系統"))
+        assertTrue(activity.contains("Room v5"))
         assertTrue(activity.contains("fitsSystemWindows = true"))
         assertTrue(activity.contains("homeHoldingsContainer"))
         assertTrue(activity.contains("marketQuotesContainer"))
@@ -328,8 +335,8 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第五十九階段 1.0.68｜個股正式頁｜8 Tab Lazy Load・真實資料", FirstVersionContract.releaseLine)
-        assertEquals("明細｜走勢｜技術｜成分｜法人｜財務｜盤後｜數據｜Lazy Load｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第六十階段 1.0.69｜正式 UI 完整合流｜五大頁面・個股 8 Tab・即時狀態", FirstVersionContract.releaseLine)
+        assertEquals("首頁｜行情｜交易｜股息｜設定｜個股 8 Tab｜StateFlow｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
