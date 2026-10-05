@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.43", BuildConfig.VERSION_NAME)
-        assertEquals(10043, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.44", BuildConfig.VERSION_NAME)
+        assertEquals(10044, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1043 keeps validated forms dialog lifecycle and upgrade contracts`() {
+    fun `v1044 keeps trade calendar validated forms and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -85,6 +85,7 @@ class BuildContractTest {
         assertTrue(activity.contains("setPositiveButton(\"儲存\", null)"))
         assertTrue(activity.contains("toLongOrNull()"))
         assertTrue(activity.contains("toDoubleOrNull()"))
+        assertTrue(activity.contains("val tradeDate = dateInput(\"交易日期\""))
         assertTrue(activity.contains("交易日期不可晚於今天"))
         assertTrue(activity.contains("股權登記日不可早於除息日"))
         assertTrue(activity.contains("發放日不可早於股權登記日"))
@@ -142,7 +143,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第三十四階段 1.0.43｜輸入安全｜交易與股息表單驗證", FirstVersionContract.releaseLine)
+        assertEquals("第三十五階段 1.0.44｜交易日期｜月曆輸入一致化", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
