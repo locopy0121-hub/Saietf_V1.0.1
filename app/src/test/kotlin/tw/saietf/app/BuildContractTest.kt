@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.36", BuildConfig.VERSION_NAME)
-        assertEquals(10036, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.37", BuildConfig.VERSION_NAME)
+        assertEquals(10037, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1036 keeps transaction summary and upgrade contracts`() {
+    fun `v1037 keeps dividend status summary and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -87,6 +87,9 @@ class BuildContractTest {
         assertTrue(activity.contains("已要求行情中心立即刷新"))
         assertTrue(activity.contains("monthEstimated"))
         assertTrue(activity.contains("monthConfirmed"))
+        assertTrue(activity.contains("monthConfirmedRows"))
+        assertTrue(activity.contains("monthAnnouncedRows"))
+        assertTrue(activity.contains("monthConfirmedCash"))
         assertTrue(activity.contains("showDividendCalendarDialog"))
         assertTrue(activity.contains("YearMonth.now"))
         assertTrue(activity.contains("本月目前沒有股息事件"))
@@ -116,7 +119,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第二十七階段 1.0.36｜交易紀錄｜分頁買賣統計", FirstVersionContract.releaseLine)
+        assertEquals("第二十八階段 1.0.37｜股息月曆｜確認與預告統計", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
