@@ -81,16 +81,32 @@ class MarketDataCenter(
                     runtime.circuitBreaker.recordSuccess(nowEpochMillis)
                 }
             } catch (error: Throwable) {
-                runtime.circuitBreaker.recordFailure(
-                    nowEpochMillis = nowEpochMillis,
-                    cooldownMillis = backoffFor(
-                        error = error,
-                        consecutiveFailures = runtime.circuitBreaker
-                            .snapshot(nowEpochMillis)
-                            .consecutiveFailures + 1,
-                        policy = policy,
-                    ),
+                val failureCount = runtime.circuitBreaker
+                    .snapshot(nowEpochMillis)
+                    .consecutiveFailures + 1
+                val retryDelay = backoffFor(
+                    error = error,
+                    consecutiveFailures = failureCount,
+                    policy = policy,
                 )
+                val mustCooldownImmediately =
+                    error is MarketProviderException &&
+                        (
+                            error.retryAfterMillis != null ||
+                                error.httpStatusCode == 429 ||
+                                error.httpStatusCode == 403
+                        )
+                if (mustCooldownImmediately) {
+                    runtime.circuitBreaker.forceCooldown(
+                        nowEpochMillis = nowEpochMillis,
+                        cooldownMillis = retryDelay,
+                    )
+                } else {
+                    runtime.circuitBreaker.recordFailure(
+                        nowEpochMillis = nowEpochMillis,
+                        cooldownMillis = retryDelay,
+                    )
+                }
                 emptyMap()
             }
 
@@ -212,6 +228,7 @@ class MarketDataCenter(
             val availability = when {
                 breaker.state == ProviderCircuitState.COOLDOWN -> ProviderAvailability.COOLDOWN
                 breaker.state == ProviderCircuitState.RECOVERING -> ProviderAvailability.THROTTLED
+                nowEpochMillis < breaker.cooldownUntilEpochMillis -> ProviderAvailability.THROTTLED
                 nowEpochMillis < nextByInterval -> ProviderAvailability.THROTTLED
                 else -> ProviderAvailability.READY
             }
