@@ -1371,7 +1371,8 @@ class MainActivity : Activity() {
                     taxText.isNotEmpty() && taxValue == null -> "證交稅必須為整數"
                     taxValue != null && taxValue < 0L -> "證交稅不可小於 0"
                     tradeDateValue == null -> "交易日期格式必須為 YYYY-MM-DD"
-                    tradeDateValue.isAfter(LocalDate.now(taipeiZone)) -> "交易日期不可晚於今天"
+                    tradeDateValue != null && tradeDateValue.isAfter(LocalDate.now(taipeiZone)) ->
+                        "交易日期不可晚於今天"
                     else -> null
                 }
                 if (validationError != null) {
