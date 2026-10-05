@@ -26,9 +26,11 @@ class ProviderCircuitBreaker(
     fun canAttempt(nowEpochMillis: Long): Boolean =
         when (state) {
             ProviderCircuitState.HEALTHY,
-            ProviderCircuitState.DEGRADED,
             ProviderCircuitState.RECOVERING,
             -> true
+
+            ProviderCircuitState.DEGRADED ->
+                nowEpochMillis >= cooldownUntilEpochMillis
 
             ProviderCircuitState.COOLDOWN -> {
                 if (nowEpochMillis >= cooldownUntilEpochMillis) {
@@ -83,11 +85,12 @@ class ProviderCircuitBreaker(
         val shouldOpen = state == ProviderCircuitState.RECOVERING ||
             consecutiveFailures >= policy.failureThreshold
 
+        val requested = cooldownMillis ?: policy.defaultCooldownMillis
+        cooldownUntilEpochMillis = nowEpochMillis +
+            requested.coerceIn(1_000L, policy.maxCooldownMillis)
+
         if (shouldOpen) {
             state = ProviderCircuitState.COOLDOWN
-            val requested = cooldownMillis ?: policy.defaultCooldownMillis
-            cooldownUntilEpochMillis = nowEpochMillis +
-                requested.coerceIn(1_000L, policy.maxCooldownMillis)
         } else {
             state = ProviderCircuitState.DEGRADED
         }
