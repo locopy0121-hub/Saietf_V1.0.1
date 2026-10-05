@@ -7,10 +7,12 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import tw.saietf.core.database.dao.DailySnapshotDao
+import tw.saietf.core.database.dao.DividendEventDao
 import tw.saietf.core.database.dao.IntradayPortfolioPointDao
 import tw.saietf.core.database.dao.LedgerDao
 import tw.saietf.core.database.dao.PortfolioDao
 import tw.saietf.core.database.entity.DailySnapshotEntity
+import tw.saietf.core.database.entity.DividendEventEntity
 import tw.saietf.core.database.entity.IntradayPortfolioPointEntity
 import tw.saietf.core.database.entity.LedgerEntryEntity
 import tw.saietf.core.database.entity.ModelAllocationEntity
@@ -23,8 +25,9 @@ import tw.saietf.core.database.entity.PortfolioEntity
         ModelAllocationEntity::class,
         DailySnapshotEntity::class,
         IntradayPortfolioPointEntity::class,
+        DividendEventEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class SaiEtfDatabase : RoomDatabase() {
@@ -32,6 +35,7 @@ abstract class SaiEtfDatabase : RoomDatabase() {
     abstract fun portfolioDao(): PortfolioDao
     abstract fun dailySnapshotDao(): DailySnapshotDao
     abstract fun intradayPortfolioPointDao(): IntradayPortfolioPointDao
+    abstract fun dividendEventDao(): DividendEventDao
 
     companion object {
         const val DATABASE_NAME = "saietf.db"
@@ -80,6 +84,45 @@ abstract class SaiEtfDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS dividend_events (
+                        id TEXT NOT NULL,
+                        portfolioId TEXT NOT NULL,
+                        symbol TEXT NOT NULL,
+                        exDateTaipei TEXT NOT NULL,
+                        recordDateTaipei TEXT,
+                        paymentDateTaipei TEXT,
+                        cashPerShare REAL NOT NULL,
+                        status TEXT NOT NULL,
+                        sharesAtEntry INTEGER NOT NULL,
+                        estimatedCash INTEGER NOT NULL,
+                        createdAtEpochMillis INTEGER NOT NULL,
+                        updatedAtEpochMillis INTEGER NOT NULL,
+                        PRIMARY KEY(id),
+                        FOREIGN KEY(portfolioId) REFERENCES portfolios(id)
+                            ON UPDATE RESTRICT ON DELETE RESTRICT
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_dividend_events_portfolioId
+                    ON dividend_events(portfolioId)
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE UNIQUE INDEX IF NOT EXISTS
+                    index_dividend_events_portfolioId_symbol_exDateTaipei
+                    ON dividend_events(portfolioId, symbol, exDateTaipei)
+                    """.trimIndent(),
+                )
+            }
+        }
+
         val APPEND_ONLY_CALLBACK = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -110,7 +153,7 @@ abstract class SaiEtfDatabase : RoomDatabase() {
                 SaiEtfDatabase::class.java,
                 DATABASE_NAME,
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .addCallback(APPEND_ONLY_CALLBACK)
                 .build()
 
