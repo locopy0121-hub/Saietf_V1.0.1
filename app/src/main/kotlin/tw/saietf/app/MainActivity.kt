@@ -1082,6 +1082,7 @@ class MainActivity : Activity() {
                 when (card.title) {
                     "交易新增" -> showTradeDialog()
                     "交易紀錄" -> showTransactionHistoryDialog()
+                    "持股分析" -> showHoldingsAnalysisDialog()
                     "持股清單" -> showHoldingsDialog()
                     "行情牆" -> showMarketWall()
                     "股息" -> showDividendCenter()
