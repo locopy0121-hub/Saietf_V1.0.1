@@ -82,6 +82,12 @@ class MainActivity : Activity() {
     private val marketDataCenter: MarketDataCenter
         get() = (application as SaiEtfApplication).marketDataCenter
 
+    private val fugleApiKeyStore: FugleApiKeyStore
+        get() = (application as SaiEtfApplication).fugleApiKeyStore
+
+    private val fugleStreamingController: FugleStreamingController
+        get() = (application as SaiEtfApplication).fugleStreamingController
+
     private val performanceHistoryRepository: PerformanceHistoryRepository
         get() = (application as SaiEtfApplication).performanceHistoryRepository
 
@@ -330,6 +336,7 @@ class MainActivity : Activity() {
     override fun onPause() {
         marketPollingActive = false
         pollGeneration++
+        fugleStreamingController.pause()
         super.onPause()
     }
 
@@ -419,6 +426,7 @@ class MainActivity : Activity() {
         latestLedgerSnapshot = snapshot
 
         val symbols = snapshot.holdings.map { it.symbol }.toSet()
+        fugleStreamingController.updateSymbols(symbols)
         if (symbols.isEmpty()) {
             runOnUiThread { applyLedgerSnapshot(snapshot) }
             scheduleMarketRefresh(30_000L, generation)
@@ -2646,6 +2654,7 @@ class MainActivity : Activity() {
                     "顯示設定" -> showDisplaySettingsDialog()
                     "卡片間距" -> showSpacingSettingsDialog()
                     "系統狀態" -> showSystemStatusDialog()
+                    "Fugle 即時行情" -> showFugleSettingsDialog()
                     "立即更新行情" -> requestImmediateMarketRefresh()
                     "介面恢復標準" -> showResetDisplaySettingsConfirmation()
                 }
@@ -2710,6 +2719,63 @@ class MainActivity : Activity() {
             .show()
     }
 
+    private fun showFugleSettingsDialog() {
+        val configured = fugleApiKeyStore.hasKey()
+        val input = EditText(this).apply {
+            hint = if (configured) {
+                "已設定 API Key；輸入新 Key 可更換"
+            } else {
+                "輸入 Fugle API Key"
+            }
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val currentSymbols = latestLedgerSnapshot?.holdings?.map { it.symbol }?.toSet().orEmpty()
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Fugle 即時行情")
+            .setMessage(
+                "API Key 使用 Android Keystore 加密後儲存在本機，" +
+                    "不寫入 GitHub，也不納入 SaiETF JSON 備份。"
+            )
+            .setView(input)
+            .setNegativeButton("取消", null)
+            .setNeutralButton("清除") { _, _ ->
+                fugleApiKeyStore.clear()
+                fugleStreamingController.onCredentialChanged(currentSymbols)
+                Toast.makeText(this, "Fugle API Key 已清除", Toast.LENGTH_SHORT).show()
+            }
+            .setPositiveButton("儲存", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val apiKey = input.text?.toString()?.trim().orEmpty()
+                if (apiKey.isBlank()) {
+                    Toast.makeText(this, "請輸入 Fugle API Key", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                runCatching {
+                    fugleApiKeyStore.save(apiKey)
+                }.onSuccess {
+                    fugleStreamingController.onCredentialChanged(currentSymbols)
+                    Toast.makeText(
+                        this,
+                        "Fugle WebSocket 憑證已安全儲存並重新連線",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    dialog.dismiss()
+                }.onFailure { error ->
+                    Toast.makeText(
+                        this,
+                        "API Key 儲存失敗：${error.message ?: "未知錯誤"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+        }
+        dialog.show()
+    }
+
     private fun showSystemStatusDialog() {
         val snapshot = latestLedgerSnapshot
         val valuation = latestValuation
@@ -2731,6 +2797,8 @@ class MainActivity : Activity() {
             ?.joinToString(", ")
             ?.ifBlank { "無" }
             ?: "無"
+        val fugleHealth = fugleStreamingController.health()
+        val fugleConfigured = fugleApiKeyStore.hasKey()
         val providerHealthText = batch?.providerHealth
             ?.joinToString("｜") { health ->
                 buildString {
@@ -2759,7 +2827,15 @@ class MainActivity : Activity() {
             append("｜距今 ${quoteAgeSeconds?.let { "${it}s" } ?: "—"}")
             append("\n舊盤標的 $staleSymbols")
             append("\n來源保護 $providerHealthText")
-            append("\n\n同步策略：UI 1 秒刷新；行情中心統一節流、快取、退避與來源切換")
+            append("\nFugle WS ")
+            append(if (fugleConfigured) "已設定" else "未設定")
+            append("｜")
+            append(fugleHealth.availability.name)
+            if (fugleHealth.consecutiveFailures > 0) {
+                append(" fail=")
+                append(fugleHealth.consecutiveFailures)
+            }
+            append("\n\n同步策略：Fugle WebSocket 優先；UI 1 秒刷新；行情中心統一節流、快取、退避與來源切換")
             append("\n升級保護：固定 applicationId、固定開發簽章、versionCode 遞增、Room migration Gate")
         }
 
