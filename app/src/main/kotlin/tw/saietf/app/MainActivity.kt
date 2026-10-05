@@ -95,6 +95,7 @@ class MainActivity : Activity() {
     private var marketWallMode: MarketWallMode = MarketWallMode.COMPACT
     private var marketWallSort: MarketWallSort = MarketWallSort.CHANGE_PCT
     private var marketWallDescending: Boolean = true
+    private var marketWallRender: (() -> Unit)? = null
 
     private var performanceDialog: AlertDialog? = null
     private var performanceDialogContent: LinearLayout? = null
@@ -503,6 +504,7 @@ class MainActivity : Activity() {
         marketStatusValue.text =
             "行情中心：$sources｜$mode｜覆蓋 ${valuation.quotedHoldingCount}/" +
                 "${valuation.expectedHoldingCount}$stale$trend"
+        marketWallRender?.invoke()
     }
 
     private fun taipeiDateOf(epochMillis: Long): String =
@@ -1407,11 +1409,17 @@ class MainActivity : Activity() {
         dialog.setOnDismissListener {
             if (marketWallDialog === dialog) {
                 marketWallDialog = null
+                marketWallRender = null
             }
         }
         marketWallDialog = dialog
         render()
         dialog.show()
+        marketWallRender = {
+            if (marketWallDialog === dialog && dialog.isShowing) {
+                render()
+            }
+        }
     }
 
     private fun sourceName(source: MarketSource): String =
