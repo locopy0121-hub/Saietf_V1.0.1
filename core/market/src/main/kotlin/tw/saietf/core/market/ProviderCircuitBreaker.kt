@@ -4,7 +4,7 @@ data class CircuitBreakerPolicy(
     val failureThreshold: Int = 2,
     val recoverySuccessThreshold: Int = 2,
     val defaultCooldownMillis: Long = 5_000L,
-    val maxCooldownMillis: Long = 5L * 60L * 1_000L,
+    val maxCooldownMillis: Long = 15L * 60L * 1_000L,
 )
 
 data class CircuitBreakerSnapshot(
