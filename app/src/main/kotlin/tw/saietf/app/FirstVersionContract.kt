@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第十六階段 1.0.25｜持股清單｜個股明細下鑽"
+    const val releaseLine = "第十七階段 1.0.26｜行情牆｜新鮮度與手動刷新"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -64,7 +64,7 @@ object FirstVersionContract {
         LandingCard(
             title = "行情牆",
             body = "TWSE MIS 優先，Yahoo 無金鑰備援；盤中 1 秒更新",
-            status = "App 啟動 / 回前景立即抓取；行情牆開啟時沿用同一視窗並隨行情中心原地更新",
+            status = "App 啟動 / 回前景立即抓取；行情牆顯示更新時間、舊盤數量並可手動要求立即刷新",
         ),
         LandingCard(
             title = "股息",
