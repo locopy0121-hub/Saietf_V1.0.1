@@ -83,7 +83,7 @@ class BuildContractTest {
         assertTrue(activity.contains("修改 / 刪除採 Ledger 修正紀錄"))
         assertTrue(activity.contains("原始 Ledger 稽核軌跡"))
         assertTrue(activity.contains("來源保護"))
-        assertTrue(activity.contains("同步策略：UI 1 秒刷新"))
+        assertTrue(activity.contains("同步策略：Fugle WebSocket 優先；UI 1 秒刷新"))
         assertTrue(activity.contains("providerHealth"))
         assertTrue(marketModels.contains("MarketSource.FUGLE") || marketModels.contains("FUGLE"))
         assertTrue(marketModels.contains("QuoteQuality"))
