@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五十六階段 1.0.65｜圖表基礎｜台股 Session Policy・技術指標引擎"
-    const val phaseLine = "Taiwan Session Window｜Minute Bucket｜SMA/EMA/RSI/MACD｜Finance Lock 不變"
+    const val releaseLine = "第五十七階段 1.0.66｜正式介面骨架｜五分頁 Bottom Navigation"
+    const val phaseLine = "首頁｜行情｜交易｜股息｜設定｜正式 App Shell｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
