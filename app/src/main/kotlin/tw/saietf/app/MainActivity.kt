@@ -210,6 +210,62 @@ class MainActivity : Activity() {
         refreshDashboard()
     }
 
+    @Deprecated("Legacy activity result API retained for document compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+
+        when (requestCode) {
+            REQUEST_EXPORT_BACKUP -> {
+                val json = pendingBackupJson ?: return
+                runCatching {
+                    contentResolver.openOutputStream(uri)?.use { output ->
+                        output.write(json.toByteArray(Charsets.UTF_8))
+                    } ?: error("無法開啟輸出檔")
+                }.onSuccess {
+                    pendingBackupJson = null
+                    Toast.makeText(this, "SaiETF 備份已匯出", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(
+                        this,
+                        "備份匯出失敗：${error.message ?: "未知錯誤"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+
+            REQUEST_IMPORT_BACKUP -> {
+                ledgerExecutor.execute {
+                    runCatching {
+                        val raw = contentResolver.openInputStream(uri)?.bufferedReader()?.use {
+                            it.readText()
+                        } ?: error("無法讀取備份檔")
+                        backupRepository.restoreJson(raw)
+                    }.onSuccess { restored ->
+                        latestMarketBatch = null
+                        runOnUiThread {
+                            Toast.makeText(
+                                this,
+                                "還原完成：交易 ${restored.ledgerCount}、股息 ${restored.dividendCount}",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                            refreshDashboard()
+                        }
+                    }.onFailure { error ->
+                        runOnUiThread {
+                            Toast.makeText(
+                                this,
+                                "還原失敗：${error.message ?: "未知錯誤"}",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         marketPollingActive = true
@@ -657,6 +713,51 @@ class MainActivity : Activity() {
                 dialog.show()
             }
         }
+    }
+
+    private fun showBackupCenter() {
+        AlertDialog.Builder(this)
+            .setTitle("資料備份")
+            .setMessage(
+                "備份包含交易 Ledger、每日損益、盤中走勢與股息資料，" +
+                    "並附 SHA-256 校驗。為避免覆寫不可變帳務，還原僅允許沒有交易紀錄的帳務。",
+            )
+            .setNegativeButton("關閉", null)
+            .setNeutralButton("還原備份") { _, _ ->
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/json"
+                }
+                startActivityForResult(intent, REQUEST_IMPORT_BACKUP)
+            }
+            .setPositiveButton("匯出備份") { _, _ ->
+                ledgerExecutor.execute {
+                    runCatching { backupRepository.exportJson() }
+                        .onSuccess { json ->
+                            pendingBackupJson = json
+                            runOnUiThread {
+                                val fileName =
+                                    "SaiETF-backup-${LocalDate.now(taipeiZone)}.json"
+                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                    type = "application/json"
+                                    putExtra(Intent.EXTRA_TITLE, fileName)
+                                }
+                                startActivityForResult(intent, REQUEST_EXPORT_BACKUP)
+                            }
+                        }
+                        .onFailure { error ->
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "備份建立失敗：${error.message ?: "未知錯誤"}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }
+                }
+            }
+            .show()
     }
 
     private fun showDividendCenter() {
