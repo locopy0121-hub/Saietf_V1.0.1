@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.50", BuildConfig.VERSION_NAME)
-        assertEquals(10050, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.51", BuildConfig.VERSION_NAME)
+        assertEquals(10051, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,12 +37,14 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1050 keeps enriched Taiwan company profiles stock info tabs and upgrade contracts`() {
+    fun `v1051 keeps real daily K line enriched Taiwan company profiles and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
         val providers = File("src/main/kotlin/tw/saietf/app/AndroidMarketProviders.kt").readText()
         val taiwanProfiles = File("src/main/kotlin/tw/saietf/app/TaiwanInstrumentInfoProvider.kt").readText()
+        val dailyHistory = File("src/main/kotlin/tw/saietf/app/TaiwanDailyHistoryProvider.kt").readText()
+        val kLineView = File("src/main/kotlin/tw/saietf/app/TaiwanKLineView.kt").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
@@ -125,6 +127,12 @@ class BuildContractTest {
         assertTrue(taiwanProfiles.contains("已發行普通股數"))
         assertTrue(activity.contains("已發行普通股"))
         assertTrue(activity.contains("公司聯絡資料"))
+        assertTrue(activity.contains("taiwanDailyHistoryProvider"))
+        assertTrue(activity.contains("TaiwanKLineView"))
+        assertTrue(activity.contains("日 K｜近 1 年真實歷史資料"))
+        assertTrue(dailyHistory.contains("interval=1d&range=1y"))
+        assertTrue(dailyHistory.contains("TaiwanDailyBar"))
+        assertTrue(kLineView.contains("drawRect"))
         assertTrue(taiwanProfiles.contains("issuedCommonShares"))
         assertTrue(taiwanProfiles.contains("已發行普通股數"))
         assertTrue(activity.contains("已發行普通股"))
@@ -176,7 +184,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第四十一階段 1.0.50｜台股資訊｜股本股數與公司資料深化", FirstVersionContract.releaseLine)
+        assertEquals("第四十二階段 1.0.51｜個股走勢｜真實日 K 與一年歷史行情", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
