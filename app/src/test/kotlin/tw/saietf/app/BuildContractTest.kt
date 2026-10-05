@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.35", BuildConfig.VERSION_NAME)
-        assertEquals(10035, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.36", BuildConfig.VERSION_NAME)
+        assertEquals(10036, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1035 keeps holding navigation diagnostics and upgrade contracts`() {
+    fun `v1036 keeps transaction summary and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -59,6 +59,9 @@ class BuildContractTest {
         assertTrue(activity.contains("09:00"))
         assertTrue(activity.contains("13:30"))
         assertTrue(activity.contains("showTransactionHistoryDialog"))
+        assertTrue(activity.contains("pageBuyCount"))
+        assertTrue(activity.contains("pageSellCount"))
+        assertTrue(activity.contains("pageGrossAmount"))
         assertTrue(activity.contains("showDividendCenter"))
         assertTrue(activity.contains("DatePickerDialog"))
         assertTrue(activity.contains("showBackupCenter"))
@@ -113,7 +116,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第二十六階段 1.0.35｜持股明細｜上一檔下一檔切換", FirstVersionContract.releaseLine)
+        assertEquals("第二十七階段 1.0.36｜交易紀錄｜分頁買賣統計", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
