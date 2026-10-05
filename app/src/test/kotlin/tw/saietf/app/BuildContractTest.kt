@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.65", BuildConfig.VERSION_NAME)
-        assertEquals(10065, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.66", BuildConfig.VERSION_NAME)
+        assertEquals(10066, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1065 keeps chart foundation market data and upgrade contracts`() {
+    fun `v1066 keeps formal app shell chart foundation and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val application = File("src/main/kotlin/tw/saietf/app/SaiEtfApplication.kt").readText()
@@ -162,6 +162,15 @@ class BuildContractTest {
         assertTrue(technicalEngine.contains("fun ema"))
         assertTrue(technicalEngine.contains("fun rsi"))
         assertTrue(technicalEngine.contains("fun macd"))
+        assertTrue(activity.contains("private enum class MainTab"))
+        assertTrue(activity.contains("buildBottomNavigation"))
+        assertTrue(activity.contains("renderMainTab"))
+        assertTrue(activity.contains("renderHomePage"))
+        assertTrue(activity.contains("renderMarketPage"))
+        assertTrue(activity.contains("renderTradePage"))
+        assertTrue(activity.contains("renderDividendPage"))
+        assertTrue(activity.contains("renderSettingsPage"))
+        assertTrue(activity.contains("fitsSystemWindows = true"))
         assertTrue(activity.contains("showFugleSettingsDialog"))
         assertTrue(activity.contains("fugleStreamingController.updateSymbols"))
         assertTrue(activity.contains("fugleStreamingController.pause"))
@@ -303,8 +312,8 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第五十六階段 1.0.65｜圖表基礎｜台股 Session Policy・技術指標引擎", FirstVersionContract.releaseLine)
-        assertEquals("Taiwan Session Window｜Minute Bucket｜SMA/EMA/RSI/MACD｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第五十七階段 1.0.66｜正式介面骨架｜五分頁 Bottom Navigation", FirstVersionContract.releaseLine)
+        assertEquals("首頁｜行情｜交易｜股息｜設定｜正式 App Shell｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
