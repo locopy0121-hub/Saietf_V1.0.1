@@ -85,8 +85,8 @@ class SchemaMigrationTest {
     }
 
     @Test
-    fun databaseReportsSchemaVersionTwo() {
-        assertEquals(2, database.openHelper.readableDatabase.version)
+    fun databaseReportsSchemaVersionThree() {
+        assertEquals(3, database.openHelper.readableDatabase.version)
     }
 
     private fun entry(
