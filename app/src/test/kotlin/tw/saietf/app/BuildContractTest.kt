@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.15", BuildConfig.VERSION_NAME)
-        assertEquals(10015, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.16", BuildConfig.VERSION_NAME)
+        assertEquals(10016, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1015 keeps day week month year trend and upgrade contracts`() {
+    fun `v1016 keeps dividend trend ledger and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -59,6 +59,8 @@ class BuildContractTest {
         assertTrue(activity.contains("09:00"))
         assertTrue(activity.contains("13:30"))
         assertTrue(activity.contains("showTransactionHistoryDialog"))
+        assertTrue(activity.contains("showDividendCenter"))
+        assertTrue(activity.contains("DatePickerDialog"))
         assertTrue(activity.contains("listOf(10, 20, 50)"))
         assertTrue(providers.contains("YahooIntradayHistoryProvider"))
         assertTrue(providers.contains("interval=1m"))
@@ -68,7 +70,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第八階段 1.0.15｜日週月年走勢｜日線 09:00–13:30", FirstVersionContract.releaseLine)
+        assertEquals("第九階段 1.0.16｜股息中心｜預告登錄與確認更新", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
