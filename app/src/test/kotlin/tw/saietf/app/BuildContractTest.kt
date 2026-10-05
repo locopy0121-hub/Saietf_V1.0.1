@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.57", BuildConfig.VERSION_NAME)
-        assertEquals(10057, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.58", BuildConfig.VERSION_NAME)
+        assertEquals(10058, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1057 keeps synchronized market pacing transaction corrections and upgrade contracts`() {
+    fun `v1058 keeps market V2 hot store provider abstraction and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -49,6 +49,10 @@ class BuildContractTest {
         val institutional = File("src/main/kotlin/tw/saietf/app/TaiwanInstitutionalProvider.kt").readText()
         val revenue = File("src/main/kotlin/tw/saietf/app/TaiwanRevenueProvider.kt").readText()
         val capitalMetrics = File("src/main/kotlin/tw/saietf/app/TaiwanCapitalMetrics.kt").readText()
+        val marketModels = File("../core/market/src/main/kotlin/tw/saietf/core/market/MarketModels.kt").readText()
+        val marketProviderV2 = File("../core/market/src/main/kotlin/tw/saietf/core/market/MarketDataProviderV2.kt").readText()
+        val hotStore = File("../core/market/src/main/kotlin/tw/saietf/core/market/MemoryMarketStore.kt").readText()
+        val marketCenter = File("../core/market/src/main/kotlin/tw/saietf/core/market/MarketDataCenter.kt").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
@@ -78,6 +82,16 @@ class BuildContractTest {
         assertTrue(activity.contains("來源保護"))
         assertTrue(activity.contains("同步策略：UI 1 秒刷新"))
         assertTrue(activity.contains("providerHealth"))
+        assertTrue(marketModels.contains("MarketSource.FUGLE") || marketModels.contains("FUGLE"))
+        assertTrue(marketModels.contains("QuoteQuality"))
+        assertTrue(marketModels.contains("fallbackLevel"))
+        assertTrue(marketModels.contains("sourceTimestampEpochMillis"))
+        assertTrue(marketProviderV2.contains("interface MarketDataProvider"))
+        assertTrue(marketProviderV2.contains("MarketProviderCapability.STREAM") || marketProviderV2.contains("STREAM"))
+        assertTrue(marketProviderV2.contains("PollingMarketDataProviderAdapter"))
+        assertTrue(hotStore.contains("MutableStateFlow"))
+        assertTrue(hotStore.contains("StateFlow<Map<String, MarketQuote>>"))
+        assertTrue(marketCenter.contains("val quotesState = hotStore.quotes"))
         assertTrue(activity.contains("showDividendCenter"))
         assertTrue(activity.contains("DatePickerDialog"))
         assertTrue(activity.contains("showBackupCenter"))
@@ -216,8 +230,8 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第四十八階段 1.0.57｜行情同步｜1秒刷新與來源節流退避", FirstVersionContract.releaseLine)
-        assertEquals("同步行情中心｜TWSE MIS → Yahoo｜快取 / 限流退避 / Failover", FirstVersionContract.phaseLine)
+        assertEquals("第四十九階段 1.0.58｜行情中心 V2｜Market Model + Provider + Memory SSOT", FirstVersionContract.releaseLine)
+        assertEquals("Market Data Center V2｜StateFlow Hot Store｜Provider Adapter｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
