@@ -1,6 +1,7 @@
 package tw.saietf.app
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import tw.saietf.core.market.MarketDataCenter
 import tw.saietf.core.market.MarketEvent
