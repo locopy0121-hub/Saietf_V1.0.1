@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五階段 1.0.12｜每日損益快照｜盤中走勢紀錄"
+    const val releaseLine = "第六階段 1.0.13｜走勢圖｜30日損益統計"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -54,7 +54,7 @@ object FirstVersionContract {
         LandingCard(
             title = "行情牆",
             body = "TWSE MIS 優先，Yahoo 無金鑰備援；盤中 1 秒更新",
-            status = "App 啟動 / 回前景立即抓取；盤中走勢每 15 秒留點",
+            status = "App 啟動 / 回前景立即抓取；盤中走勢每 15 秒留點並繪圖",
         ),
         LandingCard(
             title = "股息",
