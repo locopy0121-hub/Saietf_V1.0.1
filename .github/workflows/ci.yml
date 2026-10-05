@@ -117,9 +117,9 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.23 APK
+      - name: Upload V1.0.24 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.23-market-wall-state-apk
+          name: SaiETF-V1.0.24-live-market-wall-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
