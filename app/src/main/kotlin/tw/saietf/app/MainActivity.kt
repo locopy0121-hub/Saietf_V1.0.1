@@ -953,6 +953,86 @@ class MainActivity : Activity() {
             .show()
     }
 
+    private fun showHoldingsAnalysisDialog() {
+        val valuation = latestValuation
+        if (valuation == null || !valuation.isComplete || valuation.totalMarketValue == null) {
+            Toast.makeText(
+                this,
+                "持股分析需等待全部持股取得有效行情",
+                Toast.LENGTH_SHORT,
+            ).show()
+            return
+        }
+
+        val total = valuation.totalMarketValue
+        if (total <= 0L) {
+            Toast.makeText(this, "目前沒有可分析的持股市值", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val rows = valuation.holdings
+            .filter { it.marketValue != null && it.marketValue > 0L }
+            .sortedByDescending { it.marketValue }
+
+        val weights = rows.map { row ->
+            (row.marketValue ?: 0L).toDouble() / total.toDouble()
+        }
+        val top1 = weights.firstOrNull()?.times(100.0) ?: 0.0
+        val top3 = weights.take(3).sum().times(100.0)
+
+        val body = buildString {
+            append("總市值 ${formatTwd(total)}")
+            append("\nTop 1 集中度 ${"%.1f".format(Locale.US, top1)}%")
+            append("｜Top 3 ${"%.1f".format(Locale.US, top3)}%")
+            append("\n\n")
+            append(
+                rows.mapIndexed { index, row ->
+                    val marketValue = row.marketValue ?: 0L
+                    val weight = weights.getOrElse(index) { 0.0 } * 100.0
+                    buildString {
+                        append("${row.symbol}｜${"%.1f".format(Locale.US, weight)}%")
+                        append("｜${formatTwd(marketValue)}")
+                        append("\n今日 ${row.todayPnl?.let(::formatSignedTwd) ?: "—"}")
+                        append("｜持有總損益 ${row.totalPnl?.let(::formatSignedTwd) ?: "—"}")
+                    }
+                }.joinToString("\n\n"),
+            )
+        }
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), 0)
+            addView(
+                AllocationBarView(this@MainActivity).apply {
+                    setPadding(0, dp(6), 0, dp(6))
+                    setWeights(weights.map { it.toFloat() })
+                },
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dp(54),
+                ),
+            )
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = body
+                    textSize = 14f
+                    setTextColor(Color.rgb(15, 23, 42))
+                    setPadding(0, dp(10), 0, dp(10))
+                },
+            )
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("持股分析 / 資產配置")
+            .setView(
+                ScrollView(this).apply {
+                    addView(content)
+                },
+            )
+            .setPositiveButton("關閉", null)
+            .show()
+    }
+
     private fun showHoldingsDialog() {
         val snapshot = latestLedgerSnapshot
         val valuation = latestValuation
