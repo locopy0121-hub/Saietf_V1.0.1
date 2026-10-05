@@ -24,6 +24,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.YearMonth
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -849,10 +850,117 @@ class MainActivity : Activity() {
                     .setTitle("股息中心")
                     .setMessage(body)
                     .setNegativeButton("關閉", null)
+                    .setNeutralButton("月曆") { _, _ ->
+                        showDividendCalendarDialog()
+                    }
                     .setPositiveButton("新增 / 更新") { _, _ ->
                         showDividendEntryDialog()
                     }
                     .show()
+            }
+        }
+    }
+
+    private fun showDividendCalendarDialog() {
+        ledgerExecutor.execute {
+            val rows = runCatching { dividendRepository.recent(120) }.getOrDefault(emptyList())
+            runOnUiThread {
+                var month = YearMonth.now(taipeiZone)
+                val content = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(16), dp(8), dp(16), 0)
+                }
+                val dialog = AlertDialog.Builder(this)
+                    .setTitle("股息月曆")
+                    .setView(
+                        ScrollView(this).apply {
+                            addView(content)
+                        },
+                    )
+                    .setPositiveButton("關閉", null)
+                    .create()
+
+                fun render() {
+                    content.removeAllViews()
+                    val monthRow = LinearLayout(this).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        addView(
+                            Button(this@MainActivity).apply {
+                                text = "←"
+                                setOnClickListener {
+                                    month = month.minusMonths(1)
+                                    render()
+                                }
+                            },
+                        )
+                        addView(
+                            TextView(this@MainActivity).apply {
+                                text = month.toString()
+                                textSize = 18f
+                                gravity = Gravity.CENTER
+                                setTextColor(Color.rgb(15, 23, 42))
+                            },
+                            LinearLayout.LayoutParams(
+                                0,
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                                1f,
+                            ),
+                        )
+                        addView(
+                            Button(this@MainActivity).apply {
+                                text = "→"
+                                setOnClickListener {
+                                    month = month.plusMonths(1)
+                                    render()
+                                }
+                            },
+                        )
+                    }
+                    content.addView(monthRow)
+
+                    val monthRows = rows
+                        .filter { it.exDateTaipei.startsWith(month.toString()) }
+                        .sortedBy { it.exDateTaipei }
+                    val monthTotal = monthRows.sumOf { it.estimatedCash }
+                    content.addView(
+                        TextView(this@MainActivity).apply {
+                            text = "本月 ${monthRows.size} 筆｜預估 ${formatTwd(monthTotal)}"
+                            textSize = 14f
+                            setTextColor(Color.rgb(71, 85, 105))
+                            setPadding(0, dp(8), 0, dp(8))
+                        },
+                    )
+                    if (monthRows.isEmpty()) {
+                        content.addView(
+                            TextView(this@MainActivity).apply {
+                                text = "本月目前沒有股息事件"
+                                textSize = 14f
+                                setTextColor(Color.rgb(100, 116, 139))
+                                setPadding(0, dp(8), 0, dp(8))
+                            },
+                        )
+                    } else {
+                        monthRows.forEach { row ->
+                            content.addView(
+                                TextView(this@MainActivity).apply {
+                                    val status = if (row.status == DividendRepository.Status.CONFIRMED) {
+                                        "已確認"
+                                    } else {
+                                        "預告"
+                                    }
+                                    text = "${row.exDateTaipei}｜${row.symbol}｜$status｜${formatTwd(row.estimatedCash)}"
+                                    textSize = 14f
+                                    setTextColor(Color.rgb(15, 23, 42))
+                                    setPadding(0, dp(6), 0, dp(6))
+                                },
+                            )
+                        }
+                    }
+                    dialog.setTitle("股息月曆｜$month")
+                }
+
+                render()
+                dialog.show()
             }
         }
     }
