@@ -21,6 +21,13 @@ enum class ProviderAvailability {
     COOLDOWN,
 }
 
+enum class ProviderCircuitState {
+    HEALTHY,
+    DEGRADED,
+    COOLDOWN,
+    RECOVERING,
+}
+
 data class MarketProviderPolicy(
     val minFetchIntervalMillis: Long,
     val maxBackoffMillis: Long = 60_000L,
@@ -33,6 +40,7 @@ data class ProviderHealth(
     val lastAttemptEpochMillis: Long?,
     val lastSuccessEpochMillis: Long?,
     val nextAllowedEpochMillis: Long,
+    val circuitState: ProviderCircuitState = ProviderCircuitState.HEALTHY,
 )
 
 class MarketProviderException(
