@@ -19,6 +19,10 @@ class SaiEtfApplication : Application() {
         PerformanceHistoryRepository(database)
     }
 
+    val intradayHistoryProvider: YahooIntradayHistoryProvider by lazy {
+        YahooIntradayHistoryProvider()
+    }
+
     val marketDataCenter: MarketDataCenter by lazy {
         MarketDataCenter(
             providers = listOf(
