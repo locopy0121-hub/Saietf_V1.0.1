@@ -111,6 +111,17 @@ class MainActivity : Activity() {
         PRICE("價格"),
     }
 
+    private enum class InstrumentInfoTab(val label: String) {
+        DETAIL("明細"),
+        TREND("走勢"),
+        TECHNICAL("技術"),
+        COMPONENTS("成分"),
+        INSTITUTIONAL("法人"),
+        FINANCIAL("財務"),
+        AFTER_HOURS("盤後"),
+        DATA("數據"),
+    }
+
     @Volatile
     private var marketPollingActive = false
 
@@ -1635,25 +1646,114 @@ class MainActivity : Activity() {
             ?.holdings
             ?.firstOrNull { it.symbol == symbol }
         val quote = market?.quote
+        val averageCost = if (holding.shares > 0L) {
+            holding.investmentCost / holding.shares.toDouble()
+        } else {
+            null
+        }
 
-        val body = buildString {
-            append("$symbol｜${holding.shares} 股")
-            append("\n投入成本 ${formatTwd(holding.investmentCost)}")
-            if (holding.shares > 0L) {
-                append("\n平均成本 ${formatTwd(holding.investmentCost / holding.shares.toDouble())}")
-            }
-            if (quote != null) {
-                append("\n\n現價 ${"%.2f".format(Locale.US, quote.price)}")
-                append("｜來源 ${sourceName(quote.source)}")
-                append("\n市值 ${market.marketValue?.let(::formatTwd) ?: "—"}")
-                append("\n今日損益 ${market.todayPnl?.let(::formatSignedTwd) ?: "—"}")
-                append("｜持有總損益 ${market.totalPnl?.let(::formatSignedTwd) ?: "—"}")
-                append("\n品質 ${quote.quality.name}")
-                append("｜時間 ${Instant.ofEpochMilli(quote.asOfEpochMillis).atZone(taipeiZone).toLocalTime()}")
-            } else {
-                append("\n\n行情待更新")
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(8), dp(16), dp(4))
+        }
+        content.addView(
+            cardText(
+                "${quote?.name ?: symbol}  $symbol",
+                20f,
+                Color.rgb(15, 23, 42),
+            ),
+        )
+        content.addView(
+            cardText(
+                quote?.let {
+                    buildString {
+                        append("現價 ${"%.2f".format(Locale.US, it.price)}")
+                        val previous = it.previousClose
+                        if (previous != null && previous > 0.0) {
+                            val change = it.price - previous
+                            val pct = change / previous * 100.0
+                            append("｜${if (change > 0) "+" else ""}${"%.2f".format(Locale.US, change)}")
+                            append(" (${if (pct > 0) "+" else ""}${"%.2f".format(Locale.US, pct)}%)")
+                        }
+                    }
+                } ?: "行情待更新",
+                18f,
+                Color.rgb(30, 41, 59),
+            ),
+        )
+
+        val metricRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(
+                buildInstrumentMetricCard(
+                    "均價",
+                    averageCost?.let { "%.2f".format(Locale.US, it) } ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            addView(
+                buildInstrumentMetricCard(
+                    "市值",
+                    market?.marketValue?.let(::formatTwd) ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(8)
+                },
+            )
+        }
+        content.addView(metricRow)
+
+        val tabContent = TextView(this).apply {
+            textSize = 14f
+            setTextColor(Color.rgb(51, 65, 85))
+            setPadding(0, dp(10), 0, dp(10))
+        }
+        var selectedTab = InstrumentInfoTab.DETAIL
+
+        fun renderTab() {
+            tabContent.text = when (selectedTab) {
+                InstrumentInfoTab.DETAIL -> buildString {
+                    append("持有 ${holding.shares} 股｜投入成本 ${formatTwd(holding.investmentCost)}")
+                    append("\n今日損益 ${market?.todayPnl?.let(::formatSignedTwd) ?: "—"}")
+                    append("｜持有總損益 ${market?.totalPnl?.let(::formatSignedTwd) ?: "—"}")
+                    if (quote != null) {
+                        append("\n\n開 ${quote.open?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("｜高 ${quote.high?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("｜低 ${quote.low?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("\n來源 ${sourceName(quote.source)}｜品質 ${quote.quality.name}")
+                        append("｜更新 ${Instant.ofEpochMilli(quote.asOfEpochMillis).atZone(taipeiZone).toLocalTime()}")
+                    }
+                }
+                InstrumentInfoTab.TREND -> "走勢｜使用真實行情資料；日內走勢與長週期圖表會共用標的歷史資料層。"
+                InstrumentInfoTab.TECHNICAL -> "技術｜K 線、均線、成交量與技術指標區。僅在真實歷史資料可用時顯示。"
+                InstrumentInfoTab.COMPONENTS -> "成分｜ETF 顯示成分與權重；個股顯示產業、指數成分與相關族群。"
+                InstrumentInfoTab.INSTITUTIONAL -> "法人｜外資、投信、自營商與融資融券資料區。"
+                InstrumentInfoTab.FINANCIAL -> "財務｜股本、市值、EPS、本益比、股價淨值比、殖利率與財務指標。"
+                InstrumentInfoTab.AFTER_HOURS -> "盤後｜收盤價、盤後資訊與當日行情摘要。"
+                InstrumentInfoTab.DATA -> "數據｜資料來源、時間、新鮮度與欄位完整性診斷。"
             }
         }
+
+        InstrumentInfoTab.entries.chunked(4).forEach { group ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                group.forEach { tab ->
+                    addView(
+                        Button(this@MainActivity).apply {
+                            text = tab.label
+                            setOnClickListener {
+                                selectedTab = tab
+                                renderTab()
+                            }
+                        },
+                        LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+                    )
+                }
+            }
+            content.addView(row)
+        }
+        content.addView(tabContent)
+        renderTab()
 
         val symbols = latestLedgerSnapshot
             ?.holdings
@@ -1663,8 +1763,12 @@ class MainActivity : Activity() {
         val currentIndex = symbols.indexOf(symbol)
 
         val dialog = AlertDialog.Builder(this)
-            .setTitle("持股明細｜$symbol")
-            .setMessage(body)
+            .setTitle("個股資訊｜$symbol")
+            .setView(
+                ScrollView(this).apply {
+                    addView(content)
+                },
+            )
             .setNegativeButton("上一檔") { _, _ ->
                 if (currentIndex > 0) {
                     showHoldingDetailDialog(symbols[currentIndex - 1])
@@ -1690,6 +1794,17 @@ class MainActivity : Activity() {
         }
         holdingDetailDialog = dialog
         dialog.show()
+    }
+
+    private fun buildInstrumentMetricCard(
+        title: String,
+        value: String,
+    ): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setBackgroundColor(Color.rgb(241, 245, 249))
+        setPadding(dp(12), dp(10), dp(12), dp(10))
+        addView(cardText(title, 13f, Color.rgb(100, 116, 139)))
+        addView(cardText(value, 18f, Color.rgb(15, 23, 42)))
     }
 
     private fun showMarketWall() {
