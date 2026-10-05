@@ -92,6 +92,9 @@ class MainActivity : Activity() {
     private var marketPollingActive = false
 
     private var marketWallDialog: AlertDialog? = null
+    private var marketWallMode: MarketWallMode = MarketWallMode.COMPACT
+    private var marketWallSort: MarketWallSort = MarketWallSort.CHANGE_PCT
+    private var marketWallDescending: Boolean = true
 
     private var performanceDialog: AlertDialog? = null
     private var performanceDialogContent: LinearLayout? = null
@@ -1266,9 +1269,9 @@ class MainActivity : Activity() {
             return
         }
 
-        var mode = MarketWallMode.COMPACT
-        var sort = MarketWallSort.CHANGE_PCT
-        var descending = true
+        var mode = marketWallMode
+        var sort = marketWallSort
+        var descending = marketWallDescending
 
         val controls = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1345,6 +1348,7 @@ class MainActivity : Activity() {
                             isEnabled = option != mode
                             setOnClickListener {
                                 mode = option
+                                marketWallMode = option
                                 render()
                             }
                         },
@@ -1367,6 +1371,7 @@ class MainActivity : Activity() {
                             isEnabled = option != sort
                             setOnClickListener {
                                 sort = option
+                                marketWallSort = option
                                 render()
                             }
                         },
@@ -1382,6 +1387,7 @@ class MainActivity : Activity() {
                         text = if (descending) "↓" else "↑"
                         setOnClickListener {
                             descending = !descending
+                            marketWallDescending = descending
                             render()
                         }
                     },
