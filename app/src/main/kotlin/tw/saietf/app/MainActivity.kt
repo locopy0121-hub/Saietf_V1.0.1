@@ -204,6 +204,7 @@ class MainActivity : Activity() {
     private var instrumentSelectedTab: InstrumentInfoTab = InstrumentInfoTab.DETAIL
     private var instrumentTabContentView: TextView? = null
     private var instrumentChartHost: LinearLayout? = null
+    private val instrumentTabButtons = linkedMapOf<InstrumentInfoTab, Button>()
     private var instrumentProfilePage: TaiwanInstrumentProfile? = null
     private var instrumentDailyBarsPage: List<TaiwanDailyBar> = emptyList()
     private var instrumentInstitutionalPage: TaiwanInstitutionalFlow? = null
@@ -275,6 +276,8 @@ class MainActivity : Activity() {
                         text = tab.label
                         textSize = 12f * displayScale
                         isAllCaps = false
+                        stateListAnimator = null
+                        contentDescription = "切換至${tab.label}"
                         setOnClickListener {
                             if (selectedMainTab != tab) {
                                 renderMainTab(tab)
@@ -299,6 +302,7 @@ class MainActivity : Activity() {
         activeInstrumentSymbol = null
         homeHoldingsContainer = null
         marketQuotesContainer = null
+        instrumentTabButtons.clear()
         pageContent.removeAllViews()
         when (tab) {
             MainTab.HOME -> renderHomePage()
@@ -317,6 +321,7 @@ class MainActivity : Activity() {
             button.setTextColor(
                 if (active) Color.rgb(15, 23, 42) else Color.rgb(100, 116, 139),
             )
+            button.isSelected = active
             button.setBackgroundColor(
                 if (active) Color.rgb(226, 232, 240) else Color.WHITE,
             )
@@ -909,6 +914,22 @@ class MainActivity : Activity() {
                 }
             }
         }
+    }
+
+    @Deprecated("Legacy back callback retained for Android navigation compatibility")
+    override fun onBackPressed() {
+        if (activeInstrumentSymbol != null) {
+            activeInstrumentSymbol = null
+            renderMainTab(instrumentReturnTab)
+            refreshDashboard()
+            return
+        }
+        if (selectedMainTab != MainTab.HOME) {
+            renderMainTab(MainTab.HOME)
+            refreshDashboard()
+            return
+        }
+        super.onBackPressed()
     }
 
     override fun onResume() {
@@ -2615,6 +2636,7 @@ class MainActivity : Activity() {
         instrumentInstitutionalLoaded = false
         instrumentRevenueLoading = false
         instrumentRevenueLoaded = false
+        instrumentTabButtons.clear()
 
         homeHoldingsContainer = null
         marketQuotesContainer = null
@@ -2731,15 +2753,23 @@ class MainActivity : Activity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 group.forEach { tab ->
+                    val tabButton = Button(this@MainActivity).apply {
+                        text = tab.label
+                        isAllCaps = false
+                        textSize = 12f * displayScale
+                        stateListAnimator = null
+                        contentDescription = "個股資訊：${tab.label}"
+                        setOnClickListener {
+                            selectInstrumentPageTab(tab)
+                        }
+                    }
+                    instrumentTabButtons[tab] = tabButton
                     addView(
-                        Button(this@MainActivity).apply {
-                            text = tab.label
-                            isAllCaps = false
-                            setOnClickListener {
-                                selectInstrumentPageTab(tab)
-                            }
+                        tabButton,
+                        LinearLayout.LayoutParams(0, dp(46), 1f).apply {
+                            marginStart = dp(1)
+                            marginEnd = dp(1)
                         },
-                        LinearLayout.LayoutParams(0, dp(46), 1f),
                     )
                 }
             }
@@ -2756,7 +2786,9 @@ class MainActivity : Activity() {
         instrumentTabContentView = TextView(this).apply {
             textSize = 14f * displayScale
             setTextColor(Color.rgb(51, 65, 85))
-            setPadding(dp(4), dp(12), dp(4), dp(28))
+            setBackgroundColor(Color.WHITE)
+            setPadding(dp(16), dp(14), dp(16), dp(22))
+            minHeight = dp(132)
         }
         pageContent.addView(instrumentTabContentView)
 
@@ -2765,8 +2797,22 @@ class MainActivity : Activity() {
 
     private fun selectInstrumentPageTab(tab: InstrumentInfoTab) {
         instrumentSelectedTab = tab
+        updateInstrumentTabSelection()
         ensureInstrumentPageData(tab)
         renderInstrumentPageTab()
+    }
+
+    private fun updateInstrumentTabSelection() {
+        instrumentTabButtons.forEach { (tab, button) ->
+            val active = tab == instrumentSelectedTab
+            button.isSelected = active
+            button.setTextColor(
+                if (active) Color.rgb(15, 23, 42) else Color.rgb(100, 116, 139),
+            )
+            button.setBackgroundColor(
+                if (active) Color.rgb(226, 232, 240) else Color.WHITE,
+            )
+        }
     }
 
     private fun ensureInstrumentPageData(tab: InstrumentInfoTab) {
