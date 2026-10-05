@@ -80,14 +80,14 @@ class MarketArbitratorTest {
     @Test
     fun `equal timestamp and quality prefer lower fallback level`() {
         val existing = quote(
-            source = MarketSource.TWSE_MIS,
+            source = MarketSource.YAHOO,
             price = 1425.0,
             sourceTime = 12_000L,
             sessionDate = "2026-10-05",
             fallbackLevel = 2,
         )
         val candidate = quote(
-            source = MarketSource.SHIOAJI,
+            source = MarketSource.TWSE_MIS,
             price = 1425.0,
             sourceTime = 12_000L,
             sessionDate = "2026-10-05",
