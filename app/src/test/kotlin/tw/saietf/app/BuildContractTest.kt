@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.55", BuildConfig.VERSION_NAME)
-        assertEquals(10055, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.56", BuildConfig.VERSION_NAME)
+        assertEquals(10056, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1055 keeps capital metrics monthly revenue and upgrade contracts`() {
+    fun `v1056 keeps transaction corrections capital metrics and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -69,6 +69,12 @@ class BuildContractTest {
         assertTrue(activity.contains("pageBuyCount"))
         assertTrue(activity.contains("pageSellCount"))
         assertTrue(activity.contains("pageGrossAmount"))
+        assertTrue(activity.contains("showEditTransactionDialog"))
+        assertTrue(activity.contains("showDeleteTransactionConfirmation"))
+        assertTrue(activity.contains("repository.correctTrade"))
+        assertTrue(activity.contains("repository.deleteTrade"))
+        assertTrue(activity.contains("修改 / 刪除採 Ledger 修正紀錄"))
+        assertTrue(activity.contains("原始 Ledger 稽核軌跡"))
         assertTrue(activity.contains("showDividendCenter"))
         assertTrue(activity.contains("DatePickerDialog"))
         assertTrue(activity.contains("showBackupCenter"))
@@ -207,7 +213,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第四十六階段 1.0.55｜資本市值｜股本與公司市值衍生統計", FirstVersionContract.releaseLine)
+        assertEquals("第四十七階段 1.0.56｜交易紀錄｜修改與刪除修正軌跡", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
