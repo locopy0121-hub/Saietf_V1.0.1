@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.64", BuildConfig.VERSION_NAME)
-        assertEquals(10064, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.65", BuildConfig.VERSION_NAME)
+        assertEquals(10065, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1064 keeps broker-free market data StockDetail schema and upgrade contracts`() {
+    fun `v1065 keeps chart foundation market data and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val application = File("src/main/kotlin/tw/saietf/app/SaiEtfApplication.kt").readText()
@@ -65,6 +65,8 @@ class BuildContractTest {
         val marketCacheDao = File("../core/database/src/main/kotlin/tw/saietf/core/database/dao/MarketCacheDao.kt").readText()
         val stockDetailRepository = File("src/main/kotlin/tw/saietf/app/StockDetailRepository.kt").readText()
         val stockDetailDao = File("../core/database/src/main/kotlin/tw/saietf/core/database/dao/StockDetailDao.kt").readText()
+        val sessionPolicy = File("src/main/kotlin/tw/saietf/app/TaiwanIntradaySessionPolicy.kt").readText()
+        val technicalEngine = File("src/main/kotlin/tw/saietf/app/TaiwanTechnicalEngine.kt").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
@@ -153,6 +155,13 @@ class BuildContractTest {
         assertTrue(stockDetailDao.contains("observeMonthlyRevenue"))
         assertTrue(stockDetailDao.contains("observeEtfComponents"))
         assertTrue(stockDetailDao.contains("observeDividendReference"))
+        assertTrue(sessionPolicy.contains("09"))
+        assertTrue(sessionPolicy.contains("minuteBucketEnd"))
+        assertTrue(sessionPolicy.contains("closeGraceEndEpochMillis"))
+        assertTrue(technicalEngine.contains("fun sma"))
+        assertTrue(technicalEngine.contains("fun ema"))
+        assertTrue(technicalEngine.contains("fun rsi"))
+        assertTrue(technicalEngine.contains("fun macd"))
         assertTrue(activity.contains("showFugleSettingsDialog"))
         assertTrue(activity.contains("fugleStreamingController.updateSymbols"))
         assertTrue(activity.contains("fugleStreamingController.pause"))
@@ -294,8 +303,8 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第五十五階段 1.0.64｜Broker-free 行情｜移除 Shioaji・保留開源設計精華", FirstVersionContract.releaseLine)
-        assertEquals("Fugle WebSocket → TWSE MIS → Yahoo｜Broker-free Market Data｜Finance Lock 不變", FirstVersionContract.phaseLine)
+        assertEquals("第五十六階段 1.0.65｜圖表基礎｜台股 Session Policy・技術指標引擎", FirstVersionContract.releaseLine)
+        assertEquals("Taiwan Session Window｜Minute Bucket｜SMA/EMA/RSI/MACD｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
             FirstVersionContract.dashboardMetrics.map { it.title },
