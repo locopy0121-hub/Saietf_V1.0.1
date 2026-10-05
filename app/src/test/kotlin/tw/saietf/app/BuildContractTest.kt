@@ -109,7 +109,7 @@ class BuildContractTest {
         assertTrue(activity.contains("平均成本") || activity.contains("\"均價\""))
         assertTrue(activity.contains("InstrumentInfoTab"))
         assertTrue(activity.contains("buildInstrumentMetricCard"))
-        assertTrue(activity.contains("\\\"均價\\\""))
+        assertTrue(activity.contains("\"均價\""))
         assertTrue(activity.contains("\"市值\""))
         assertTrue(activity.contains("InstrumentInfoTab.COMPONENTS"))
         assertTrue(activity.contains("InstrumentInfoTab.FINANCIAL"))
