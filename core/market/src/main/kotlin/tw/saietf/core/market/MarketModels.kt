@@ -2,7 +2,6 @@ package tw.saietf.core.market
 
 enum class MarketSource {
     FUGLE,
-    SHIOAJI,
     TWSE_MIS,
     YAHOO,
     CACHE,
