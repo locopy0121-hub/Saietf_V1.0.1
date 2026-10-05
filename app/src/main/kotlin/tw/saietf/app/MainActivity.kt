@@ -51,6 +51,7 @@ class MainActivity : Activity() {
     private val ledgerExecutor = Executors.newSingleThreadExecutor()
     private val marketScheduler = Executors.newSingleThreadScheduledExecutor()
     private val valuator = PortfolioMarketValuator()
+    private val taiwanInstrumentInfoProvider = TaiwanInstrumentInfoProvider()
     private val taipeiZone = ZoneId.of("Asia/Taipei")
 
     private val displayScale: Float
@@ -1709,6 +1710,14 @@ class MainActivity : Activity() {
             setPadding(0, dp(10), 0, dp(10))
         }
         var selectedTab = InstrumentInfoTab.DETAIL
+        var instrumentProfile: TaiwanInstrumentProfile? = null
+        var profileLoadFinished = false
+
+        fun profileSummary(profile: TaiwanInstrumentProfile): String = buildString {
+            append("${profile.market}｜${profile.industry ?: "產業別待資料源"}")
+            profile.listingDate?.let { append("｜掛牌 $it") }
+            profile.paidInCapitalTwd?.let { append("\n實收資本額 ${formatTwd(it)}") }
+        }
 
         fun renderTab() {
             tabContent.text = when (selectedTab) {
@@ -1723,14 +1732,52 @@ class MainActivity : Activity() {
                         append("\n來源 ${sourceName(quote.source)}｜品質 ${quote.quality.name}")
                         append("｜更新 ${Instant.ofEpochMilli(quote.asOfEpochMillis).atZone(taipeiZone).toLocalTime()}")
                     }
+                    val profile = instrumentProfile
+                    if (profile != null) {
+                        append("\n\n台股基本資料｜")
+                        append(profileSummary(profile))
+                    } else if (!profileLoadFinished) {
+                        append("\n\n台股基本資料載入中…")
+                    }
                 }
                 InstrumentInfoTab.TREND -> "走勢｜使用真實行情資料；日內走勢與長週期圖表會共用標的歷史資料層。"
                 InstrumentInfoTab.TECHNICAL -> "技術｜K 線、均線、成交量與技術指標區。僅在真實歷史資料可用時顯示。"
-                InstrumentInfoTab.COMPONENTS -> "成分｜ETF 顯示成分與權重；個股顯示產業、指數成分與相關族群。"
-                InstrumentInfoTab.INSTITUTIONAL -> "法人｜外資、投信、自營商與融資融券資料區。"
-                InstrumentInfoTab.FINANCIAL -> "財務｜股本、市值、EPS、本益比、股價淨值比、殖利率與財務指標。"
+                InstrumentInfoTab.COMPONENTS -> instrumentProfile?.let { profile ->
+                    "個股結構｜${profile.market}｜產業 ${profile.industry ?: "—"}\n" +
+                        "公司 ${profile.shortName}；指數成分與同族群資料將只在可核實來源存在時顯示。"
+                } ?: if (profileLoadFinished) {
+                    "成分｜目前未取得公司型標的資料；ETF 將使用基金成分 / 權重專屬資料層。"
+                } else {
+                    "成分｜台股標的資料載入中…"
+                }
+                InstrumentInfoTab.INSTITUTIONAL -> "法人｜外資、投信、自營商與融資融券資料區；無可核實資料時不產生推估值。"
+                InstrumentInfoTab.FINANCIAL -> instrumentProfile?.let { profile ->
+                    buildString {
+                        append("${profile.companyName}（${profile.shortName}）")
+                        append("\n市場 ${profile.market}｜產業 ${profile.industry ?: "—"}")
+                        append("\n實收資本額 ${profile.paidInCapitalTwd?.let(::formatTwd) ?: "—"}")
+                        append("｜面額 ${profile.parValueText ?: "—"}")
+                        append("\n掛牌日期 ${profile.listingDate ?: "—"}")
+                        append("\n董事長 ${profile.chairman ?: "—"}｜總經理 ${profile.generalManager ?: "—"}")
+                        profile.address?.let { append("\n地址 $it") }
+                    }
+                } ?: if (profileLoadFinished) {
+                    "財務 / 資本｜目前公開公司基本資料來源未回傳此代號；不以估算值冒充官方資料。"
+                } else {
+                    "財務 / 資本｜台股公開資料載入中…"
+                }
                 InstrumentInfoTab.AFTER_HOURS -> "盤後｜收盤價、盤後資訊與當日行情摘要。"
-                InstrumentInfoTab.DATA -> "數據｜資料來源、時間、新鮮度與欄位完整性診斷。"
+                InstrumentInfoTab.DATA -> buildString {
+                    append("行情來源 ${quote?.let { sourceName(it.source) } ?: "—"}")
+                    append("｜品質 ${quote?.quality?.name ?: "—"}")
+                    instrumentProfile?.let {
+                        append("\n基本資料來源 ${it.source}｜市場 ${it.market}")
+                    } ?: if (profileLoadFinished) {
+                        append("\n基本資料來源：未取得")
+                    } else {
+                        append("\n基本資料來源：載入中")
+                    }
+                }
             }
         }
 
@@ -1794,6 +1841,18 @@ class MainActivity : Activity() {
         }
         holdingDetailDialog = dialog
         dialog.show()
+
+        ledgerExecutor.execute {
+            val loadedProfile = runCatching {
+                taiwanInstrumentInfoProvider.fetchProfile(symbol)
+            }.getOrNull()
+            runOnUiThread {
+                if (holdingDetailDialog !== dialog || !dialog.isShowing) return@runOnUiThread
+                instrumentProfile = loadedProfile
+                profileLoadFinished = true
+                renderTab()
+            }
+        }
     }
 
     private fun buildInstrumentMetricCard(
