@@ -1,6 +1,6 @@
 # SaiETF Market Data Synchronization Policy
 
-Version line: V1.0.61
+Version line: V1.0.62
 
 ## Goal
 
@@ -114,3 +114,14 @@ If all live sources fail:
 - Persistence is throttled to a 5-second batch cadence and flushed when the Activity moves to background.
 - Room schema advances from v3 to v4 with an explicit 3→4 migration; destructive migration is not allowed.
 - The existing Finance Lock and append-only Ledger schema remain unchanged.
+
+
+## V1.0.62 Shioaji streaming failover contract
+
+- Realtime source order is Fugle WebSocket → Shioaji SSE Gateway → TWSE MIS → Yahoo → same-session cache.
+- Shioaji is a Secondary stream and is activated only when Fugle is not HEALTHY.
+- Android never embeds Shioaji broker credentials or the Python SDK; it connects only to a user-configured HTTPS SSE Gateway.
+- Gateway bearer tokens are encrypted with Android Keystore and excluded from backup JSON.
+- Shioaji events normalize into MarketQuote with source=SHIOAJI and fallbackLevel=1.
+- Fresh secondary quotes remain LIVE and pass through the same Session/Timestamp/Sequence arbitration.
+- When Fugle returns to HEALTHY, the secondary SSE stream is closed to minimize traffic and resource use.
