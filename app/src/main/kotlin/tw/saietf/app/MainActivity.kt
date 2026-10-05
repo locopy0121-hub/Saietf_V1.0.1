@@ -53,6 +53,16 @@ class MainActivity : Activity() {
     private val valuator = PortfolioMarketValuator()
     private val taipeiZone = ZoneId.of("Asia/Taipei")
 
+    private val displayScale: Float
+        get() = when (
+            getSharedPreferences("saietf-display", MODE_PRIVATE).getString("scale", "standard")
+        ) {
+            "compact" -> 0.90f
+            "large" -> 1.15f
+            else -> 1.00f
+        }
+
+
     private val repository: LedgerRepository
         get() = (application as SaiEtfApplication).ledgerRepository
 
@@ -1702,14 +1712,14 @@ class MainActivity : Activity() {
 
     private fun sectionTitle(textValue: String): TextView = TextView(this).apply {
         text = textValue
-        textSize = 18f
+        textSize = 18f * displayScale
         setTextColor(Color.rgb(15, 23, 42))
         setPadding(0, dp(6), 0, dp(8))
     }
 
     private fun statusText(value: String): TextView = TextView(this).apply {
         text = value
-        textSize = 13f
+        textSize = 13f * displayScale
         setTextColor(Color.rgb(100, 116, 139))
         setPadding(0, 0, 0, dp(8))
     }
@@ -1811,7 +1821,7 @@ class MainActivity : Activity() {
 
     private fun cardText(textValue: String, sizeSp: Float, color: Int): TextView = TextView(this).apply {
         text = textValue
-        textSize = sizeSp
+        textSize = sizeSp * displayScale
         setTextColor(color)
         setPadding(0, 0, 0, dp(4))
     }
