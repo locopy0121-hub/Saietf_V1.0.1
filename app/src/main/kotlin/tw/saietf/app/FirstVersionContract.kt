@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第四十三階段 1.0.52｜技術分析｜MA / RSI / 成交量指標"
+    const val releaseLine = "第四十四階段 1.0.53｜法人籌碼｜TWSE / TPEx 三大法人"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -59,7 +59,7 @@ object FirstVersionContract {
         LandingCard(
             title = "持股清單",
             body = "台股與 ETF 庫存由 Ledger 經 Finance Lock 投影",
-            status = "個股資訊頁以真實日 K 計算 MA5 / MA20 / MA60、RSI14 與 20 日均量；缺少足夠交易日即顯示 —，不補造指標",
+            status = "個股資訊頁加入 TWSE / TPEx 官方三大法人資料：外資、投信、自營商以最近可取得交易日顯示；來源缺失時不推估",
         ),
         LandingCard(
             title = "行情牆",
