@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第二十八階段 1.0.37｜股息月曆｜確認與預告統計"
+    const val releaseLine = "第二十九階段 1.0.38｜行情中心｜首頁立即更新"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -90,6 +90,11 @@ object FirstVersionContract {
             title = "系統狀態",
             body = "版本、Ledger、持股、行情覆蓋、資料來源與走勢點數",
             status = "提供版本、新鮮度與逐檔來源 / 品質 / 距今秒數診斷，並保留升級保護",
+        ),
+        LandingCard(
+            title = "立即更新行情",
+            body = "手動要求行情中心立即刷新持股報價",
+            status = "不改變盤中 1 秒排程；只追加一次立即更新請求",
         ),
     )
 
