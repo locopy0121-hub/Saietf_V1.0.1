@@ -1,6 +1,7 @@
 package tw.saietf.app
 
 import android.app.Application
+import java.security.KeyStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,6 +14,22 @@ import tw.saietf.core.market.MarketDataCenter
 
 class SaiEtfApplication : Application() {
     private val marketScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onCreate() {
+        super.onCreate()
+        removeRetiredShioajiSecrets()
+    }
+
+    private fun removeRetiredShioajiSecrets() {
+        getSharedPreferences("saietf-shioaji-gateway", MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
+        runCatching {
+            KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+                .deleteEntry("saietf-shioaji-gateway-token-v1")
+        }
+    }
 
     val database: SaiEtfDatabase by lazy {
         SaiEtfDatabase.build(this)
@@ -40,10 +57,6 @@ class SaiEtfApplication : Application() {
 
     val fugleApiKeyStore: FugleApiKeyStore by lazy {
         FugleApiKeyStore(this)
-    }
-
-    val shioajiGatewaySettingsStore: ShioajiGatewaySettingsStore by lazy {
-        ShioajiGatewaySettingsStore(this)
     }
 
     internal val fugleWebSocketProvider: FugleWebSocketProvider by lazy {
@@ -81,24 +94,6 @@ class SaiEtfApplication : Application() {
         FugleStreamingController(
             scope = marketScope,
             provider = fugleWebSocketProvider,
-            marketDataCenter = marketDataCenter,
-        )
-    }
-
-    internal val shioajiSseGatewayProvider: ShioajiSseGatewayProvider by lazy {
-        ShioajiSseGatewayProvider(
-            endpointProvider = shioajiGatewaySettingsStore::url,
-            bearerTokenProvider = shioajiGatewaySettingsStore::bearerToken,
-        )
-    }
-
-    internal val realtimeStreamingController: RealtimeStreamingController by lazy {
-        RealtimeStreamingController(
-            scope = marketScope,
-            fugleController = fugleStreamingController,
-            fugleProvider = fugleWebSocketProvider,
-            shioajiProvider = shioajiSseGatewayProvider,
-            shioajiSettings = shioajiGatewaySettingsStore,
             marketDataCenter = marketDataCenter,
         )
     }
