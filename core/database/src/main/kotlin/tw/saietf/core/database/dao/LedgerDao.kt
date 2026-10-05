@@ -59,6 +59,24 @@ interface LedgerDao {
         limit: Int,
     ): List<LedgerEntryEntity>
 
+
+    @Query(
+        """
+        SELECT * FROM ledger_entries
+        WHERE portfolioId = :portfolioId
+        ORDER BY occurredAtEpochMillis DESC, id DESC
+        LIMIT :limit OFFSET :offset
+        """,
+    )
+    fun pageBlocking(
+        portfolioId: String,
+        limit: Int,
+        offset: Int,
+    ): List<LedgerEntryEntity>
+
+    @Query("SELECT COUNT(*) FROM ledger_entries WHERE portfolioId = :portfolioId")
+    fun countBlocking(portfolioId: String): Long
+
     @Query("SELECT COUNT(*) FROM ledger_entries WHERE portfolioId = :portfolioId")
     suspend fun count(portfolioId: String): Long
 }
