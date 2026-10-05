@@ -1830,6 +1830,16 @@ class MainActivity : Activity() {
             ?.joinToString(" + ")
             ?.ifBlank { "無" }
             ?: "無"
+        val latestAsOf = batch?.quotes?.values?.maxOfOrNull { it.asOfEpochMillis }
+        val quoteAgeSeconds = latestAsOf?.let {
+            ((System.currentTimeMillis() - it).coerceAtLeast(0L) / 1_000L)
+        }
+        val staleSymbols = batch?.staleQuotes
+            ?.map { it.symbol }
+            ?.sorted()
+            ?.joinToString(", ")
+            ?.ifBlank { "無" }
+            ?: "無"
         val body = buildString {
             append("版本 ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
             append("\n套件 ${BuildConfig.APPLICATION_ID}")
@@ -1840,6 +1850,9 @@ class MainActivity : Activity() {
             append("\n舊盤 ${batch?.staleQuotes?.size ?: 0} 檔")
             append("｜今日走勢 $latestIntradayPointCount 點")
             append("\n行情輪詢 ${if (marketPollingActive) "執行中" else "暫停"}")
+            append("\n最新行情 ${latestAsOf?.let { Instant.ofEpochMilli(it).atZone(taipeiZone).toLocalTime() } ?: "—"}")
+            append("｜距今 ${quoteAgeSeconds?.let { "${it}s" } ?: "—"}")
+            append("\n舊盤標的 $staleSymbols")
             append("\n\n升級保護：固定 applicationId、固定開發簽章、versionCode 遞增、Room migration Gate")
         }
 
