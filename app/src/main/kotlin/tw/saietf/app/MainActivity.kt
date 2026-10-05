@@ -2698,6 +2698,8 @@ class MainActivity : Activity() {
                     append("\n\n公司基本資料載入中…")
                 } else if (instrumentProfileLoaded) {
                     append("\n\n公司基本資料來源未回傳此代號。")
+                } else {
+                    Unit
                 }
             }
 
