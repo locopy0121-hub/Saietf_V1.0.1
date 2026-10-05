@@ -1,6 +1,6 @@
 # SaiETF Market Data Synchronization Policy
 
-Version line: V1.0.62
+Version line: V1.0.64
 
 ## Goal
 
@@ -44,9 +44,10 @@ No client can guarantee that a third-party service will never throttle or block 
 
 Authenticated streaming is preferred over high-frequency REST polling when an authorized provider is configured.
 
-Planned adapters:
-- Fugle WebSocket: trades / aggregates / candles / books.
-- Shioaji streaming or officially supported realtime interfaces where account authorization and usage terms permit.
+Active streaming adapter:
+- Fugle WebSocket: trades today, with aggregates / candles / books as planned extensions.
+
+Broker-account-only adapters are intentionally excluded from the Android app.
 
 API keys or broker credentials must not be committed to the repository. An adapter is enabled only after the user configures valid credentials through an approved secret/configuration path.
 
@@ -98,7 +99,7 @@ If all live sources fail:
 - A prior-session quote can never overwrite a newer session quote.
 - For the same streaming provider and session, a lower sequence is rejected even when it arrives later.
 - A fresher fallback quote may replace an older primary quote; fallback level does not imply stale quality.
-- Equal-timestamp ties prefer FUGLE → SHIOAJI → TWSE MIS → YAHOO → CACHE.
+- Equal-timestamp ties prefer FUGLE → TWSE MIS → YAHOO → CACHE.
 - Polling providers use a circuit breaker: HEALTHY → DEGRADED → COOLDOWN → RECOVERING → HEALTHY.
 - Two consecutive failures open the circuit by default; recovery requires two successful probes.
 - HTTP 429 honors Retry-After where available; HTTP 403 uses a longer cooldown; network/5xx backoff includes bounded jitter.
@@ -116,12 +117,11 @@ If all live sources fail:
 - The existing Finance Lock and append-only Ledger schema remain unchanged.
 
 
-## V1.0.62 Shioaji streaming failover contract
+## V1.0.64 broker-free source policy
 
-- Realtime source order is Fugle WebSocket → Shioaji SSE Gateway → TWSE MIS → Yahoo → same-session cache.
-- Shioaji is a Secondary stream and is activated only when Fugle is not HEALTHY.
-- Android never embeds Shioaji broker credentials or the Python SDK; it connects only to a user-configured HTTPS SSE Gateway.
-- Gateway bearer tokens are encrypted with Android Keystore and excluded from backup JSON.
-- Shioaji events normalize into MarketQuote with source=SHIOAJI and fallbackLevel=1.
-- Fresh secondary quotes remain LIVE and pass through the same Session/Timestamp/Sequence arbitration.
-- When Fugle returns to HEALTHY, the secondary SSE stream is closed to minimize traffic and resource use.
+- The experimental Shioaji SSE path introduced during V1.0.62 development is retired from SaiETF.
+- Reason: Shioaji API credentials require an eligible SinoPac Securities account, which conflicts with SaiETF's goal of broadly usable market-data acquisition.
+- The app removes Shioaji UI, runtime provider, gateway token storage, source enum, tests, and documentation.
+- On upgrade, retired Shioaji SharedPreferences and Android Keystore entries are purged.
+- Current realtime/fallback path is Fugle WebSocket → TWSE MIS → Yahoo → same-session cache.
+- Open-source projects may still be studied for architecture and UX patterns, but broker-specific code is not copied into the app.
