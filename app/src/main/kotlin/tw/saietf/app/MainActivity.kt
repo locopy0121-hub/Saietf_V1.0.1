@@ -1128,6 +1128,12 @@ class MainActivity : Activity() {
                 return@execute
             }
 
+            val pageBuyCount = page.rows.count { it.side == LedgerEntryKind.BUY }
+            val pageSellCount = page.rows.count { it.side == LedgerEntryKind.SELL }
+            val pageGrossAmount = page.rows.sumOf { row ->
+                (row.shares.toDouble() * row.price).toLong()
+            }
+
             val body = if (page.rows.isEmpty()) {
                 "目前沒有交易紀錄。"
             } else {
@@ -1162,7 +1168,11 @@ class MainActivity : Activity() {
                     setPadding(dp(18), dp(6), dp(18), 0)
                     addView(
                         TextView(this@MainActivity).apply {
-                            text = "第 ${page.pageIndex + 1} / ${page.totalPages} 頁｜共 ${page.totalCount} 筆"
+                            text = buildString {
+                                append("第 ${page.pageIndex + 1} / ${page.totalPages} 頁｜共 ${page.totalCount} 筆")
+                                append("\n本頁 買進 $pageBuyCount｜賣出 $pageSellCount")
+                                append("｜成交額 ${formatTwd(pageGrossAmount)}")
+                            }
                             textSize = 14f
                             setTextColor(Color.rgb(71, 85, 105))
                         },
