@@ -2188,22 +2188,14 @@ class MainActivity : ComponentActivity() {
         returnPageIndex: Int,
         returnPageSize: Int,
     ) {
-        val sideSpinner = Spinner(this).apply {
-            adapter = ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                listOf("買進", "賣出"),
-            )
-            setSelection(if (row.side == LedgerEntryKind.BUY) 0 else 1)
-        }
-        val modeSpinner = Spinner(this).apply {
-            adapter = ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                listOf("整股", "零股"),
-            )
-            setSelection(if (row.tradeMode == TradeMode.ROUND_LOT) 0 else 1)
-        }
+        val sideSpinner = optionSpinner(
+            listOf("買進", "賣出"),
+            if (row.side == LedgerEntryKind.BUY) 0 else 1,
+        )
+        val modeSpinner = optionSpinner(
+            listOf("整股", "零股"),
+            if (row.tradeMode == TradeMode.ROUND_LOT) 0 else 1,
+        )
         val symbol = input("代號，例如 0050").apply { setText(row.symbol) }
         val shares = input("股數").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
@@ -2400,20 +2392,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showTradeDialog() {
-        val sideSpinner = Spinner(this).apply {
-            adapter = ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                listOf("買進", "賣出"),
-            )
-        }
-        val modeSpinner = Spinner(this).apply {
-            adapter = ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                listOf("整股", "零股"),
-            )
-        }
+        val sideSpinner = optionSpinner(listOf("買進", "賣出"))
+        val modeSpinner = optionSpinner(listOf("整股", "零股"))
         val symbol = input("代號，例如 0050")
         val shares = input("股數").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
@@ -4173,19 +4153,49 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun optionSpinner(
+        items: List<String>,
+        selection: Int = 0,
+    ): Spinner = Spinner(this).apply {
+        adapter = ArrayAdapter(
+            this@MainActivity,
+            android.R.layout.simple_spinner_dropdown_item,
+            items,
+        )
+        setSelection(selection.coerceIn(0, (items.size - 1).coerceAtLeast(0)))
+        background = SaiTheme.rounded(
+            fill = SaiTheme.INPUT,
+            radiusDp = 14f,
+            density = resources.displayMetrics.density,
+            strokeColor = SaiTheme.BORDER,
+            strokeDp = 1,
+        )
+        minimumHeight = dp(52)
+        setPadding(dp(12), 0, dp(10), 0)
+    }
+
     private fun input(hintValue: String): EditText = EditText(this).apply {
         hint = hintValue
-        textSize = 15f
-        setTextColor(Color.rgb(15, 23, 42))
+        textSize = 15f * displayScale
+        setTextColor(SaiTheme.TEXT)
         setHintTextColor(Color.rgb(148, 163, 184))
-        setPadding(0, dp(8), 0, dp(8))
+        background = SaiTheme.rounded(
+            fill = SaiTheme.INPUT,
+            radiusDp = 14f,
+            density = resources.displayMetrics.density,
+            strokeColor = SaiTheme.BORDER,
+            strokeDp = 1,
+        )
+        minimumHeight = dp(52)
+        setPadding(dp(14), dp(10), dp(14), dp(10))
     }
 
     private fun label(value: String): TextView = TextView(this).apply {
         text = value
-        textSize = 13f
-        setTextColor(Color.rgb(71, 85, 105))
-        setPadding(0, dp(8), 0, 0)
+        textSize = 13f * displayScale
+        setTextColor(SaiTheme.MUTED)
+        setTypeface(typeface, android.graphics.Typeface.BOLD)
+        setPadding(dp(2), dp(10), 0, dp(5))
     }
 
     private fun cardText(textValue: String, sizeSp: Float, color: Int): TextView = TextView(this).apply {
