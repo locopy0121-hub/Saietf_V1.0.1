@@ -11,6 +11,32 @@ enum class QuoteQuality {
     STALE,
 }
 
+enum class ProviderAvailability {
+    READY,
+    THROTTLED,
+    COOLDOWN,
+}
+
+data class MarketProviderPolicy(
+    val minFetchIntervalMillis: Long,
+    val maxBackoffMillis: Long = 60_000L,
+)
+
+data class ProviderHealth(
+    val source: MarketSource,
+    val availability: ProviderAvailability,
+    val consecutiveFailures: Int,
+    val lastAttemptEpochMillis: Long?,
+    val lastSuccessEpochMillis: Long?,
+    val nextAllowedEpochMillis: Long,
+)
+
+class MarketProviderException(
+    val httpStatusCode: Int? = null,
+    val retryAfterMillis: Long? = null,
+    message: String,
+) : RuntimeException(message)
+
 data class MarketQuote(
     val symbol: String,
     val name: String = symbol,
@@ -35,4 +61,5 @@ data class MarketBatch(
     val unresolvedSymbols: Set<String>,
     val sourcesTried: List<MarketSource>,
     val refreshedAtEpochMillis: Long,
+    val providerHealth: List<ProviderHealth> = emptyList(),
 )
