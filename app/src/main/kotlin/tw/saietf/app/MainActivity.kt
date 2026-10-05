@@ -1350,6 +1350,16 @@ class MainActivity : Activity() {
             val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             saveButton.setOnClickListener {
                 val symbolValue = symbol.text.toString().trim()
+                val selectedSide = if (sideSpinner.selectedItemPosition == 0) {
+                    LedgerEntryKind.BUY
+                } else {
+                    LedgerEntryKind.SELL
+                }
+                val availableShares = latestLedgerSnapshot
+                    ?.holdings
+                    ?.firstOrNull { it.symbol.equals(symbolValue, ignoreCase = true) }
+                    ?.shares
+                    ?: 0L
                 val sharesValue = shares.text.toString().trim().toLongOrNull()
                 val priceValue = price.text.toString().trim().toDoubleOrNull()
                 val feeText = fee.text.toString().trim()
@@ -1362,6 +1372,8 @@ class MainActivity : Activity() {
                 val validationError = when {
                     symbolValue.isEmpty() -> "請輸入 ETF / 股票代號"
                     sharesValue == null || sharesValue <= 0L -> "股數必須為大於 0 的整數"
+                    selectedSide == LedgerEntryKind.SELL && sharesValue > availableShares ->
+                        "賣出股數 $sharesValue 超過目前持有 $availableShares 股"
                     priceValue == null || !priceValue.isFinite() || priceValue <= 0.0 ->
                         "成交價必須大於 0"
                     feeText.isNotEmpty() && feeValue == null -> "手續費必須為整數"
@@ -1382,11 +1394,7 @@ class MainActivity : Activity() {
                 val validPrice = priceValue ?: return@setOnClickListener
                 val validTradeDate = tradeDateValue ?: return@setOnClickListener
                 val command = LedgerRepository.AddTradeCommand(
-                    side = if (sideSpinner.selectedItemPosition == 0) {
-                        LedgerEntryKind.BUY
-                    } else {
-                        LedgerEntryKind.SELL
-                    },
+                    side = selectedSide,
                     symbol = symbolValue,
                     shares = validShares,
                     price = validPrice,
