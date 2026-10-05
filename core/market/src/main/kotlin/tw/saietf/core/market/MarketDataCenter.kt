@@ -9,6 +9,7 @@ class MarketDataCenter(
     private val liveThresholdMillis: Long = 30_000L,
     private val maxOfflineCacheAgeMillis: Long = 7L * 24L * 60L * 60L * 1_000L,
     private val providerPolicies: Map<MarketSource, MarketProviderPolicy> = defaultPolicies,
+    private val hotStore: MemoryMarketStore = MemoryMarketStore(),
 ) {
     private data class ProviderRuntime(
         var lastAttemptEpochMillis: Long? = null,
@@ -20,6 +21,8 @@ class MarketDataCenter(
     private val cache = linkedMapOf<String, MarketQuote>()
     private val taipeiZone = ZoneId.of("Asia/Taipei")
     private val providerRuntime = providers.associate { it.source to ProviderRuntime() }.toMutableMap()
+
+    val quotesState = hotStore.quotes
 
     fun refresh(
         symbols: Set<String>,
@@ -110,6 +113,10 @@ class MarketDataCenter(
             }
         }
 
+        if (accepted.isNotEmpty()) {
+            hotStore.publish(accepted.values)
+        }
+
         return MarketBatch(
             quotes = accepted.toMap(),
             staleQuotes = stale.toMap(),
@@ -142,6 +149,9 @@ class MarketDataCenter(
                 nextAllowedEpochMillis = nextAllowed,
             )
         }
+
+    fun memoryQuotes(symbols: Set<String> = emptySet()): Map<String, MarketQuote> =
+        hotStore.snapshot(symbols)
 
     fun cachedQuotes(symbols: Set<String>): Map<String, MarketQuote> {
         val requested = symbols.map { it.trim().uppercase(Locale.US) }.toSet()
