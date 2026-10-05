@@ -84,7 +84,7 @@ class MarketArbitratorTest {
             price = 1425.0,
             sourceTime = 12_000L,
             sessionDate = "2026-10-05",
-            fallbackLevel = 3,
+            fallbackLevel = 0,
         )
         val candidate = quote(
             source = MarketSource.FUGLE,
