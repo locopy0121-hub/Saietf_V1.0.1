@@ -52,6 +52,7 @@ class LedgerRepository(
         val tax: Long?,
         val tradeDateTaipei: String,
         val note: String?,
+        val isEdited: Boolean,
     )
 
     data class TransactionPage(
@@ -92,10 +93,83 @@ class LedgerRepository(
             createdAtEpochMillis = now,
         )
 
-        val existing = database.ledgerDao().listChronological(DEFAULT_PORTFOLIO_ID)
-        val sameSymbol = existing.filter { it.symbol.equals(normalizedSymbol, ignoreCase = true) }
-        projector.project((sameSymbol + candidate).map(::toFinanceEntry))
+        val existing = effectiveLedgerEntries(
+            database.ledgerDao().listChronological(DEFAULT_PORTFOLIO_ID),
+        )
+        val candidateEffective = existing + candidate
+        validateEffectiveProjection(candidateEffective)
         database.ledgerDao().insertBlocking(candidate)
+        return loadDashboard()
+    }
+
+    fun correctTrade(
+        entryId: String,
+        command: AddTradeCommand,
+    ): DashboardSnapshot {
+        val allEntries = database.ledgerDao().listChronological(DEFAULT_PORTFOLIO_ID)
+        val activeEntries = effectiveLedgerEntries(allEntries)
+        val target = activeEntries.firstOrNull { it.id == entryId }
+            ?: error("找不到可修改的交易紀錄")
+
+        val normalizedSymbol = command.symbol.trim().uppercase(Locale.US)
+        require(normalizedSymbol.isNotBlank()) { "請輸入股票 / ETF 代號" }
+        require(command.shares > 0) { "股數必須大於 0" }
+        require(command.price.isFinite() && command.price > 0.0) { "成交價必須大於 0" }
+        require(command.actualFee == null || command.actualFee >= 0) { "手續費不可為負數" }
+        require(command.actualTax == null || command.actualTax >= 0) { "證交稅不可為負數" }
+        LocalDate.parse(command.tradeDateTaipei)
+
+        val now = System.currentTimeMillis()
+        val correctionId =
+            target.id + "~edit-" + "%013d".format(Locale.US, now) + "-" + UUID.randomUUID()
+        val correction = LedgerEntryEntity(
+            id = correctionId,
+            portfolioId = DEFAULT_PORTFOLIO_ID,
+            idempotencyKey = "edit-$correctionId",
+            entryType = command.side.name,
+            symbol = normalizedSymbol,
+            shares = command.shares,
+            price = command.price,
+            tradeMode = command.tradeMode.name,
+            actualFee = command.actualFee,
+            actualTax = if (command.side == LedgerEntryKind.SELL) command.actualTax else null,
+            occurredAtEpochMillis = target.occurredAtEpochMillis,
+            tradeDateTaipei = command.tradeDateTaipei,
+            note = command.note?.trim()?.takeIf { it.isNotEmpty() },
+            correctionOfEntryId = target.id,
+            correctionReason = CORRECTION_EDIT,
+            createdAtEpochMillis = now,
+        )
+
+        validateEffectiveProjection(effectiveLedgerEntries(allEntries + correction))
+        database.ledgerDao().insertBlocking(correction)
+        return loadDashboard()
+    }
+
+    fun deleteTrade(entryId: String): DashboardSnapshot {
+        val allEntries = database.ledgerDao().listChronological(DEFAULT_PORTFOLIO_ID)
+        val activeEntries = effectiveLedgerEntries(allEntries)
+        val target = activeEntries.firstOrNull { it.id == entryId }
+            ?: error("找不到可刪除的交易紀錄")
+
+        val now = System.currentTimeMillis()
+        val correctionId =
+            target.id + "~delete-" + "%013d".format(Locale.US, now) + "-" + UUID.randomUUID()
+        val deletionMarker = target.copy(
+            id = correctionId,
+            idempotencyKey = "delete-$correctionId",
+            shares = 0L,
+            price = 0.0,
+            actualFee = null,
+            actualTax = null,
+            note = null,
+            correctionOfEntryId = target.id,
+            correctionReason = CORRECTION_DELETE,
+            createdAtEpochMillis = now,
+        )
+
+        validateEffectiveProjection(effectiveLedgerEntries(allEntries + deletionMarker))
+        database.ledgerDao().insertBlocking(deletionMarker)
         return loadDashboard()
     }
 
@@ -107,29 +181,35 @@ class LedgerRepository(
         require(pageSize in setOf(10, 20, 50)) { "pageSize must be 10, 20, or 50" }
         require(pageIndex >= 0) { "pageIndex cannot be negative" }
 
-        val totalCount = database.ledgerDao().countBlocking(DEFAULT_PORTFOLIO_ID)
+        val effective = effectiveLedgerEntries(
+            database.ledgerDao().listChronological(DEFAULT_PORTFOLIO_ID),
+        ).sortedWith(
+            compareByDescending<LedgerEntryEntity> { it.occurredAtEpochMillis }
+                .thenByDescending { it.id },
+        )
+        val totalCount = effective.size.toLong()
         val totalPages = if (totalCount == 0L) 1 else {
             ((totalCount + pageSize - 1L) / pageSize).toInt()
         }
         val safePage = pageIndex.coerceAtMost(totalPages - 1)
-        val rows = database.ledgerDao().pageBlocking(
-            portfolioId = DEFAULT_PORTFOLIO_ID,
-            limit = pageSize,
-            offset = safePage * pageSize,
-        ).map { entity ->
-            TransactionRow(
-                id = entity.id,
-                side = LedgerEntryKind.valueOf(entity.entryType),
-                symbol = entity.symbol.uppercase(Locale.US),
-                shares = entity.shares,
-                price = entity.price,
-                tradeMode = TradeMode.valueOf(entity.tradeMode ?: TradeMode.ROUND_LOT.name),
-                fee = entity.actualFee,
-                tax = entity.actualTax,
-                tradeDateTaipei = entity.tradeDateTaipei,
-                note = entity.note,
-            )
-        }
+        val rows = effective
+            .drop(safePage * pageSize)
+            .take(pageSize)
+            .map { entity ->
+                TransactionRow(
+                    id = entity.id,
+                    side = LedgerEntryKind.valueOf(entity.entryType),
+                    symbol = entity.symbol.uppercase(Locale.US),
+                    shares = entity.shares,
+                    price = entity.price,
+                    tradeMode = TradeMode.valueOf(entity.tradeMode ?: TradeMode.ROUND_LOT.name),
+                    fee = entity.actualFee,
+                    tax = entity.actualTax,
+                    tradeDateTaipei = entity.tradeDateTaipei,
+                    note = entity.note,
+                    isEdited = entity.correctionReason == CORRECTION_EDIT,
+                )
+            }
 
         return TransactionPage(
             pageIndex = safePage,
@@ -142,7 +222,9 @@ class LedgerRepository(
 
     fun loadDashboard(): DashboardSnapshot {
         ensureDefaultPortfolio()
-        val entries = database.ledgerDao().listChronological(DEFAULT_PORTFOLIO_ID)
+        val entries = effectiveLedgerEntries(
+            database.ledgerDao().listChronological(DEFAULT_PORTFOLIO_ID),
+        )
         if (entries.isEmpty()) {
             return DashboardSnapshot(
                 totalInvestmentCost = 0.0,
@@ -175,6 +257,33 @@ class LedgerRepository(
         )
     }
 
+    private fun effectiveLedgerEntries(
+        entries: List<LedgerEntryEntity>,
+    ): List<LedgerEntryEntity> {
+        if (entries.isEmpty()) return emptyList()
+        val correctedIds = entries.mapNotNull { it.correctionOfEntryId }.toSet()
+        return entries.filter { entry ->
+            entry.id !in correctedIds && entry.correctionReason != CORRECTION_DELETE
+        }
+    }
+
+    private fun validateEffectiveProjection(entries: List<LedgerEntryEntity>) {
+        try {
+            entries
+                .groupBy { it.symbol.uppercase(Locale.US) }
+                .values
+                .filter { it.isNotEmpty() }
+                .forEach { rows -> projector.project(rows.map(::toFinanceEntry)) }
+        } catch (error: IllegalArgumentException) {
+            if (error.message?.contains("oversell", ignoreCase = true) == true) {
+                throw IllegalArgumentException(
+                    "修改或刪除後會造成歷史賣出超過可用持股，請先調整後續交易紀錄",
+                )
+            }
+            throw error
+        }
+    }
+
     private fun ensureDefaultPortfolio() {
         if (database.portfolioDao().findByIdBlocking(DEFAULT_PORTFOLIO_ID) != null) return
         database.portfolioDao().insertBlocking(
@@ -201,5 +310,7 @@ class LedgerRepository(
 
     companion object {
         const val DEFAULT_PORTFOLIO_ID = "default"
+        const val CORRECTION_EDIT = "USER_EDIT"
+        const val CORRECTION_DELETE = "USER_DELETE"
     }
 }
