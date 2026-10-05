@@ -86,3 +86,5 @@ If all live sources fail:
 - Subscription updates are diffed. Adding/removing holdings or watched symbols sends only the required subscribe/unsubscribe operations and does not intentionally rebuild the whole connection.
 - Fresh Fugle quotes are used before polling. If no fresh stream quote is available, the existing TWSE MIS → Yahoo fallback path remains active.
 - Trial messages are not accepted into portfolio valuation.
+
+- Android WebSocket transport uses OkHttp 5.3.2, selected to keep the current compileSdk 36 contract intact.
