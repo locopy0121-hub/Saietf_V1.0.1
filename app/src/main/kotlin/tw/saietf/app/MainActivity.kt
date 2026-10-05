@@ -42,6 +42,11 @@ import tw.saietf.core.market.QuoteQuality
 import tw.saietf.core.model.TradeMode
 
 class MainActivity : Activity() {
+    private companion object {
+        const val REQUEST_EXPORT_BACKUP = 4101
+        const val REQUEST_IMPORT_BACKUP = 4102
+    }
+
     private val ledgerExecutor = Executors.newSingleThreadExecutor()
     private val marketScheduler = Executors.newSingleThreadScheduledExecutor()
     private val valuator = PortfolioMarketValuator()
@@ -193,6 +198,62 @@ class MainActivity : Activity() {
         )
 
         refreshDashboard()
+    }
+
+    @Deprecated("Legacy activity result API retained for minSdk-compatible document flow")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+
+        when (requestCode) {
+            REQUEST_EXPORT_BACKUP -> {
+                val json = pendingBackupJson ?: return
+                runCatching {
+                    contentResolver.openOutputStream(uri)?.use { output ->
+                        output.write(json.toByteArray(Charsets.UTF_8))
+                    } ?: error("無法開啟輸出檔")
+                }.onSuccess {
+                    pendingBackupJson = null
+                    Toast.makeText(this, "SaiETF 備份已匯出", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(
+                        this,
+                        "備份匯出失敗：${error.message ?: "未知錯誤"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+
+            REQUEST_IMPORT_BACKUP -> {
+                ledgerExecutor.execute {
+                    runCatching {
+                        val raw = contentResolver.openInputStream(uri)?.bufferedReader()?.use {
+                            it.readText()
+                        } ?: error("無法讀取備份檔")
+                        backupRepository.restoreJson(raw)
+                    }.onSuccess { restored ->
+                        latestMarketBatch = null
+                        runOnUiThread {
+                            Toast.makeText(
+                                this,
+                                "還原完成：交易 ${restored.ledgerCount}、股息 ${restored.dividendCount}",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                            refreshDashboard()
+                        }
+                    }.onFailure { error ->
+                        runOnUiThread {
+                            Toast.makeText(
+                                this,
+                                "還原失敗：${error.message ?: "未知錯誤"}",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onResume() {
