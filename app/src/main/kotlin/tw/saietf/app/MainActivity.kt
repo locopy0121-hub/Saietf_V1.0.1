@@ -336,22 +336,51 @@ class MainActivity : ComponentActivity() {
         title: String,
         subtitle: String,
     ) {
-        pageContent.addView(
-            TextView(this).apply {
-                text = title
-                textSize = 28f * displayScale
-                setTextColor(SaiTheme.TEXT)
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            },
-        )
-        pageContent.addView(
-            TextView(this).apply {
-                text = subtitle
-                textSize = 13f * displayScale
-                setTextColor(SaiTheme.MUTED)
-                setPadding(0, dp(4), 0, dp(18))
-            },
-        )
+        val density = resources.displayMetrics.density
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.rounded(
+                fill = SaiTheme.CARD,
+                radiusDp = 24f,
+                density = density,
+                strokeColor = SaiTheme.BORDER,
+                strokeDp = 1,
+            )
+            elevation = dp(1).toFloat()
+            setPadding(dp(18), dp(15), dp(18), dp(15))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = dp(16)
+            }
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = "SaiETF  •  台股資產管家"
+                    textSize = 12f * displayScale
+                    setTextColor(SaiTheme.BRAND)
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setPadding(0, 0, 0, dp(4))
+                },
+            )
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = title
+                    textSize = 28f * displayScale
+                    setTextColor(SaiTheme.TEXT)
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                },
+            )
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = subtitle
+                    textSize = 13f * displayScale
+                    setTextColor(SaiTheme.MUTED)
+                    setPadding(0, dp(4), 0, 0)
+                },
+            )
+        }
+        pageContent.addView(header)
     }
 
     private fun renderHomePage() {
