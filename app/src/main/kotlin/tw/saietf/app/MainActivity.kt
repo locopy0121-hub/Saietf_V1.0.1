@@ -1849,6 +1849,18 @@ class MainActivity : Activity() {
                         } else if (!revenueLoadFinished) {
                             append("\n\n月營收資料載入中…")
                         }
+                        val capitalMetrics = TaiwanCapitalMetricCalculator.calculate(
+                            profile = profile,
+                            currentPrice = quote?.price,
+                            dailyBars = dailyBars,
+                        )
+                        append("\n\n公司資本 / 市值")
+                        append("\n公司市值 ${capitalMetrics.marketCapitalizationTwd?.let(::formatTwd) ?: "—"}")
+                        append("｜公式：現價 × 已發行普通股")
+                        append("\n每股實收資本 ${capitalMetrics.capitalPerIssuedShareTwd?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("\n一年高 ${capitalMetrics.oneYearHigh?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("｜一年低 ${capitalMetrics.oneYearLow?.let { "%.2f".format(Locale.US, it) } ?: "—"}")
+                        append("｜一年報酬 ${capitalMetrics.oneYearReturnPct?.let { "%.2f%%".format(Locale.US, it) } ?: "—"}")
                     }
                 } ?: if (profileLoadFinished) {
                     "財務 / 資本｜目前公開公司基本資料來源未回傳此代號；不以估算值冒充官方資料。"
@@ -1864,6 +1876,7 @@ class MainActivity : Activity() {
                         append("\n股本欄位：實收資本額 / 已發行普通股")
                         if (it.website != null || it.phone != null) append("\n公司聯絡資料：已取得")
                         revenueSnapshot?.let { revenue -> append("\n月營收來源 ${revenue.source}") }
+                        append("\n公司市值口徑：現價 × 官方已發行普通股；屬衍生計算值")
                     } ?: if (profileLoadFinished) {
                         append("\n基本資料來源：未取得")
                     } else {
