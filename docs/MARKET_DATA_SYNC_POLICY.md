@@ -1,6 +1,6 @@
 # SaiETF Market Data Synchronization Policy
 
-Version line: V1.0.59
+Version line: V1.0.60
 
 ## Goal
 
@@ -89,3 +89,17 @@ If all live sources fail:
 
 - Android WebSocket transport uses OkHttp 5.3.2, selected to keep the current compileSdk 36 contract intact.
 - Provider health is considered unhealthy after 75 seconds without a server message; the watchdog then reconnects instead of treating a quiet symbol as a provider failure.
+
+
+## V1.0.60 Arbitration and Circuit Breaker contract
+
+- Every candidate quote is normalized before it can replace the Memory Hot Store or same-session cache.
+- Arbitration order: session date → same-source sequence → source timestamp → quality → source priority → received-at.
+- A prior-session quote can never overwrite a newer session quote.
+- For the same streaming provider and session, a lower sequence is rejected even when it arrives later.
+- A fresher fallback quote may replace an older primary quote; fallback level does not imply stale quality.
+- Equal-timestamp ties prefer FUGLE → SHIOAJI → TWSE MIS → YAHOO → CACHE.
+- Polling providers use a circuit breaker: HEALTHY → DEGRADED → COOLDOWN → RECOVERING → HEALTHY.
+- Two consecutive failures open the circuit by default; recovery requires two successful probes.
+- HTTP 429 honors Retry-After where available; HTTP 403 uses a longer cooldown; network/5xx backoff includes bounded jitter.
+- Fugle diagnostics expose HEALTHY / DEGRADED / COOLDOWN / RECOVERING separately from quote freshness.
