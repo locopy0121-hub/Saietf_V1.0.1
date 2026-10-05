@@ -142,6 +142,14 @@ class MainActivity : Activity() {
         DATA("數據"),
     }
 
+    private enum class MainTab(val label: String) {
+        HOME("首頁"),
+        MARKET("行情"),
+        TRADE("交易"),
+        DIVIDEND("股息"),
+        SETTINGS("設定"),
+    }
+
     @Volatile
     private var marketPollingActive = false
 
@@ -186,6 +194,9 @@ class MainActivity : Activity() {
     private lateinit var holdingsCountValue: TextView
     private lateinit var ledgerStatusValue: TextView
     private lateinit var marketStatusValue: TextView
+    private lateinit var pageContent: LinearLayout
+    private lateinit var bottomNavigation: LinearLayout
+    private var selectedMainTab: MainTab = MainTab.HOME
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -194,43 +205,128 @@ class MainActivity : Activity() {
         window.navigationBarColor = Color.WHITE
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
-        val root = LinearLayout(this).apply {
+        val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.rgb(248, 250, 252))
-            setPadding(dp(20), dp(28), dp(20), dp(28))
+            fitsSystemWindows = true
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
         }
 
-        root.addView(
-            TextView(this).apply {
-                text = FirstVersionContract.appDisplayName
-                textSize = 28f
-                setTextColor(Color.rgb(15, 23, 42))
-                gravity = Gravity.START
-                setPadding(0, 0, 0, dp(4))
-            },
-        )
-        root.addView(
-            TextView(this).apply {
-                text = FirstVersionContract.releaseLine
-                textSize = 15f
-                setTextColor(Color.rgb(71, 85, 105))
-                setPadding(0, 0, 0, dp(4))
-            },
-        )
-        root.addView(
-            TextView(this).apply {
-                text = FirstVersionContract.phaseLine
-                textSize = 13f
-                setTextColor(Color.rgb(100, 116, 139))
-                setPadding(0, 0, 0, dp(18))
-            },
-        )
+        pageContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(18), dp(18), dp(20))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+        }
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f,
+            )
+            addView(pageContent)
+        }
 
-        root.addView(sectionTitle("資產儀表板"))
+        bottomNavigation = buildBottomNavigation()
+        shell.addView(scroll)
+        shell.addView(bottomNavigation)
+        setContentView(shell)
+
+        renderMainTab(MainTab.HOME)
+        marketPersistenceController
+        bindMarketStateFlow()
+        refreshDashboard()
+    }
+
+    private fun buildBottomNavigation(): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(Color.WHITE)
+            setPadding(dp(8), dp(6), dp(8), dp(8))
+            elevation = dp(8).toFloat()
+            MainTab.entries.forEach { tab ->
+                addView(
+                    Button(this@MainActivity).apply {
+                        text = tab.label
+                        textSize = 12f * displayScale
+                        isAllCaps = false
+                        setOnClickListener {
+                            if (selectedMainTab != tab) {
+                                renderMainTab(tab)
+                                refreshDashboard()
+                            }
+                        }
+                        layoutParams = LinearLayout.LayoutParams(
+                            0,
+                            dp(52),
+                            1f,
+                        ).apply {
+                            marginStart = dp(2)
+                            marginEnd = dp(2)
+                        }
+                    },
+                )
+            }
+        }
+
+    private fun renderMainTab(tab: MainTab) {
+        selectedMainTab = tab
+        pageContent.removeAllViews()
+        when (tab) {
+            MainTab.HOME -> renderHomePage()
+            MainTab.MARKET -> renderMarketPage()
+            MainTab.TRADE -> renderTradePage()
+            MainTab.DIVIDEND -> renderDividendPage()
+            MainTab.SETTINGS -> renderSettingsPage()
+        }
+        updateBottomNavigationSelection()
+    }
+
+    private fun updateBottomNavigationSelection() {
+        MainTab.entries.forEachIndexed { index, tab ->
+            val button = bottomNavigation.getChildAt(index) as? Button ?: return@forEachIndexed
+            val active = tab == selectedMainTab
+            button.setTextColor(
+                if (active) Color.rgb(15, 23, 42) else Color.rgb(100, 116, 139),
+            )
+            button.setBackgroundColor(
+                if (active) Color.rgb(226, 232, 240) else Color.WHITE,
+            )
+        }
+    }
+
+    private fun addPageHeader(
+        title: String,
+        subtitle: String,
+    ) {
+        pageContent.addView(
+            TextView(this).apply {
+                text = title
+                textSize = 26f * displayScale
+                setTextColor(Color.rgb(15, 23, 42))
+            },
+        )
+        pageContent.addView(
+            TextView(this).apply {
+                text = subtitle
+                textSize = 13f * displayScale
+                setTextColor(Color.rgb(100, 116, 139))
+                setPadding(0, dp(3), 0, dp(16))
+            },
+        )
+    }
+
+    private fun renderHomePage() {
+        addPageHeader(
+            "SaiETF",
+            "台股 / ETF 資產總覽｜${BuildConfig.VERSION_NAME}",
+        )
 
         val totalAsset = buildMetricCard(
             "總資產",
@@ -238,7 +334,7 @@ class MainActivity : Activity() {
             "完整行情覆蓋後才發布總市值",
         )
         totalAssetValue = totalAsset.second
-        root.addView(totalAsset.first)
+        pageContent.addView(totalAsset.first)
 
         val investmentCost = buildMetricCard(
             "帳務投入成本",
@@ -246,47 +342,186 @@ class MainActivity : Activity() {
             "Room Ledger → Finance Lock 真實投影",
         )
         investmentCostValue = investmentCost.second
-        root.addView(investmentCost.first)
+        pageContent.addView(investmentCost.first)
 
         val pnl = buildMetricCard(
             "昨日 / 今日 / 總損益",
             "— / — / —",
-            "三者為不同數據；昨日取上一交易日快照",
+            "昨日、今日與持有總損益為不同數據",
         )
         pnlValue = pnl.second
         pnl.first.isClickable = true
         pnl.first.isFocusable = true
         pnl.first.setOnClickListener { showDailyPerformanceDialog() }
-        root.addView(pnl.first)
+        pageContent.addView(pnl.first)
 
         val holdingCount = buildMetricCard(
             "持股檔數",
             "0 檔",
-            "由不可變交易 Ledger 推導",
+            "點擊可查看持股與個股資訊",
         )
         holdingsCountValue = holdingCount.second
-        root.addView(holdingCount.first)
+        holdingCount.first.isClickable = true
+        holdingCount.first.setOnClickListener { showHoldingsDialog() }
+        pageContent.addView(holdingCount.first)
 
         ledgerStatusValue = statusText("帳務資料載入中…")
         marketStatusValue = statusText("行情中心等待持股資料…")
-        root.addView(ledgerStatusValue)
-        root.addView(marketStatusValue)
+        pageContent.addView(ledgerStatusValue)
+        pageContent.addView(marketStatusValue)
 
-        root.addView(sectionTitle("功能入口"))
-        FirstVersionContract.landingCards.forEach { card ->
-            root.addView(buildLandingCard(card))
-        }
-
-        setContentView(
-            ScrollView(this).apply {
-                addView(root)
-            },
+        pageContent.addView(sectionTitle("快速操作"))
+        pageContent.addView(
+            buildActionCard(
+                title = "查看持股",
+                description = "持股清單、均價、市值與個股 8 大資訊頁",
+            ) { showHoldingsDialog() },
+        )
+        pageContent.addView(
+            buildActionCard(
+                title = "行情牆",
+                description = "詳細條列、大字、方格、多筆走勢與趨勢摘要",
+            ) { showMarketWall() },
         )
 
-        marketPersistenceController
-        bindMarketStateFlow()
-        refreshDashboard()
+        latestLedgerSnapshot?.let(::applyLedgerSnapshot)
     }
+
+    private fun renderMarketPage() {
+        addPageHeader(
+            "市場行情",
+            "單一 MarketDataCenter｜Fugle → TWSE MIS → Yahoo",
+        )
+        pageContent.addView(
+            buildActionCard(
+                title = "行情牆",
+                description = "切換多種行情牆模式與排序",
+            ) { showMarketWall() },
+        )
+        pageContent.addView(
+            buildActionCard(
+                title = "個股 / ETF 資訊",
+                description = "明細、走勢、技術、成分、法人、財務、盤後、數據",
+            ) { showHoldingSelectorDialog() },
+        )
+        pageContent.addView(
+            buildActionCard(
+                title = "立即同步行情",
+                description = "要求行情中心立即刷新；仍遵守來源限流與熔斷",
+            ) { requestImmediateMarketRefresh() },
+        )
+        val batch = latestMarketBatch
+        pageContent.addView(sectionTitle("目前行情"))
+        if (batch == null || batch.quotes.isEmpty()) {
+            pageContent.addView(statusText("目前尚無可顯示行情"))
+        } else {
+            batch.quotes.values
+                .sortedBy { it.symbol }
+                .take(20)
+                .forEach { quote ->
+                    pageContent.addView(
+                        buildActionCard(
+                            title = "${quote.symbol}  ${quote.name}",
+                            description = "${formatPrice(quote.price)}｜${sourceName(quote.source)}｜${quote.quality.name}",
+                        ) { showHoldingDetailDialog(quote.symbol) },
+                    )
+                }
+        }
+    }
+
+    private fun renderTradePage() {
+        addPageHeader(
+            "交易與持股",
+            "所有帳務寫入仍遵守 append-only Ledger 與 Finance Lock",
+        )
+        pageContent.addView(
+            buildActionCard("新增交易", "買進 / 賣出、整股 / 零股、日期與實際費稅") {
+                showTradeDialog()
+            },
+        )
+        pageContent.addView(
+            buildActionCard("交易紀錄", "分頁查看、修改與刪除修正軌跡") {
+                showTransactionHistoryDialog()
+            },
+        )
+        pageContent.addView(
+            buildActionCard("持股清單", "查看目前有效持股與損益") {
+                showHoldingsDialog()
+            },
+        )
+        pageContent.addView(
+            buildActionCard("持股分析", "集中度、Top 1 / Top 3 與市值分布") {
+                showHoldingsAnalysisDialog()
+            },
+        )
+    }
+
+    private fun renderDividendPage() {
+        addPageHeader(
+            "股息",
+            "預告可先登錄，待公告確定後更新",
+        )
+        pageContent.addView(
+            buildActionCard("股息中心", "新增 / 更新、月份統計與股息紀錄") {
+                showDividendCenter()
+            },
+        )
+        pageContent.addView(
+            buildActionCard("股息月曆", "依月份查看預告與已確認股息") {
+                showDividendCalendarDialog(YearMonth.now(taipeiZone))
+            },
+        )
+    }
+
+    private fun renderSettingsPage() {
+        addPageHeader(
+            "設定",
+            "介面、行情、資料備份與系統診斷",
+        )
+        pageContent.addView(buildActionCard("顯示設定", "調整全域文字比例") {
+            showDisplaySettingsDialog()
+        })
+        pageContent.addView(buildActionCard("卡片間距", "緊湊 / 標準 / 寬鬆") {
+            showSpacingSettingsDialog()
+        })
+        pageContent.addView(buildActionCard("Fugle 即時行情", "安全設定或更換 API Key") {
+            showFugleSettingsDialog()
+        })
+        pageContent.addView(buildActionCard("資料備份", "匯出 / 還原本機 JSON 備份") {
+            showBackupCenter()
+        })
+        pageContent.addView(buildActionCard("系統狀態", "行情來源、品質、延遲與 Provider Health") {
+            showSystemStatusDialog()
+        })
+        pageContent.addView(buildActionCard("立即更新行情", "立即要求行情中心同步") {
+            requestImmediateMarketRefresh()
+        })
+        pageContent.addView(buildActionCard("恢復介面標準", "清除顯示比例與間距偏好") {
+            showResetDisplaySettingsConfirmation()
+        })
+    }
+
+    private fun buildActionCard(
+        title: String,
+        description: String,
+        action: () -> Unit,
+    ): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.WHITE)
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+            addView(cardText(title, 17f, Color.rgb(15, 23, 42)))
+            addView(cardText(description, 13f, Color.rgb(100, 116, 139)))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { action() }
+        }
 
     @Deprecated("Legacy activity result API retained for document compatibility")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
