@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第二十階段 1.0.29｜資料備份｜還原前安全預檢"
+    const val releaseLine = "第二十一階段 1.0.30｜顯示設定｜字級比例持久化"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -75,6 +75,11 @@ object FirstVersionContract {
             title = "資料備份",
             body = "本機 Room 優先；可匯出 JSON 備份並從空白帳務安全還原",
             status = "交易、每日損益、走勢、股息均納入；還原前先驗 SHA-256、版本與資料筆數，Ledger 不允許覆寫",
+        ),
+        LandingCard(
+            title = "顯示設定",
+            body = "精簡 / 標準 / 放大三段文字比例",
+            status = "設定保存在本機；套用或恢復標準後立即重建主畫面",
         ),
     )
 
