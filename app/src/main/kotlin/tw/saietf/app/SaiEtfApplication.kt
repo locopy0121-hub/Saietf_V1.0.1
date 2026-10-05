@@ -1,6 +1,7 @@
 package tw.saietf.app
 
 import android.app.Application
+import tw.saietf.core.database.DividendRepository
 import tw.saietf.core.database.LedgerRepository
 import tw.saietf.core.database.PerformanceHistoryRepository
 import tw.saietf.core.database.SaiEtfDatabase
@@ -17,6 +18,10 @@ class SaiEtfApplication : Application() {
 
     val performanceHistoryRepository: PerformanceHistoryRepository by lazy {
         PerformanceHistoryRepository(database)
+    }
+
+    val dividendRepository: DividendRepository by lazy {
+        DividendRepository(database, ledgerRepository)
     }
 
     val marketDataCenter: MarketDataCenter by lazy {
