@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第十階段 1.0.17｜資料備份｜SHA-256 校驗與安全還原"
+    const val releaseLine = "第十階段 1.0.18｜資料備份｜SHA-256 校驗與安全還原"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
