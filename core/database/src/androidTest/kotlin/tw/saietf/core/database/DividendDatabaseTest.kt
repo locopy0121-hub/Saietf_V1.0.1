@@ -64,6 +64,6 @@ class DividendDatabaseTest {
         assertEquals("CONFIRMED", row?.status)
         assertEquals(1.25, row?.cashPerShare ?: 0.0, 0.0)
         assertEquals(125L, row?.estimatedCash)
-        assertEquals(4, database.openHelper.readableDatabase.version)
+        assertEquals(5, database.openHelper.readableDatabase.version)
     }
 }
