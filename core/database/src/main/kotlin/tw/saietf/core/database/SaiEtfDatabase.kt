@@ -10,11 +10,14 @@ import tw.saietf.core.database.dao.DailySnapshotDao
 import tw.saietf.core.database.dao.DividendEventDao
 import tw.saietf.core.database.dao.IntradayPortfolioPointDao
 import tw.saietf.core.database.dao.LedgerDao
+import tw.saietf.core.database.dao.MarketCacheDao
 import tw.saietf.core.database.dao.PortfolioDao
 import tw.saietf.core.database.entity.DailySnapshotEntity
 import tw.saietf.core.database.entity.DividendEventEntity
 import tw.saietf.core.database.entity.IntradayPortfolioPointEntity
 import tw.saietf.core.database.entity.LedgerEntryEntity
+import tw.saietf.core.database.entity.MarketMinuteCandleEntity
+import tw.saietf.core.database.entity.MarketQuoteSnapshotEntity
 import tw.saietf.core.database.entity.ModelAllocationEntity
 import tw.saietf.core.database.entity.PortfolioEntity
 
@@ -26,8 +29,10 @@ import tw.saietf.core.database.entity.PortfolioEntity
         DailySnapshotEntity::class,
         IntradayPortfolioPointEntity::class,
         DividendEventEntity::class,
+        MarketQuoteSnapshotEntity::class,
+        MarketMinuteCandleEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class SaiEtfDatabase : RoomDatabase() {
@@ -36,10 +41,11 @@ abstract class SaiEtfDatabase : RoomDatabase() {
     abstract fun dailySnapshotDao(): DailySnapshotDao
     abstract fun intradayPortfolioPointDao(): IntradayPortfolioPointDao
     abstract fun dividendEventDao(): DividendEventDao
+    abstract fun marketCacheDao(): MarketCacheDao
 
     companion object {
         const val DATABASE_NAME = "saietf.db"
-        const val SCHEMA_VERSION = 3
+        const val SCHEMA_VERSION = 4
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -124,6 +130,68 @@ abstract class SaiEtfDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS market_quote_snapshots (
+                        symbol TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        exchange TEXT,
+                        market TEXT,
+                        price REAL NOT NULL,
+                        previousClose REAL,
+                        open REAL,
+                        high REAL,
+                        low REAL,
+                        volume INTEGER,
+                        bid REAL,
+                        ask REAL,
+                        source TEXT NOT NULL,
+                        quality TEXT NOT NULL,
+                        sourceTimestampEpochMillis INTEGER NOT NULL,
+                        receivedAtEpochMillis INTEGER NOT NULL,
+                        sessionDate TEXT NOT NULL,
+                        fallbackLevel INTEGER NOT NULL,
+                        sequence INTEGER,
+                        isClose INTEGER NOT NULL,
+                        persistedAtEpochMillis INTEGER NOT NULL,
+                        PRIMARY KEY(symbol)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS market_minute_candles (
+                        symbol TEXT NOT NULL,
+                        sessionDate TEXT NOT NULL,
+                        bucketEpochMillis INTEGER NOT NULL,
+                        open REAL NOT NULL,
+                        high REAL NOT NULL,
+                        low REAL NOT NULL,
+                        close REAL NOT NULL,
+                        volume INTEGER NOT NULL,
+                        source TEXT NOT NULL,
+                        updatedAtEpochMillis INTEGER NOT NULL,
+                        PRIMARY KEY(symbol, bucketEpochMillis)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_market_minute_candles_symbol
+                    ON market_minute_candles(symbol)
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_market_minute_candles_sessionDate
+                    ON market_minute_candles(sessionDate)
+                    """.trimIndent(),
+                )
+            }
+        }
+
         val APPEND_ONLY_CALLBACK = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -154,7 +222,7 @@ abstract class SaiEtfDatabase : RoomDatabase() {
                 SaiEtfDatabase::class.java,
                 DATABASE_NAME,
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .addCallback(APPEND_ONLY_CALLBACK)
                 .build()
 
