@@ -2338,6 +2338,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         dialog.show()
+        styleDialog(dialog, accent = true)
     }
 
     private fun showDeleteTransactionConfirmation(
@@ -2522,6 +2523,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         dialog.show()
+        styleDialog(dialog, accent = true)
     }
     private fun showHoldingsAnalysisDialog() {
         val valuation = latestValuation
@@ -4123,6 +4125,35 @@ class MainActivity : ComponentActivity() {
                 recreate()
             }
             .show()
+    }
+
+    private fun styleDialog(
+        dialog: AlertDialog,
+        accent: Boolean = false,
+    ) {
+        val density = resources.displayMetrics.density
+        dialog.window?.setBackgroundDrawable(
+            SaiTheme.rounded(
+                fill = SaiTheme.CARD,
+                radiusDp = 24f,
+                density = density,
+                strokeColor = SaiTheme.BORDER,
+                strokeDp = 1,
+            ),
+        )
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {
+            setTextColor(if (accent) SaiTheme.ACCENT else SaiTheme.BRAND)
+            isAllCaps = false
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply {
+            setTextColor(SaiTheme.MUTED)
+            isAllCaps = false
+        }
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply {
+            setTextColor(SaiTheme.BRAND)
+            isAllCaps = false
+        }
     }
 
     private fun dateInput(
