@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第二十九階段 1.0.38｜行情中心｜首頁立即更新"
+    const val releaseLine = "第三十階段 1.0.39｜介面設定｜二次確認恢復標準"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -95,6 +95,11 @@ object FirstVersionContract {
             title = "立即更新行情",
             body = "手動要求行情中心立即刷新持股報價",
             status = "不改變盤中 1 秒排程；只追加一次立即更新請求",
+        ),
+        LandingCard(
+            title = "介面恢復標準",
+            body = "將文字比例與卡片間距恢復為標準值",
+            status = "執行前需二次確認；只清除介面偏好，不碰 Ledger 與行情資料",
         ),
     )
 
