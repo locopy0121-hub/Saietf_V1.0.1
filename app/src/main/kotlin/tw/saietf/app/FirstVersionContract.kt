@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第二十一階段 1.0.30｜顯示設定｜字級比例持久化"
+    const val releaseLine = "第二十二階段 1.0.31｜版面設定｜卡片間距持久化"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -80,6 +80,11 @@ object FirstVersionContract {
             title = "顯示設定",
             body = "精簡 / 標準 / 放大三段文字比例",
             status = "設定保存在本機；套用或恢復標準後立即重建主畫面",
+        ),
+        LandingCard(
+            title = "卡片間距",
+            body = "緊湊 / 標準 / 寬鬆三段卡片密度",
+            status = "調整資產卡片與功能卡片的內距與卡片間距，設定保存在本機",
         ),
     )
 
