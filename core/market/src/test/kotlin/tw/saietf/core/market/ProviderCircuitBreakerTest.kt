@@ -20,20 +20,21 @@ class ProviderCircuitBreakerTest {
 
         breaker.recordFailure(t0, 5_000L)
         assertEquals(ProviderCircuitState.DEGRADED, breaker.snapshot(t0).state)
-        assertTrue(breaker.canAttempt(t0 + 100L))
+        assertFalse(breaker.canAttempt(t0 + 100L))
+        assertTrue(breaker.canAttempt(t0 + 5_000L))
 
-        breaker.recordFailure(t0 + 200L, 5_000L)
-        assertEquals(ProviderCircuitState.COOLDOWN, breaker.snapshot(t0 + 200L).state)
-        assertFalse(breaker.canAttempt(t0 + 4_000L))
+        breaker.recordFailure(t0 + 5_100L, 5_000L)
+        assertEquals(ProviderCircuitState.COOLDOWN, breaker.snapshot(t0 + 5_100L).state)
+        assertFalse(breaker.canAttempt(t0 + 9_000L))
 
-        assertTrue(breaker.canAttempt(t0 + 5_200L))
-        assertEquals(ProviderCircuitState.RECOVERING, breaker.snapshot(t0 + 5_200L).state)
+        assertTrue(breaker.canAttempt(t0 + 10_100L))
+        assertEquals(ProviderCircuitState.RECOVERING, breaker.snapshot(t0 + 10_100L).state)
 
-        breaker.recordSuccess(t0 + 5_300L)
-        assertEquals(ProviderCircuitState.RECOVERING, breaker.snapshot(t0 + 5_300L).state)
+        breaker.recordSuccess(t0 + 10_200L)
+        assertEquals(ProviderCircuitState.RECOVERING, breaker.snapshot(t0 + 10_200L).state)
 
-        breaker.recordSuccess(t0 + 5_400L)
-        val recovered = breaker.snapshot(t0 + 5_400L)
+        breaker.recordSuccess(t0 + 10_300L)
+        val recovered = breaker.snapshot(t0 + 10_300L)
         assertEquals(ProviderCircuitState.HEALTHY, recovered.state)
         assertEquals(0, recovered.consecutiveFailures)
     }
