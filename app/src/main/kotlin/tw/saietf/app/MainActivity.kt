@@ -986,9 +986,18 @@ class MainActivity : Activity() {
                         .filter { it.exDateTaipei.startsWith(month.toString()) }
                         .sortedBy { it.exDateTaipei }
                     val monthTotal = monthRows.sumOf { it.estimatedCash }
+                    val monthConfirmedRows = monthRows
+                        .filter { it.status == DividendRepository.Status.CONFIRMED }
+                    val monthAnnouncedRows = monthRows
+                        .filter { it.status == DividendRepository.Status.ANNOUNCED }
+                    val monthConfirmedCash = monthConfirmedRows.sumOf { it.estimatedCash }
                     content.addView(
                         TextView(this@MainActivity).apply {
-                            text = "本月 ${monthRows.size} 筆｜預估 ${formatTwd(monthTotal)}"
+                            text = buildString {
+                                append("本月 ${monthRows.size} 筆｜預估 ${formatTwd(monthTotal)}")
+                                append("\n已確認 ${monthConfirmedRows.size} 筆 / ${formatTwd(monthConfirmedCash)}")
+                                append("｜預告 ${monthAnnouncedRows.size} 筆")
+                            }
                             textSize = 14f
                             setTextColor(Color.rgb(71, 85, 105))
                             setPadding(0, dp(8), 0, dp(8))
