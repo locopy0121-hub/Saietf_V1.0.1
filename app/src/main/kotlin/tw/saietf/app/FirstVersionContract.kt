@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第四十五階段 1.0.54｜基本面｜上市櫃官方月營收"
+    const val releaseLine = "第四十六階段 1.0.55｜資本市值｜股本與公司市值衍生統計"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -59,7 +59,7 @@ object FirstVersionContract {
         LandingCard(
             title = "持股清單",
             body = "台股與 ETF 庫存由 Ledger 經 Finance Lock 投影",
-            status = "個股資訊頁財務分頁加入 TWSE / TPEx 官方月營收、年增 / 月增與累計營收；保留三大法人、K 線與技術指標",
+            status = "個股資訊頁新增公司市值（現價 × 官方已發行普通股）、每股實收資本、一年高低與一年報酬；衍生值明確標示公式",
         ),
         LandingCard(
             title = "行情牆",
