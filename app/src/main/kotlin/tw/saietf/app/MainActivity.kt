@@ -976,6 +976,34 @@ class MainActivity : Activity() {
             }
         }
 
+    private fun dateInput(
+        hintValue: String,
+        initialValue: String,
+    ): EditText = input(hintValue).apply {
+        setText(initialValue)
+        isFocusable = false
+        isClickable = true
+        setOnClickListener {
+            val seed = text.toString().trim()
+                .takeIf { it.isNotEmpty() }
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                ?: LocalDate.now(taipeiZone)
+            DatePickerDialog(
+                this@MainActivity,
+                { _, year, month, day ->
+                    setText(LocalDate.of(year, month + 1, day).toString())
+                },
+                seed.year,
+                seed.monthValue - 1,
+                seed.dayOfMonth,
+            ).show()
+        }
+        setOnLongClickListener {
+            setText("")
+            true
+        }
+    }
+
     private fun input(hintValue: String): EditText = EditText(this).apply {
         hint = hintValue
         textSize = 15f
