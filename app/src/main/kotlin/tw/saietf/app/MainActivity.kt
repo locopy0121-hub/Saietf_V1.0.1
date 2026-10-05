@@ -199,6 +199,23 @@ class MainActivity : Activity() {
     private var selectedMainTab: MainTab = MainTab.HOME
     private var homeHoldingsContainer: LinearLayout? = null
     private var marketQuotesContainer: LinearLayout? = null
+    private var activeInstrumentSymbol: String? = null
+    private var instrumentReturnTab: MainTab = MainTab.MARKET
+    private var instrumentSelectedTab: InstrumentInfoTab = InstrumentInfoTab.DETAIL
+    private var instrumentTabContentView: TextView? = null
+    private var instrumentChartHost: LinearLayout? = null
+    private var instrumentProfilePage: TaiwanInstrumentProfile? = null
+    private var instrumentDailyBarsPage: List<TaiwanDailyBar> = emptyList()
+    private var instrumentInstitutionalPage: TaiwanInstitutionalFlow? = null
+    private var instrumentRevenuePage: TaiwanRevenueSnapshot? = null
+    private var instrumentProfileLoading = false
+    private var instrumentProfileLoaded = false
+    private var instrumentHistoryLoading = false
+    private var instrumentHistoryLoaded = false
+    private var instrumentInstitutionalLoading = false
+    private var instrumentInstitutionalLoaded = false
+    private var instrumentRevenueLoading = false
+    private var instrumentRevenueLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -279,6 +296,7 @@ class MainActivity : Activity() {
 
     private fun renderMainTab(tab: MainTab) {
         selectedMainTab = tab
+        activeInstrumentSymbol = null
         homeHoldingsContainer = null
         marketQuotesContainer = null
         pageContent.removeAllViews()
@@ -450,7 +468,7 @@ class MainActivity : Activity() {
                         buildActionCard(
                             title = holding.symbol,
                             description = "${holding.shares} 股｜成本 ${formatTwd(holding.investmentCost)}｜行情待更新",
-                        ) { showHoldingDetailDialog(holding.symbol) },
+                        ) { showInstrumentPage(holding.symbol) },
                     )
                 }
             return
@@ -470,7 +488,7 @@ class MainActivity : Activity() {
                     buildActionCard(
                         title = "${row.symbol}  ${quote?.name ?: ""}",
                         description = "${row.shares} 股｜現價 $priceText｜市值 $marketValueText｜總損益 $pnlText",
-                    ) { showHoldingDetailDialog(row.symbol) },
+                    ) { showInstrumentPage(row.symbol) },
                 )
             }
     }
@@ -551,7 +569,7 @@ class MainActivity : Activity() {
                 buildActionCard(
                     title = "${quote.symbol}  ${quote.name}  ${String.format(Locale.US, "%.2f", quote.price)}",
                     description = "$changeText｜${sourceName(quote.source)}｜${quote.quality.name}｜${ageSeconds}s",
-                ) { showHoldingDetailDialog(quote.symbol) },
+                ) { showInstrumentPage(quote.symbol) },
             )
         }
     }
@@ -2383,9 +2401,443 @@ class MainActivity : Activity() {
             .setView(spinner)
             .setNegativeButton("取消", null)
             .setPositiveButton("查看") { _, _ ->
-                showHoldingDetailDialog(spinner.selectedItem.toString())
+                showInstrumentPage(spinner.selectedItem.toString())
             }
             .show()
+    }
+
+    private fun showInstrumentPage(symbol: String) {
+        val holding = latestLedgerSnapshot
+            ?.holdings
+            ?.firstOrNull { it.symbol == symbol }
+        if (holding == null) {
+            Toast.makeText(this, "找不到 $symbol 的持股資料", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        instrumentReturnTab = selectedMainTab
+        activeInstrumentSymbol = symbol
+        instrumentSelectedTab = InstrumentInfoTab.DETAIL
+        instrumentProfilePage = null
+        instrumentDailyBarsPage = emptyList()
+        instrumentInstitutionalPage = null
+        instrumentRevenuePage = null
+        instrumentProfileLoading = false
+        instrumentProfileLoaded = false
+        instrumentHistoryLoading = false
+        instrumentHistoryLoaded = false
+        instrumentInstitutionalLoading = false
+        instrumentInstitutionalLoaded = false
+        instrumentRevenueLoading = false
+        instrumentRevenueLoaded = false
+
+        homeHoldingsContainer = null
+        marketQuotesContainer = null
+        pageContent.removeAllViews()
+
+        val market = latestValuation
+            ?.holdings
+            ?.firstOrNull { it.symbol == symbol }
+        val quote = market?.quote
+        val averageCost = holding.investmentCost
+            .takeIf { holding.shares > 0L }
+            ?.div(holding.shares.toDouble())
+
+        val titleRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(
+                Button(this@MainActivity).apply {
+                    text = "‹"
+                    textSize = 22f
+                    isAllCaps = false
+                    setOnClickListener {
+                        activeInstrumentSymbol = null
+                        renderMainTab(instrumentReturnTab)
+                        refreshDashboard()
+                    }
+                },
+                LinearLayout.LayoutParams(dp(52), dp(48)),
+            )
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(cardText("${quote?.name ?: symbol}  $symbol", 22f, Color.rgb(15, 23, 42)))
+                    addView(
+                        cardText(
+                            quote?.let {
+                                val previous = it.previousClose
+                                val pct = previous
+                                    ?.takeIf { p -> p > 0.0 }
+                                    ?.let { p -> (it.price - p) / p * 100.0 }
+                                buildString {
+                                    append("現價 ${String.format(Locale.US, "%.2f", it.price)}")
+                                    pct?.let { value ->
+                                        append("  ")
+                                        append(String.format(Locale.US, "%+.2f%%", value))
+                                    }
+                                    append("｜${sourceName(it.source)}｜${it.quality.name}")
+                                }
+                            } ?: "行情待更新",
+                            13f,
+                            Color.rgb(100, 116, 139),
+                        ),
+                    )
+                },
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+        }
+        pageContent.addView(titleRow)
+
+        val metricRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, dp(12), 0, dp(10))
+            addView(
+                buildInstrumentMetricCard(
+                    "均價",
+                    averageCost?.let { String.format(Locale.US, "%.2f", it) } ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            addView(
+                buildInstrumentMetricCard(
+                    "市值",
+                    market?.marketValue?.let(::formatTwd) ?: "—",
+                ),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(8)
+                },
+            )
+        }
+        pageContent.addView(metricRow)
+
+        val navigationRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            val symbols = latestLedgerSnapshot?.holdings?.map { it.symbol }?.sorted().orEmpty()
+            val index = symbols.indexOf(symbol)
+            addView(
+                Button(this@MainActivity).apply {
+                    text = "上一檔"
+                    isAllCaps = false
+                    isEnabled = index > 0
+                    setOnClickListener {
+                        if (index > 0) showInstrumentPage(symbols[index - 1])
+                    }
+                },
+                LinearLayout.LayoutParams(0, dp(44), 1f),
+            )
+            addView(
+                Button(this@MainActivity).apply {
+                    text = "下一檔"
+                    isAllCaps = false
+                    isEnabled = index >= 0 && index + 1 < symbols.size
+                    setOnClickListener {
+                        if (index >= 0 && index + 1 < symbols.size) {
+                            showInstrumentPage(symbols[index + 1])
+                        }
+                    }
+                },
+                LinearLayout.LayoutParams(0, dp(44), 1f),
+            )
+        }
+        pageContent.addView(navigationRow)
+
+        InstrumentInfoTab.entries.chunked(4).forEach { group ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                group.forEach { tab ->
+                    addView(
+                        Button(this@MainActivity).apply {
+                            text = tab.label
+                            isAllCaps = false
+                            setOnClickListener {
+                                selectInstrumentPageTab(tab)
+                            }
+                        },
+                        LinearLayout.LayoutParams(0, dp(46), 1f),
+                    )
+                }
+            }
+            pageContent.addView(row)
+        }
+
+        instrumentChartHost = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            setPadding(0, dp(8), 0, dp(4))
+        }
+        pageContent.addView(instrumentChartHost)
+
+        instrumentTabContentView = TextView(this).apply {
+            textSize = 14f * displayScale
+            setTextColor(Color.rgb(51, 65, 85))
+            setPadding(dp(4), dp(12), dp(4), dp(28))
+        }
+        pageContent.addView(instrumentTabContentView)
+
+        selectInstrumentPageTab(InstrumentInfoTab.DETAIL)
+    }
+
+    private fun selectInstrumentPageTab(tab: InstrumentInfoTab) {
+        instrumentSelectedTab = tab
+        ensureInstrumentPageData(tab)
+        renderInstrumentPageTab()
+    }
+
+    private fun ensureInstrumentPageData(tab: InstrumentInfoTab) {
+        val symbol = activeInstrumentSymbol ?: return
+        when (tab) {
+            InstrumentInfoTab.DETAIL,
+            InstrumentInfoTab.COMPONENTS,
+            InstrumentInfoTab.DATA,
+            -> loadInstrumentProfileForPage(symbol)
+
+            InstrumentInfoTab.TREND,
+            InstrumentInfoTab.TECHNICAL,
+            -> loadInstrumentHistoryForPage(symbol)
+
+            InstrumentInfoTab.INSTITUTIONAL -> loadInstrumentInstitutionalForPage(symbol)
+
+            InstrumentInfoTab.FINANCIAL -> {
+                loadInstrumentProfileForPage(symbol)
+                loadInstrumentHistoryForPage(symbol)
+                loadInstrumentRevenueForPage(symbol)
+            }
+
+            InstrumentInfoTab.AFTER_HOURS -> Unit
+        }
+    }
+
+    private fun loadInstrumentProfileForPage(symbol: String) {
+        if (instrumentProfileLoaded || instrumentProfileLoading) return
+        instrumentProfileLoading = true
+        ledgerExecutor.execute {
+            val result = runCatching { taiwanInstrumentInfoProvider.fetchProfile(symbol) }.getOrNull()
+            runOnUiThread {
+                if (activeInstrumentSymbol != symbol) return@runOnUiThread
+                instrumentProfilePage = result
+                instrumentProfileLoading = false
+                instrumentProfileLoaded = true
+                renderInstrumentPageTab()
+            }
+        }
+    }
+
+    private fun loadInstrumentHistoryForPage(symbol: String) {
+        if (instrumentHistoryLoaded || instrumentHistoryLoading) return
+        instrumentHistoryLoading = true
+        ledgerExecutor.execute {
+            val result = runCatching { taiwanDailyHistoryProvider.fetch(symbol) }.getOrDefault(emptyList())
+            runOnUiThread {
+                if (activeInstrumentSymbol != symbol) return@runOnUiThread
+                instrumentDailyBarsPage = result
+                instrumentHistoryLoading = false
+                instrumentHistoryLoaded = true
+                renderInstrumentPageTab()
+            }
+        }
+    }
+
+    private fun loadInstrumentInstitutionalForPage(symbol: String) {
+        if (instrumentInstitutionalLoaded || instrumentInstitutionalLoading) return
+        instrumentInstitutionalLoading = true
+        ledgerExecutor.execute {
+            val result = runCatching { taiwanInstitutionalProvider.fetchLatest(symbol) }.getOrNull()
+            runOnUiThread {
+                if (activeInstrumentSymbol != symbol) return@runOnUiThread
+                instrumentInstitutionalPage = result
+                instrumentInstitutionalLoading = false
+                instrumentInstitutionalLoaded = true
+                renderInstrumentPageTab()
+            }
+        }
+    }
+
+    private fun loadInstrumentRevenueForPage(symbol: String) {
+        if (instrumentRevenueLoaded || instrumentRevenueLoading) return
+        instrumentRevenueLoading = true
+        ledgerExecutor.execute {
+            val result = runCatching { taiwanRevenueProvider.fetch(symbol) }.getOrNull()
+            runOnUiThread {
+                if (activeInstrumentSymbol != symbol) return@runOnUiThread
+                instrumentRevenuePage = result
+                instrumentRevenueLoading = false
+                instrumentRevenueLoaded = true
+                renderInstrumentPageTab()
+            }
+        }
+    }
+
+    private fun renderInstrumentPageTab() {
+        val symbol = activeInstrumentSymbol ?: return
+        val content = instrumentTabContentView ?: return
+        val chartHost = instrumentChartHost ?: return
+        val holding = latestLedgerSnapshot?.holdings?.firstOrNull { it.symbol == symbol } ?: return
+        val market = latestValuation?.holdings?.firstOrNull { it.symbol == symbol }
+        val quote = market?.quote
+
+        chartHost.removeAllViews()
+        chartHost.visibility = View.GONE
+
+        content.text = when (instrumentSelectedTab) {
+            InstrumentInfoTab.DETAIL -> buildString {
+                append("持有 ${holding.shares} 股｜投入成本 ${formatTwd(holding.investmentCost)}")
+                append("\n今日損益 ${market?.todayPnl?.let(::formatSignedTwd) ?: "—"}")
+                append("｜持有總損益 ${market?.totalPnl?.let(::formatSignedTwd) ?: "—"}")
+                quote?.let {
+                    append("\n\n開 ${it.open?.let { value -> String.format(Locale.US, "%.2f", value) } ?: "—"}")
+                    append("｜高 ${it.high?.let { value -> String.format(Locale.US, "%.2f", value) } ?: "—"}")
+                    append("｜低 ${it.low?.let { value -> String.format(Locale.US, "%.2f", value) } ?: "—"}")
+                    append("\n成交量 ${it.volume ?: 0L}｜Bid ${it.bid ?: "—"}｜Ask ${it.ask ?: "—"}")
+                }
+                instrumentProfilePage?.let { profile ->
+                    append("\n\n${profile.market}｜${profile.industry ?: "產業待資料源"}")
+                    append("\n${profile.companyName}（${profile.shortName}）")
+                    profile.listingDate?.let { append("｜掛牌 $it") }
+                } ?: if (instrumentProfileLoading) {
+                    append("\n\n公司基本資料載入中…")
+                } else if (instrumentProfileLoaded) {
+                    append("\n\n公司基本資料來源未回傳此代號。")
+                }
+            }
+
+            InstrumentInfoTab.TREND -> {
+                if (instrumentDailyBarsPage.isNotEmpty()) {
+                    chartHost.visibility = View.VISIBLE
+                    chartHost.addView(
+                        TaiwanKLineView(this).apply { setBars(instrumentDailyBarsPage) },
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(300),
+                        ),
+                    )
+                    val latest = instrumentDailyBarsPage.last()
+                    "日 K｜近 1 年｜${instrumentDailyBarsPage.size} 根\n" +
+                        "O ${String.format(Locale.US, "%.2f", latest.open)}  " +
+                        "H ${String.format(Locale.US, "%.2f", latest.high)}  " +
+                        "L ${String.format(Locale.US, "%.2f", latest.low)}  " +
+                        "C ${String.format(Locale.US, "%.2f", latest.close)}｜量 ${latest.volume}"
+                } else if (instrumentHistoryLoading) {
+                    "走勢資料載入中…"
+                } else {
+                    "目前沒有可核實的歷史 K 線；不產生模擬走勢。"
+                }
+            }
+
+            InstrumentInfoTab.TECHNICAL -> {
+                if (instrumentDailyBarsPage.isNotEmpty()) {
+                    chartHost.visibility = View.VISIBLE
+                    chartHost.addView(
+                        TaiwanKLineView(this).apply { setBars(instrumentDailyBarsPage) },
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(300),
+                        ),
+                    )
+                    val sma20 = TaiwanTechnicalEngine.sma(instrumentDailyBarsPage, 20).lastOrNull()?.value
+                    val ema12 = TaiwanTechnicalEngine.ema(instrumentDailyBarsPage, 12).lastOrNull()?.value
+                    val rsi14 = TaiwanTechnicalEngine.rsi(instrumentDailyBarsPage, 14).lastOrNull()?.value
+                    val macd = TaiwanTechnicalEngine.macd(instrumentDailyBarsPage)
+                    buildString {
+                        append("技術指標｜以真實日 K 本機計算")
+                        append("\nSMA20 ${sma20?.let { String.format(Locale.US, "%.2f", it) } ?: "—"}")
+                        append("｜EMA12 ${ema12?.let { String.format(Locale.US, "%.2f", it) } ?: "—"}")
+                        append("\nRSI14 ${rsi14?.let { String.format(Locale.US, "%.1f", it) } ?: "—"}")
+                        append("｜MACD ${macd.macd.lastOrNull()?.value?.let { String.format(Locale.US, "%.3f", it) } ?: "—"}")
+                        append("｜Signal ${macd.signal.lastOrNull()?.value?.let { String.format(Locale.US, "%.3f", it) } ?: "—"}")
+                    }
+                } else if (instrumentHistoryLoading) {
+                    "技術指標所需 K 線載入中…"
+                } else {
+                    "沒有可核實 K 線，因此不計算技術指標。"
+                }
+            }
+
+            InstrumentInfoTab.COMPONENTS -> {
+                instrumentProfilePage?.let { profile ->
+                    buildString {
+                        append("標的結構｜${profile.market}")
+                        append("\n產業 ${profile.industry ?: "—"}")
+                        append("｜已發行普通股 ${profile.issuedCommonShares?.let { NumberFormat.getIntegerInstance(Locale.TAIWAN).format(it) } ?: "—"}")
+                        append("\nETF 成分 / 權重只在專屬資料源可核實時顯示；目前不以公司股本冒充 ETF 成分。")
+                    }
+                } ?: if (instrumentProfileLoading) {
+                    "成分 / 結構資料載入中…"
+                } else {
+                    "目前尚無可核實的 ETF 成分資料。"
+                }
+            }
+
+            InstrumentInfoTab.INSTITUTIONAL -> {
+                instrumentInstitutionalPage?.let { flow ->
+                    buildString {
+                        append("三大法人｜${flow.taipeiDate}")
+                        append("\n外資 ${flow.foreignNetShares?.let(::formatSignedShares) ?: "—"}")
+                        append("｜投信 ${flow.investmentTrustNetShares?.let(::formatSignedShares) ?: "—"}")
+                        append("｜自營商 ${flow.dealerNetShares?.let(::formatSignedShares) ?: "—"}")
+                        append("\n來源 ${flow.source}")
+                    }
+                } ?: if (instrumentInstitutionalLoading) {
+                    "法人資料載入中…"
+                } else {
+                    "最近交易日未取得可核實三大法人資料。"
+                }
+            }
+
+            InstrumentInfoTab.FINANCIAL -> {
+                val profile = instrumentProfilePage
+                val revenue = instrumentRevenuePage
+                if (profile == null && (instrumentProfileLoading || instrumentRevenueLoading)) {
+                    "財務資料載入中…"
+                } else {
+                    buildString {
+                        profile?.let {
+                            append("${it.companyName}（${it.shortName}）")
+                            append("\n實收資本額 ${it.paidInCapitalTwd?.let(::formatTwd) ?: "—"}")
+                            append("｜已發行普通股 ${it.issuedCommonShares?.let { value -> NumberFormat.getIntegerInstance(Locale.TAIWAN).format(value) } ?: "—"}")
+                            val metrics = TaiwanCapitalMetricCalculator.calculate(
+                                profile = it,
+                                currentPrice = quote?.price,
+                                dailyBars = instrumentDailyBarsPage,
+                            )
+                            append("\n公司市值 ${metrics.marketCapitalizationTwd?.let(::formatTwd) ?: "—"}")
+                            append("｜一年報酬 ${metrics.oneYearReturnPct?.let { value -> String.format(Locale.US, "%.2f%%", value) } ?: "—"}")
+                        }
+                        revenue?.let {
+                            append("\n\n月營收 ${it.yearMonth ?: "最新"}")
+                            append("\n當月 ${it.currentMonthRevenueTwd?.let(::formatTwd) ?: "—"}")
+                            append("｜年增 ${it.yearOverYearPct?.let { value -> String.format(Locale.US, "%.2f%%", value) } ?: "—"}")
+                            append("｜月增 ${it.monthOverMonthPct?.let { value -> String.format(Locale.US, "%.2f%%", value) } ?: "—"}")
+                            append("\n來源 ${it.source}")
+                        }
+                        if (profile == null && revenue == null) {
+                            append("目前公開資料源未回傳可核實財務資料。")
+                        }
+                    }
+                }
+            }
+
+            InstrumentInfoTab.AFTER_HOURS -> buildString {
+                append("盤後摘要")
+                append("\n收盤 / 最新價 ${quote?.price?.let { String.format(Locale.US, "%.2f", it) } ?: "—"}")
+                append("｜成交量 ${quote?.volume ?: "—"}")
+                append("\n資料時間 ${quote?.sourceTimestampEpochMillis?.let { Instant.ofEpochMilli(it).atZone(taipeiZone) } ?: "—"}")
+                append("\n盤後定價成交等欄位只有來源實際提供時才顯示，不用即時價代填。")
+            }
+
+            InstrumentInfoTab.DATA -> buildString {
+                append("資料治理")
+                append("\n行情來源 ${quote?.let { sourceName(it.source) } ?: "—"}")
+                append("｜品質 ${quote?.quality?.name ?: "—"}")
+                append("｜Fallback ${quote?.fallbackLevel ?: "—"}")
+                append("\nSession ${quote?.sessionDate ?: "—"}")
+                append("｜Sequence ${quote?.sequence ?: "—"}")
+                append("\nSource timestamp ${quote?.sourceTimestampEpochMillis ?: "—"}")
+                instrumentProfilePage?.let {
+                    append("\n基本資料來源 ${it.source}")
+                }
+            }
+        }
     }
 
     private fun showHoldingDetailDialog(symbol: String) {
