@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.33", BuildConfig.VERSION_NAME)
-        assertEquals(10033, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.34", BuildConfig.VERSION_NAME)
+        assertEquals(10034, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1033 keeps quote freshness diagnostics and upgrade contracts`() {
+    fun `v1034 keeps per symbol quote diagnostics and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -99,6 +99,8 @@ class BuildContractTest {
         assertTrue(activity.contains("行情覆蓋"))
         assertTrue(activity.contains("quoteAgeSeconds"))
         assertTrue(activity.contains("staleSymbols"))
+        assertTrue(activity.contains("showQuoteDiagnosticsDialog"))
+        assertTrue(activity.contains("行情來源 / 品質診斷"))
         assertTrue(!activity.contains("showMarketWall(option, sort, descending)"))
         assertTrue(activity.contains("listOf(10, 20, 50)"))
         assertTrue(providers.contains("YahooIntradayHistoryProvider"))
@@ -109,7 +111,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第二十四階段 1.0.33｜系統狀態｜行情新鮮度診斷", FirstVersionContract.releaseLine)
+        assertEquals("第二十五階段 1.0.34｜系統狀態｜逐檔行情品質診斷", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
