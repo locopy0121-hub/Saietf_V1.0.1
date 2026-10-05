@@ -41,6 +41,27 @@ class LedgerRepository(
         val holdings: List<HoldingSnapshot>,
     )
 
+    data class TransactionRow(
+        val id: String,
+        val side: LedgerEntryKind,
+        val symbol: String,
+        val shares: Long,
+        val price: Double,
+        val tradeMode: TradeMode,
+        val fee: Long?,
+        val tax: Long?,
+        val tradeDateTaipei: String,
+        val note: String?,
+    )
+
+    data class TransactionPage(
+        val pageIndex: Int,
+        val pageSize: Int,
+        val totalCount: Long,
+        val totalPages: Int,
+        val rows: List<TransactionRow>,
+    )
+
     fun addTrade(command: AddTradeCommand): DashboardSnapshot {
         val normalizedSymbol = command.symbol.trim().uppercase(Locale.US)
         require(normalizedSymbol.isNotBlank()) { "請輸入股票 / ETF 代號" }
@@ -76,6 +97,47 @@ class LedgerRepository(
         projector.project((sameSymbol + candidate).map(::toFinanceEntry))
         database.ledgerDao().insertBlocking(candidate)
         return loadDashboard()
+    }
+
+    fun transactionPage(
+        pageIndex: Int,
+        pageSize: Int,
+    ): TransactionPage {
+        ensureDefaultPortfolio()
+        require(pageSize in setOf(10, 20, 50)) { "pageSize must be 10, 20, or 50" }
+        require(pageIndex >= 0) { "pageIndex cannot be negative" }
+
+        val totalCount = database.ledgerDao().countBlocking(DEFAULT_PORTFOLIO_ID)
+        val totalPages = if (totalCount == 0L) 1 else {
+            ((totalCount + pageSize - 1L) / pageSize).toInt()
+        }
+        val safePage = pageIndex.coerceAtMost(totalPages - 1)
+        val rows = database.ledgerDao().pageBlocking(
+            portfolioId = DEFAULT_PORTFOLIO_ID,
+            limit = pageSize,
+            offset = safePage * pageSize,
+        ).map { entity ->
+            TransactionRow(
+                id = entity.id,
+                side = LedgerEntryKind.valueOf(entity.entryType),
+                symbol = entity.symbol.uppercase(Locale.US),
+                shares = entity.shares,
+                price = entity.price,
+                tradeMode = TradeMode.valueOf(entity.tradeMode ?: TradeMode.ROUND_LOT.name),
+                fee = entity.actualFee,
+                tax = entity.actualTax,
+                tradeDateTaipei = entity.tradeDateTaipei,
+                note = entity.note,
+            )
+        }
+
+        return TransactionPage(
+            pageIndex = safePage,
+            pageSize = pageSize,
+            totalCount = totalCount,
+            totalPages = totalPages,
+            rows = rows,
+        )
     }
 
     fun loadDashboard(): DashboardSnapshot {
