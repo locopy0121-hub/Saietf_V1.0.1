@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.45", BuildConfig.VERSION_NAME)
-        assertEquals(10045, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.46", BuildConfig.VERSION_NAME)
+        assertEquals(10046, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -37,7 +37,7 @@ class BuildContractTest {
     }
 
     @Test
-    fun `v1045 keeps sell preflight trade calendar and upgrade contracts`() {
+    fun `v1046 keeps daily performance sell preflight and upgrade contracts`() {
         val manifest = File("src/main/AndroidManifest.xml").readText()
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val gradle = File("build.gradle.kts").readText()
@@ -96,6 +96,9 @@ class BuildContractTest {
         assertTrue(activity.contains("saveButton.isEnabled = true"))
         assertTrue(activity.contains("performanceDialog?.dismiss()"))
         assertTrue(activity.contains("performanceDialogContent = null"))
+        assertTrue(activity.contains("每日損益紀錄"))
+        assertTrue(activity.contains("render.records"))
+        assertTrue(activity.contains("takeLast(12)"))
         assertTrue(activity.contains("showHoldingSelectorDialog"))
         assertTrue(activity.contains("showHoldingDetailDialog"))
         assertTrue(activity.contains("平均成本"))
@@ -146,7 +149,7 @@ class BuildContractTest {
     @Test
     fun `third stage exposes real ledger entry and truthful market placeholders`() {
         assertEquals("SaiETF 資產管家", FirstVersionContract.appDisplayName)
-        assertEquals("第三十六階段 1.0.45｜交易預檢｜賣出股數防超賣", FirstVersionContract.releaseLine)
+        assertEquals("第三十七階段 1.0.46｜每日損益｜走勢與逐日紀錄 UI", FirstVersionContract.releaseLine)
         assertEquals("本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變", FirstVersionContract.phaseLine)
         assertEquals(
             listOf("總資產", "帳務投入成本", "昨日 / 今日 / 總損益", "持股檔數"),
