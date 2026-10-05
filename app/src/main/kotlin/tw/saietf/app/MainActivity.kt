@@ -1819,6 +1819,38 @@ class MainActivity : Activity() {
             .show()
     }
 
+    private fun showSpacingSettingsDialog() {
+        val labels = listOf("緊湊", "標準", "寬鬆")
+        val keys = listOf("tight", "standard", "roomy")
+        val preferences = getSharedPreferences("saietf-display", MODE_PRIVATE)
+        val currentKey = preferences.getString("spacing", "standard") ?: "standard"
+        val spinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                labels,
+            )
+            setSelection(keys.indexOf(currentKey).coerceAtLeast(0))
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("卡片間距")
+            .setMessage("調整首頁資產卡片與功能卡片的內距與卡片間距。")
+            .setView(spinner)
+            .setNegativeButton("取消", null)
+            .setNeutralButton("恢復標準") { _, _ ->
+                preferences.edit().putString("spacing", "standard").apply()
+                recreate()
+            }
+            .setPositiveButton("套用") { _, _ ->
+                preferences.edit()
+                    .putString("spacing", keys[spinner.selectedItemPosition])
+                    .apply()
+                recreate()
+            }
+            .show()
+    }
+
     private fun dateInput(
         hintValue: String,
         initialValue: String,
