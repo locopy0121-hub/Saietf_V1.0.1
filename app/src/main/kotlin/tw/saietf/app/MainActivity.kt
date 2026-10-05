@@ -809,24 +809,38 @@ class MainActivity : Activity() {
 
     private fun showDividendCenter() {
         ledgerExecutor.execute {
-            val rows = runCatching { dividendRepository.recent(30) }.getOrDefault(emptyList())
+            val rows = runCatching { dividendRepository.recent(120) }.getOrDefault(emptyList())
+            val monthKey = LocalDate.now(taipeiZone).toString().substring(0, 7)
+            val monthRows = rows.filter { it.exDateTaipei.startsWith(monthKey) }
+            val monthEstimated = monthRows.sumOf { it.estimatedCash }
+            val monthConfirmed = monthRows
+                .filter { it.status == DividendRepository.Status.CONFIRMED }
+                .sumOf { it.estimatedCash }
             val body = if (rows.isEmpty()) {
                 "目前沒有股息紀錄。可先登錄預告，待資訊確定後用相同代號與除息日更新。"
             } else {
-                rows.joinToString("\n\n") { row ->
-                    val status = if (row.status == DividendRepository.Status.CONFIRMED) {
-                        "已確認"
-                    } else {
-                        "預告"
-                    }
-                    buildString {
-                        append("${row.symbol}｜$status｜除息 ${row.exDateTaipei}")
-                        append("\n每股 ${"%.4f".format(Locale.US, row.cashPerShare)}")
-                        append("｜持股 ${row.sharesAtEntry} 股")
-                        append("｜估算 ${formatTwd(row.estimatedCash)}")
-                        row.recordDateTaipei?.let { append("\n股權登記 $it") }
-                        row.paymentDateTaipei?.let { append("｜發放 $it") }
-                    }
+                buildString {
+                    append("$monthKey｜本月 ${monthRows.size} 筆")
+                    append("｜預估 ${formatTwd(monthEstimated)}")
+                    append("｜已確認 ${formatTwd(monthConfirmed)}")
+                    append("\n\n")
+                    append(
+                        rows.joinToString("\n\n") { row ->
+                            val status = if (row.status == DividendRepository.Status.CONFIRMED) {
+                                "已確認"
+                            } else {
+                                "預告"
+                            }
+                            buildString {
+                                append("${row.symbol}｜$status｜除息 ${row.exDateTaipei}")
+                                append("\n每股 ${"%.4f".format(Locale.US, row.cashPerShare)}")
+                                append("｜持股 ${row.sharesAtEntry} 股")
+                                append("｜估算 ${formatTwd(row.estimatedCash)}")
+                                row.recordDateTaipei?.let { append("\n股權登記 $it") }
+                                row.paymentDateTaipei?.let { append("｜發放 $it") }
+                            }
+                        },
+                    )
                 }
             }
 
