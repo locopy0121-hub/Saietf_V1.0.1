@@ -14,7 +14,7 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第三十三階段 1.0.42｜生命週期｜Dialog 防洩漏收尾"
+    const val releaseLine = "第三十四階段 1.0.43｜輸入安全｜交易與股息表單驗證"
     const val phaseLine = "本機優先｜TWSE MIS → Yahoo｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
@@ -44,7 +44,7 @@ object FirstVersionContract {
         LandingCard(
             title = "交易新增",
             body = "買進 / 賣出 / 股數 / 成交價 / 手續費 / 證交稅實際值",
-            status = "Ledger Repository + Room 已實裝",
+            status = "Ledger Repository + Room 已實裝；錯誤輸入留在原視窗修正，驗證通過才寫入",
         ),
         LandingCard(
             title = "交易紀錄",
@@ -69,7 +69,7 @@ object FirstVersionContract {
         LandingCard(
             title = "股息",
             body = "預告可先登錄；相同代號＋除息日可更新為已確認",
-            status = "月曆可前後切換月份，並統計本月預估、已確認金額與預告 / 確認筆數",
+            status = "月曆可前後切換月份；新增 / 更新會驗證股利金額、日期格式與日期先後順序",
         ),
         LandingCard(
             title = "資料備份",
