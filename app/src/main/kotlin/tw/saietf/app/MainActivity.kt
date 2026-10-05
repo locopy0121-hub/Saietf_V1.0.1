@@ -1243,35 +1243,17 @@ class MainActivity : Activity() {
                 (row.shares.toDouble() * row.price).toLong()
             }
 
-            val body = if (page.rows.isEmpty()) {
-                "目前沒有交易紀錄。"
-            } else {
-                page.rows.joinToString("\n\n") { row ->
-                    val side = if (row.side == LedgerEntryKind.BUY) "買進" else "賣出"
-                    val mode = if (row.tradeMode == TradeMode.ROUND_LOT) "整股" else "零股"
-                    buildString {
-                        append("${row.tradeDateTaipei}｜$side｜${row.symbol}")
-                        append("\n${row.shares} 股 × ${"%.2f".format(Locale.US, row.price)}｜$mode")
-                        append("\n手續費 ${row.fee?.let(::formatTwd) ?: "—"}")
-                        if (row.side == LedgerEntryKind.SELL) {
-                            append("｜證交稅 ${row.tax?.let(::formatTwd) ?: "—"}")
-                        }
-                        row.note?.takeIf { it.isNotBlank() }?.let {
-                            append("\n備註 $it")
-                        }
-                    }
-                }
-            }
-
             runOnUiThread {
+                val pageSizes = listOf(10, 20, 50)
                 val sizeSpinner = Spinner(this).apply {
                     adapter = ArrayAdapter(
                         this@MainActivity,
                         android.R.layout.simple_spinner_dropdown_item,
-                        listOf(10, 20, 50),
+                        pageSizes,
                     )
-                    setSelection(listOf(10, 20, 50).indexOf(page.pageSize))
+                    setSelection(pageSizes.indexOf(page.pageSize))
                 }
+                var historyDialog: AlertDialog? = null
                 val content = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
                     setPadding(dp(18), dp(6), dp(18), 0)
@@ -1281,20 +1263,116 @@ class MainActivity : Activity() {
                                 append("第 ${page.pageIndex + 1} / ${page.totalPages} 頁｜共 ${page.totalCount} 筆")
                                 append("\n本頁 買進 $pageBuyCount｜賣出 $pageSellCount")
                                 append("｜成交額 ${formatTwd(pageGrossAmount)}")
+                                append("\n修改 / 刪除採 Ledger 修正紀錄，不直接覆寫原始帳務")
                             }
                             textSize = 14f
                             setTextColor(Color.rgb(71, 85, 105))
                         },
                     )
                     addView(sizeSpinner)
-                    addView(
+                }
+
+                if (page.rows.isEmpty()) {
+                    content.addView(
                         TextView(this@MainActivity).apply {
-                            text = body
+                            text = "目前沒有交易紀錄。"
                             textSize = 14f
-                            setTextColor(Color.rgb(15, 23, 42))
-                            setPadding(0, dp(10), 0, dp(10))
+                            setTextColor(Color.rgb(100, 116, 139))
+                            setPadding(0, dp(12), 0, dp(12))
                         },
                     )
+                } else {
+                    page.rows.forEach { row ->
+                        val side = if (row.side == LedgerEntryKind.BUY) "買進" else "賣出"
+                        val mode = if (row.tradeMode == TradeMode.ROUND_LOT) "整股" else "零股"
+                        val card = LinearLayout(this).apply {
+                            orientation = LinearLayout.VERTICAL
+                            setBackgroundColor(Color.WHITE)
+                            setPadding(dp(12), dp(10), dp(12), dp(10))
+                            layoutParams = LinearLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ).apply {
+                                topMargin = dp(8)
+                            }
+                        }
+                        card.addView(
+                            cardText(
+                                buildString {
+                                    append("${row.tradeDateTaipei}｜$side｜${row.symbol}")
+                                    if (row.isEdited) append("｜已修改")
+                                },
+                                15f,
+                                Color.rgb(15, 23, 42),
+                            ),
+                        )
+                        card.addView(
+                            cardText(
+                                "${row.shares} 股 × ${"%.2f".format(Locale.US, row.price)}｜$mode",
+                                14f,
+                                Color.rgb(51, 65, 85),
+                            ),
+                        )
+                        card.addView(
+                            cardText(
+                                buildString {
+                                    append("手續費 ${row.fee?.let(::formatTwd) ?: "—"}")
+                                    if (row.side == LedgerEntryKind.SELL) {
+                                        append("｜證交稅 ${row.tax?.let(::formatTwd) ?: "—"}")
+                                    }
+                                    row.note?.takeIf { it.isNotBlank() }?.let {
+                                        append("\n備註 $it")
+                                    }
+                                },
+                                13f,
+                                Color.rgb(100, 116, 139),
+                            ),
+                        )
+                        card.addView(
+                            LinearLayout(this).apply {
+                                orientation = LinearLayout.HORIZONTAL
+                                addView(
+                                    Button(this@MainActivity).apply {
+                                        text = "修改"
+                                        setOnClickListener {
+                                            historyDialog?.dismiss()
+                                            showEditTransactionDialog(
+                                                row = row,
+                                                returnPageIndex = page.pageIndex,
+                                                returnPageSize = page.pageSize,
+                                            )
+                                        }
+                                    },
+                                    LinearLayout.LayoutParams(
+                                        0,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                                        1f,
+                                    ),
+                                )
+                                addView(
+                                    Button(this@MainActivity).apply {
+                                        text = "刪除"
+                                        setOnClickListener {
+                                            historyDialog?.dismiss()
+                                            showDeleteTransactionConfirmation(
+                                                row = row,
+                                                returnPageIndex = page.pageIndex,
+                                                returnPageSize = page.pageSize,
+                                            )
+                                        }
+                                    },
+                                    LinearLayout.LayoutParams(
+                                        0,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                                        1f,
+                                    ).apply {
+                                        marginStart = dp(8)
+                                    },
+                                )
+                            },
+                        )
+                        content.addView(card)
+                    }
                 }
 
                 val dialog = AlertDialog.Builder(this)
@@ -1318,6 +1396,7 @@ class MainActivity : Activity() {
                         )
                     }
                     .create()
+                historyDialog = dialog
 
                 dialog.setOnShowListener {
                     dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled = page.pageIndex > 0
@@ -1331,7 +1410,7 @@ class MainActivity : Activity() {
                                 position: Int,
                                 id: Long,
                             ) {
-                                val selected = listOf(10, 20, 50)[position]
+                                val selected = pageSizes[position]
                                 if (selected != page.pageSize) {
                                     dialog.dismiss()
                                     showTransactionHistoryDialog(0, selected)
@@ -1344,6 +1423,221 @@ class MainActivity : Activity() {
                 dialog.show()
             }
         }
+    }
+
+    private fun showEditTransactionDialog(
+        row: LedgerRepository.TransactionRow,
+        returnPageIndex: Int,
+        returnPageSize: Int,
+    ) {
+        val sideSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                listOf("買進", "賣出"),
+            )
+            setSelection(if (row.side == LedgerEntryKind.BUY) 0 else 1)
+        }
+        val modeSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                listOf("整股", "零股"),
+            )
+            setSelection(if (row.tradeMode == TradeMode.ROUND_LOT) 0 else 1)
+        }
+        val symbol = input("代號，例如 0050").apply { setText(row.symbol) }
+        val shares = input("股數").apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(row.shares.toString())
+        }
+        val price = input("成交價").apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText("%.2f".format(Locale.US, row.price))
+        }
+        val fee = input("實際手續費（可留空）").apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(row.fee?.toString().orEmpty())
+        }
+        val tax = input("實際證交稅（賣出可留空）").apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(row.tax?.toString().orEmpty())
+        }
+        val tradeDate = dateInput("交易日期", row.tradeDateTaipei)
+        val note = input("備註（可留空）").apply {
+            setText(row.note.orEmpty())
+        }
+
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), 0)
+            addView(
+                cardText(
+                    "修改會新增一筆修正紀錄，原始 Ledger 保留不變。",
+                    13f,
+                    Color.rgb(100, 116, 139),
+                ),
+            )
+            addView(label("買賣別"))
+            addView(sideSpinner)
+            addView(label("交易模式"))
+            addView(modeSpinner)
+            addView(symbol)
+            addView(shares)
+            addView(price)
+            addView(fee)
+            addView(tax)
+            addView(tradeDate)
+            addView(note)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("修改交易｜${row.symbol}")
+            .setView(form)
+            .setNegativeButton("取消") { _, _ ->
+                showTransactionHistoryDialog(returnPageIndex, returnPageSize)
+            }
+            .setPositiveButton("儲存修改", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            saveButton.setOnClickListener {
+                val symbolValue = symbol.text.toString().trim()
+                val selectedSide = if (sideSpinner.selectedItemPosition == 0) {
+                    LedgerEntryKind.BUY
+                } else {
+                    LedgerEntryKind.SELL
+                }
+                val sharesValue = shares.text.toString().trim().toLongOrNull()
+                val priceValue = price.text.toString().trim().toDoubleOrNull()
+                val feeText = fee.text.toString().trim()
+                val taxText = tax.text.toString().trim()
+                val feeValue = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val taxValue = taxText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val tradeDateText = tradeDate.text.toString().trim()
+                val tradeDateValue = runCatching { LocalDate.parse(tradeDateText) }.getOrNull()
+
+                val validationError = when {
+                    symbolValue.isEmpty() -> "請輸入 ETF / 股票代號"
+                    sharesValue == null || sharesValue <= 0L -> "股數必須為大於 0 的整數"
+                    priceValue == null || !priceValue.isFinite() || priceValue <= 0.0 ->
+                        "成交價必須大於 0"
+                    feeText.isNotEmpty() && feeValue == null -> "手續費必須為整數"
+                    feeValue != null && feeValue < 0L -> "手續費不可小於 0"
+                    taxText.isNotEmpty() && taxValue == null -> "證交稅必須為整數"
+                    taxValue != null && taxValue < 0L -> "證交稅不可小於 0"
+                    tradeDateValue == null -> "交易日期格式必須為 YYYY-MM-DD"
+                    tradeDateValue.isAfter(LocalDate.now(taipeiZone)) -> "交易日期不可晚於今天"
+                    else -> null
+                }
+                if (validationError != null) {
+                    Toast.makeText(this, validationError, Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+
+                val command = LedgerRepository.AddTradeCommand(
+                    side = selectedSide,
+                    symbol = symbolValue,
+                    shares = sharesValue ?: return@setOnClickListener,
+                    price = priceValue ?: return@setOnClickListener,
+                    tradeMode = if (modeSpinner.selectedItemPosition == 0) {
+                        TradeMode.ROUND_LOT
+                    } else {
+                        TradeMode.ODD_LOT
+                    },
+                    tradeDateTaipei = tradeDateValue?.toString()
+                        ?: return@setOnClickListener,
+                    actualFee = feeValue,
+                    actualTax = taxValue,
+                    note = note.text.toString().trim().takeIf { it.isNotEmpty() },
+                )
+
+                saveButton.isEnabled = false
+                ledgerExecutor.execute {
+                    runCatching { repository.correctTrade(row.id, command) }
+                        .onSuccess { snapshot ->
+                            latestLedgerSnapshot = snapshot
+                            latestMarketBatch = null
+                            runOnUiThread {
+                                dialog.dismiss()
+                                applyLedgerSnapshot(snapshot)
+                                Toast.makeText(
+                                    this,
+                                    "交易已修改；原始 Ledger 已保留修正軌跡",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                                showTransactionHistoryDialog(returnPageIndex, returnPageSize)
+                            }
+                            if (marketPollingActive) {
+                                scheduleMarketRefresh(0L, pollGeneration)
+                            }
+                        }
+                        .onFailure { error ->
+                            runOnUiThread {
+                                saveButton.isEnabled = true
+                                Toast.makeText(
+                                    this,
+                                    "交易修改失敗：${error.message ?: "未知錯誤"}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun showDeleteTransactionConfirmation(
+        row: LedgerRepository.TransactionRow,
+        returnPageIndex: Int,
+        returnPageSize: Int,
+    ) {
+        val side = if (row.side == LedgerEntryKind.BUY) "買進" else "賣出"
+        AlertDialog.Builder(this)
+            .setTitle("刪除交易")
+            .setMessage(
+                "${row.tradeDateTaipei}｜$side｜${row.symbol}\n" +
+                    "${row.shares} 股 × ${"%.2f".format(Locale.US, row.price)}\n\n" +
+                    "刪除後畫面與資產計算會排除此筆交易；" +
+                    "底層仍以修正標記保留原始 Ledger 稽核軌跡。",
+            )
+            .setNegativeButton("取消") { _, _ ->
+                showTransactionHistoryDialog(returnPageIndex, returnPageSize)
+            }
+            .setPositiveButton("確認刪除") { _, _ ->
+                ledgerExecutor.execute {
+                    runCatching { repository.deleteTrade(row.id) }
+                        .onSuccess { snapshot ->
+                            latestLedgerSnapshot = snapshot
+                            latestMarketBatch = null
+                            runOnUiThread {
+                                applyLedgerSnapshot(snapshot)
+                                Toast.makeText(
+                                    this,
+                                    "交易已刪除；原始 Ledger 稽核軌跡已保留",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                                showTransactionHistoryDialog(returnPageIndex, returnPageSize)
+                            }
+                            if (marketPollingActive) {
+                                scheduleMarketRefresh(0L, pollGeneration)
+                            }
+                        }
+                        .onFailure { error ->
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this,
+                                    "交易刪除失敗：${error.message ?: "未知錯誤"}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                                showTransactionHistoryDialog(returnPageIndex, returnPageSize)
+                            }
+                        }
+                }
+            }
+            .show()
     }
 
     private fun showTradeDialog() {
