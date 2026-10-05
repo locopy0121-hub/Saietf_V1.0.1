@@ -9,6 +9,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -727,6 +728,7 @@ class MainActivity : Activity() {
             setOnClickListener {
                 when (card.title) {
                     "交易新增" -> showTradeDialog()
+                    "交易紀錄" -> showTransactionHistoryDialog()
                     "持股清單" -> showHoldingsDialog()
                     "行情牆" -> showMarketWall()
                     "股息" -> Toast.makeText(this@MainActivity, "股息資料源將於後續階段串接", Toast.LENGTH_SHORT).show()
