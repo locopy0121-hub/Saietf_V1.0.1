@@ -1918,6 +1918,7 @@ class MainActivity : Activity() {
             ((System.currentTimeMillis() - it).coerceAtLeast(0L) / 1_000L)
         }
         val staleSymbols = batch?.staleQuotes
+            ?.values
             ?.map { it.symbol }
             ?.sorted()
             ?.joinToString(", ")
