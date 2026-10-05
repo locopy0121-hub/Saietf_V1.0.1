@@ -10,6 +10,7 @@ import java.util.Locale
 import kotlin.math.floor
 import org.json.JSONObject
 import tw.saietf.core.market.MarketQuote
+import tw.saietf.core.market.MarketProviderException
 import tw.saietf.core.market.MarketQuoteProvider
 import tw.saietf.core.market.MarketSource
 
@@ -266,7 +267,16 @@ private object HttpText {
         return try {
             val code = connection.responseCode
             if (code !in 200..299) {
-                error("HTTP $code")
+                val retryAfterMillis = connection.getHeaderField("Retry-After")
+                    ?.trim()
+                    ?.toLongOrNull()
+                    ?.takeIf { it > 0L }
+                    ?.times(1_000L)
+                throw MarketProviderException(
+                    httpStatusCode = code,
+                    retryAfterMillis = retryAfterMillis,
+                    message = "HTTP $code",
+                )
             }
             connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
         } finally {
