@@ -25,8 +25,8 @@ android {
         applicationId = "tw.saietf.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 10029
-        versionName = "1.0.29"
+        versionCode = 10030
+        versionName = "1.0.30"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "INCLUDED_MODULES", "\"$approvedModules\"")
     }
