@@ -14,8 +14,8 @@ object FirstVersionContract {
     )
 
     const val appDisplayName = "SaiETF 資產管家"
-    const val releaseLine = "第五十四階段 1.0.63｜個股資料中心｜Room Schema v5・Cache-First Repository"
-    const val phaseLine = "StockDetail Batch Pipeline｜Room v5｜Data Period / Lineage / Cache-First｜Finance Lock 不變"
+    const val releaseLine = "第五十五階段 1.0.64｜Broker-free 行情｜移除 Shioaji・保留開源設計精華"
+    const val phaseLine = "Fugle WebSocket → TWSE MIS → Yahoo｜Broker-free Market Data｜Finance Lock 不變"
 
     val dashboardMetrics: List<DashboardMetric> = listOf(
         DashboardMetric(
@@ -64,7 +64,7 @@ object FirstVersionContract {
         LandingCard(
             title = "行情牆",
             body = "Fugle WebSocket 優先，TWSE MIS / Yahoo 自動備援；盤中 UI 1 秒同步",
-            status = "Primary Fugle HEALTHY 時只保留主串流；Fugle 降級 / 冷卻 / 恢復中時自動啟動 Shioaji SSE，兩者都走相同行情仲裁與 Memory SSOT",
+            status = "Fugle 串流優先；失聯或不新鮮時由 TWSE MIS / Yahoo 接手，全部走 Session / Timestamp / Sequence 仲裁與 Memory SSOT",
         ),
         LandingCard(
             title = "股息",
@@ -95,11 +95,6 @@ object FirstVersionContract {
             title = "Fugle 即時行情",
             body = "設定個人 Fugle API Key，啟用台股 WebSocket trades 即時推播",
             status = "API Key 以 Android Keystore 加密儲存在本機；支援 30 秒 Heartbeat、Ping/Pong、斷線重連與訂閱差異更新",
-        ),
-        LandingCard(
-            title = "Shioaji 備援",
-            body = "設定使用者自管 HTTPS SSE Gateway；Fugle 不健康時才啟用 Secondary",
-            status = "Gateway Bearer Token 以 Android Keystore 加密；App 不內嵌 Shioaji 帳密或 Python SDK",
         ),
         LandingCard(
             title = "立即更新行情",
