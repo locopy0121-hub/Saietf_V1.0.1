@@ -15,6 +15,15 @@ interface DividendEventDao {
         """
         SELECT * FROM dividend_events
         WHERE portfolioId = :portfolioId
+        ORDER BY exDateTaipei ASC, updatedAtEpochMillis ASC, id ASC
+        """,
+    )
+    fun allBlocking(portfolioId: String): List<DividendEventEntity>
+
+    @Query(
+        """
+        SELECT * FROM dividend_events
+        WHERE portfolioId = :portfolioId
         ORDER BY exDateTaipei DESC, updatedAtEpochMillis DESC, id DESC
         LIMIT :limit
         """,
