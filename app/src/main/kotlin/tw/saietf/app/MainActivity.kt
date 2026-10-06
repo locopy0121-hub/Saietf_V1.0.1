@@ -3065,12 +3065,16 @@ class MainActivity : ComponentActivity() {
     private fun showTradeDialog() {
         val sideSpinner = optionSpinner(listOf("買進", "賣出"))
         val modeSpinner = optionSpinner(listOf("整股", "零股"))
-        val symbol = input("代號，例如 0050")
+        val symbol = input("代號，例如 0050").apply {
+            contentDescription = "交易代號"
+        }
         val shares = input("股數").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
+            contentDescription = "交易股數"
         }
         val price = input("成交價").apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            contentDescription = "交易成交價"
         }
         val fee = input("實際手續費（可留空）").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
