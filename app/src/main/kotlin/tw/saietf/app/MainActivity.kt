@@ -388,7 +388,7 @@ class MainActivity : ComponentActivity() {
                     )
                     addView(
                         TextView(this@MainActivity).apply {
-                            text = "  台股資產管家"
+                            text = "  台股資產管家  •  ${BuildConfig.VERSION_NAME}"
                             textSize = 12f * displayScale
                             setTextColor(SaiTheme.MUTED)
                         },
