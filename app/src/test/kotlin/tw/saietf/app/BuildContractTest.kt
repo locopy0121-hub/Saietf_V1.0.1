@@ -355,7 +355,7 @@ class BuildContractTest {
         assertTrue(activity.contains("InstrumentInfoTab"))
         assertTrue(activity.contains("buildInstrumentMetricCard"))
         assertTrue(activity.contains("buildInstrumentQuoteStrip"))
-        assertTrue(activity.contains("contentDescription = \"標的即時行情：$symbol\""))
+        assertTrue(activity.contains("contentDescription = \"標的即時行情：\\$symbol\""))
         assertTrue(activity.contains("cardText(\"即時行情\", 10f, SaiTheme.BRAND)"))
         assertTrue(activity.contains("即時行情摘要"))
         assertTrue(activity.contains("\"均價\""))
