@@ -1399,6 +1399,7 @@ class MainActivity : ComponentActivity() {
         pageContent.addView(
             buildSettingsStatusCard(
                 version = BuildConfig.VERSION_NAME,
+                themeSummary = currentThemeSummary(),
                 fugleConfigured = fugleApiKeyStore.hasKey(),
                 circuitState = fugleHealth.circuitState.name,
                 availability = fugleHealth.availability.name,
@@ -1445,6 +1446,7 @@ class MainActivity : ComponentActivity() {
 
     private fun buildSettingsStatusCard(
         version: String,
+        themeSummary: String,
         fugleConfigured: Boolean,
         circuitState: String,
         availability: String,
