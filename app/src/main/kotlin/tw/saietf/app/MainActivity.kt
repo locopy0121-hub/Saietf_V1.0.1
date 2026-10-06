@@ -939,6 +939,7 @@ class MainActivity : ComponentActivity() {
                 showTradeDialog()
             },
         )
+        pageContent.addView(sectionTitle("帳務工具"))
         pageContent.addView(
             buildActionCard("交易紀錄", "分頁查看、修改與刪除修正軌跡") {
                 showTransactionHistoryDialog()
