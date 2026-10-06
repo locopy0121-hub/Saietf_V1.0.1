@@ -1519,7 +1519,7 @@ class MainActivity : ComponentActivity() {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                     addView(
-                        cardText(title, 18f, Color.WHITE).apply {
+                        cardText(title, 18f, SaiTheme.ON_ACCENT).apply {
                             setTypeface(typeface, android.graphics.Typeface.BOLD)
                         },
                         LinearLayout.LayoutParams(
@@ -1529,7 +1529,7 @@ class MainActivity : ComponentActivity() {
                         ),
                     )
                     addView(
-                        cardText("›", 22f, Color.WHITE).apply {
+                        cardText("›", 22f, SaiTheme.ON_ACCENT).apply {
                             gravity = Gravity.CENTER
                         },
                         LinearLayout.LayoutParams(
@@ -1540,7 +1540,7 @@ class MainActivity : ComponentActivity() {
                 },
             )
             addView(
-                cardText(description, 13f, Color.rgb(237, 233, 254)).apply {
+                cardText(description, 13f, SaiTheme.ON_ACCENT_MUTED).apply {
                     setPadding(0, displayDp(3), displayDp(28), 0)
                 },
             )
@@ -2135,11 +2135,11 @@ class MainActivity : ComponentActivity() {
                     TextView(this@MainActivity).apply {
                         text = render.summary
                         textSize = 14f
-                        setTextColor(Color.rgb(51, 65, 85))
+                        setTextColor(SaiTheme.TEXT_SECONDARY)
                         setPadding(0, dp(8), 0, dp(8))
                     },
                 )
-                content.addView(cardText("每日損益紀錄", 16f, Color.rgb(15, 23, 42)))
+                content.addView(cardText("每日損益紀錄", 16f, SaiTheme.TEXT))
                 if (render.records.isEmpty()) {
                     content.addView(
                         cardText(
@@ -2151,7 +2151,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                     render.records.forEach { row ->
                         content.addView(
-                            cardText(row, 13f, Color.rgb(51, 65, 85)).apply {
+                            cardText(row, 13f, SaiTheme.TEXT_SECONDARY).apply {
                                 setPadding(0, dp(6), 0, dp(6))
                             },
                         )
@@ -2516,7 +2516,7 @@ class MainActivity : ComponentActivity() {
                                 text = month.toString()
                                 textSize = 18f
                                 gravity = Gravity.CENTER
-                                setTextColor(Color.rgb(15, 23, 42))
+                                setTextColor(SaiTheme.TEXT)
                             },
                             LinearLayout.LayoutParams(
                                 0,
@@ -2553,7 +2553,7 @@ class MainActivity : ComponentActivity() {
                                 append("｜預告 ${monthAnnouncedRows.size} 筆")
                             }
                             textSize = 14f
-                            setTextColor(Color.rgb(71, 85, 105))
+                            setTextColor(SaiTheme.TEXT_SECONDARY)
                             setPadding(0, dp(8), 0, dp(8))
                         },
                     )
@@ -2562,7 +2562,7 @@ class MainActivity : ComponentActivity() {
                             TextView(this@MainActivity).apply {
                                 text = "本月目前沒有股息事件"
                                 textSize = 14f
-                                setTextColor(Color.rgb(100, 116, 139))
+                                setTextColor(SaiTheme.MUTED)
                                 setPadding(0, dp(8), 0, dp(8))
                             },
                         )
@@ -2577,7 +2577,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                     text = "${row.exDateTaipei}｜${row.symbol}｜$status｜${formatTwd(row.estimatedCash)}"
                                     textSize = 14f
-                                    setTextColor(Color.rgb(15, 23, 42))
+                                    setTextColor(SaiTheme.TEXT)
                                     setPadding(0, dp(6), 0, dp(6))
                                 },
                             )
@@ -2759,7 +2759,7 @@ class MainActivity : ComponentActivity() {
                                 append("\n修改 / 刪除採 Ledger 修正紀錄，不直接覆寫原始帳務")
                             }
                             textSize = 14f
-                            setTextColor(Color.rgb(71, 85, 105))
+                            setTextColor(SaiTheme.TEXT_SECONDARY)
                         },
                     )
                     addView(sizeSpinner)
@@ -2770,7 +2770,7 @@ class MainActivity : ComponentActivity() {
                         TextView(this@MainActivity).apply {
                             text = "目前沒有交易紀錄。"
                             textSize = 14f
-                            setTextColor(Color.rgb(100, 116, 139))
+                            setTextColor(SaiTheme.MUTED)
                             setPadding(0, dp(12), 0, dp(12))
                         },
                     )
@@ -2780,7 +2780,7 @@ class MainActivity : ComponentActivity() {
                         val mode = if (row.tradeMode == TradeMode.ROUND_LOT) "整股" else "零股"
                         val card = LinearLayout(this).apply {
                             orientation = LinearLayout.VERTICAL
-                            setBackgroundColor(Color.WHITE)
+                            background = SaiTheme.card(resources.displayMetrics.density)
                             setPadding(dp(12), dp(10), dp(12), dp(10))
                             layoutParams = LinearLayout.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -2796,14 +2796,14 @@ class MainActivity : ComponentActivity() {
                                     if (row.isEdited) append("｜已修改")
                                 },
                                 15f,
-                                Color.rgb(15, 23, 42),
+                                SaiTheme.TEXT,
                             ),
                         )
                         card.addView(
                             cardText(
                                 "${row.shares} 股 × ${"%.2f".format(Locale.US, row.price)}｜$mode",
                                 14f,
-                                Color.rgb(51, 65, 85),
+                                SaiTheme.TEXT_SECONDARY,
                             ),
                         )
                         card.addView(
@@ -2818,7 +2818,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 13f,
-                                Color.rgb(100, 116, 139),
+                                SaiTheme.MUTED,
                             ),
                         )
                         card.addView(
@@ -2960,7 +2960,7 @@ class MainActivity : ComponentActivity() {
                 cardText(
                     "修改會新增一筆修正紀錄，原始 Ledger 保留不變。",
                     13f,
-                    Color.rgb(100, 116, 139),
+                    SaiTheme.MUTED,
                 ),
             )
             addView(label("買賣別"))
@@ -3327,7 +3327,7 @@ class MainActivity : ComponentActivity() {
                 TextView(this@MainActivity).apply {
                     text = body
                     textSize = 14f
-                    setTextColor(Color.rgb(15, 23, 42))
+                    setTextColor(SaiTheme.TEXT)
                     setPadding(0, dp(10), 0, dp(10))
                 },
             )
@@ -4072,7 +4072,7 @@ class MainActivity : ComponentActivity() {
             cardText(
                 "${quote?.name ?: symbol}  $symbol",
                 20f,
-                Color.rgb(15, 23, 42),
+                SaiTheme.TEXT,
             ),
         )
         content.addView(
@@ -4090,7 +4090,7 @@ class MainActivity : ComponentActivity() {
                     }
                 } ?: "行情待更新",
                 18f,
-                Color.rgb(30, 41, 59),
+                SaiTheme.TEXT_SECONDARY,
             ),
         )
 
@@ -4117,7 +4117,7 @@ class MainActivity : ComponentActivity() {
 
         val tabContent = TextView(this).apply {
             textSize = 14f
-            setTextColor(Color.rgb(51, 65, 85))
+            setTextColor(SaiTheme.TEXT_SECONDARY)
             setPadding(0, dp(10), 0, dp(10))
         }
         var selectedTab = InstrumentInfoTab.DETAIL
@@ -4577,7 +4577,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     textSize = 12f
-                    setTextColor(Color.rgb(100, 116, 139))
+                    setTextColor(SaiTheme.MUTED)
                     setPadding(0, 0, 0, dp(6))
                 },
             )
@@ -4662,7 +4662,7 @@ class MainActivity : ComponentActivity() {
                         MarketWallMode.GRID -> 16f
                         else -> 14f
                     }
-                    setTextColor(Color.rgb(15, 23, 42))
+                    setTextColor(SaiTheme.TEXT)
                     setPadding(0, dp(10), 0, dp(10))
                 },
             )
@@ -5267,7 +5267,7 @@ class MainActivity : ComponentActivity() {
         hint = hintValue
         textSize = 15f * displayScale
         setTextColor(SaiTheme.TEXT)
-        setHintTextColor(Color.rgb(148, 163, 184))
+        setHintTextColor(SaiTheme.HINT)
         background = SaiTheme.rounded(
             fill = SaiTheme.INPUT,
             radiusDp = 14f,
