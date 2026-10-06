@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.78", BuildConfig.VERSION_NAME)
-        assertEquals(10078, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.79", BuildConfig.VERSION_NAME)
+        assertEquals(10079, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -164,6 +164,9 @@ class BuildContractTest {
         assertTrue(technicalEngine.contains("fun macd"))
         assertTrue(activity.contains("private enum class MainTab"))
         assertTrue(activity.contains("buildBottomNavigation"))
+        assertTrue(activity.contains("bottomNavigation.getChildAt(index) as? TextView"))
+        assertTrue(activity.contains("radiusDp = 17f"))
+        assertTrue(activity.contains("切換至"))
         assertTrue(activity.contains("installBackNavigation"))
         assertTrue(activity.contains("OnBackPressedCallback"))
         assertTrue(activity.contains("onBackPressedDispatcher"))
