@@ -329,6 +329,7 @@ class MainActivity : ComponentActivity() {
         MainTab.entries.forEachIndexed { index, tab ->
             val item = bottomNavigation.getChildAt(index) as? TextView ?: return@forEachIndexed
             val active = tab == selectedMainTab
+            item.text = if (active) "●  ${tab.label}" else tab.label
             item.setTextColor(
                 if (active) SaiTheme.BRAND else SaiTheme.MUTED,
             )

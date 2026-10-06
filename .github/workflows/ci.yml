@@ -120,10 +120,10 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.0.90 APK
+      - name: Upload V1.0.91 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.0.90-section-markers-apk
+          name: SaiETF-V1.0.91-nav-indicator-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publish Android CI commit status
