@@ -707,8 +707,13 @@ class MainActivity : ComponentActivity() {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                     setPadding(0, dp(8), 0, 0)
+                    val changeColor = when {
+                        changeText.startsWith("+") -> SaiTheme.GAIN
+                        changeText.startsWith("-") -> SaiTheme.LOSS
+                        else -> SaiTheme.FLAT
+                    }
                     addView(
-                        cardText(changeText, 14f, SaiTheme.BRAND).apply {
+                        cardText(changeText, 14f, changeColor).apply {
                             setTypeface(typeface, android.graphics.Typeface.BOLD)
                         },
                     )
