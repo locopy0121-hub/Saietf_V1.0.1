@@ -506,7 +506,7 @@ class MainActivity : ComponentActivity() {
             "單一 MarketDataCenter｜Fugle → TWSE MIS → Yahoo",
         )
         pageContent.addView(
-            buildActionCard(
+            buildPrimaryActionCard(
                 title = "行情牆",
                 description = "切換多種行情牆模式與排序",
             ) { showMarketWall() },
