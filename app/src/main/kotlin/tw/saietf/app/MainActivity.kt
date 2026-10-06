@@ -448,7 +448,40 @@ class MainActivity : ComponentActivity() {
             "Room Ledger → Finance Lock 真實投影",
         )
         investmentCostValue = investmentCost.second
-        pageContent.addView(investmentCost.first)
+
+        val holdingCount = buildMetricCard(
+            "持股檔數",
+            "0 檔",
+            "點擊可查看持股與個股資訊",
+        )
+        holdingsCountValue = holdingCount.second
+        holdingCount.first.isClickable = true
+        holdingCount.first.setOnClickListener { showHoldingsDialog() }
+
+        pageContent.addView(
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                contentDescription = "首頁次要指標：帳務投入成本與持股檔數"
+                addView(
+                    investmentCost.first,
+                    LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ),
+                )
+                addView(
+                    holdingCount.first,
+                    LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        marginStart = displayDp(8)
+                    },
+                )
+            },
+        )
 
         val pnl = buildMetricCard(
             "昨日 / 今日 / 總損益",
@@ -460,16 +493,6 @@ class MainActivity : ComponentActivity() {
         pnl.first.isFocusable = true
         pnl.first.setOnClickListener { showDailyPerformanceDialog() }
         pageContent.addView(pnl.first)
-
-        val holdingCount = buildMetricCard(
-            "持股檔數",
-            "0 檔",
-            "點擊可查看持股與個股資訊",
-        )
-        holdingsCountValue = holdingCount.second
-        holdingCount.first.isClickable = true
-        holdingCount.first.setOnClickListener { showHoldingsDialog() }
-        pageContent.addView(holdingCount.first)
 
         ledgerStatusValue = statusText("帳務資料載入中…")
         marketStatusValue = statusText("行情中心等待持股資料…")
