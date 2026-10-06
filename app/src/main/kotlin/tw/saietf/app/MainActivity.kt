@@ -1482,6 +1482,16 @@ class MainActivity : ComponentActivity() {
                 },
             )
             addView(
+                cardText("外觀", 11f, SaiTheme.MUTED).apply {
+                    setPadding(0, displayDp(2), 0, displayDp(2))
+                },
+            )
+            addView(
+                cardText(themeSummary, 12f, SaiTheme.TEXT_SECONDARY).apply {
+                    setPadding(0, 0, 0, displayDp(6))
+                },
+            )
+            addView(
                 cardText("即時行情", 11f, SaiTheme.MUTED).apply {
                     setPadding(0, displayDp(2), 0, displayDp(2))
                 },
