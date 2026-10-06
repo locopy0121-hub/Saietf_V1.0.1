@@ -45,6 +45,7 @@ import tw.saietf.core.database.entity.EtfComponentEntity
 import tw.saietf.core.finance.LedgerEntryKind
 import tw.saietf.core.market.HoldingCost
 import tw.saietf.core.market.MarketBatch
+import tw.saietf.core.market.MarketQuote
 import tw.saietf.core.market.MarketDataCenter
 import tw.saietf.core.market.MarketSource
 import tw.saietf.core.market.PortfolioMarketValuation
@@ -3554,6 +3555,7 @@ class MainActivity : ComponentActivity() {
             )
         }
         pageContent.addView(titleRow)
+        pageContent.addView(buildInstrumentQuoteStrip(quote))
 
         val metricRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -4406,6 +4408,54 @@ class MainActivity : ComponentActivity() {
                 revenueSnapshot = loadedRevenue
                 revenueLoadFinished = true
                 renderTab()
+            }
+        }
+    }
+
+    private fun buildInstrumentQuoteStrip(quote: MarketQuote?): LinearLayout {
+        val values = listOf(
+            "開盤" to quote?.open?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+            "最高" to quote?.high?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+            "最低" to quote?.low?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+            "成交量" to quote?.volume?.let { NumberFormat.getIntegerInstance(Locale.TAIWAN).format(it) }.orEmpty(),
+        )
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = SaiTheme.softCard(resources.displayMetrics.density)
+            setPadding(displayDp(8), displayDp(8), displayDp(8), displayDp(8))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = displayDp(10)
+                bottomMargin = displayDp(10)
+            }
+            values.forEachIndexed { index, (labelText, valueText) ->
+                addView(
+                    LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.VERTICAL
+                        gravity = Gravity.CENTER
+                        addView(cardText(labelText, 10f, SaiTheme.MUTED).apply {
+                            gravity = Gravity.CENTER
+                        })
+                        addView(cardText(valueText.ifBlank { "—" }, 14f, SaiTheme.TEXT).apply {
+                            gravity = Gravity.CENTER
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        })
+                    },
+                    LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                        if (index > 0) marginStart = displayDp(2)
+                    },
+                )
+            }
+            contentDescription = buildString {
+                append("即時行情摘要")
+                values.forEach { (labelText, valueText) ->
+                    append("，")
+                    append(labelText)
+                    append(" ")
+                    append(valueText.ifBlank { "—" })
+                }
             }
         }
     }
