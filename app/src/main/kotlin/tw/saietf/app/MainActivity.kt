@@ -585,6 +585,7 @@ class MainActivity : ComponentActivity() {
         )
         pageContent.addView(sectionTitle("目前行情"))
         pageContent.addView(buildInlineMarketSortBar())
+        pageContent.addView(buildMarketColumnHeader())
         marketQuotesContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -801,6 +802,26 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+    private fun buildMarketColumnHeader(): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(displayDp(12), displayDp(2), displayDp(12), displayDp(6))
+            contentDescription = "行情欄位：商品、價格、漲跌幅"
+            addView(
+                cardText("商品", 11f, SaiTheme.MUTED),
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            addView(
+                cardText("價格", 11f, SaiTheme.MUTED).apply { gravity = Gravity.END },
+                LinearLayout.LayoutParams(displayDp(82), ViewGroup.LayoutParams.WRAP_CONTENT),
+            )
+            addView(
+                cardText("漲跌幅", 11f, SaiTheme.MUTED).apply { gravity = Gravity.END },
+                LinearLayout.LayoutParams(displayDp(78), ViewGroup.LayoutParams.WRAP_CONTENT),
+            )
+        }
+
     private fun renderMarketQuotesInline() {
         val container = marketQuotesContainer ?: return
         container.removeAllViews()
@@ -866,16 +887,21 @@ class MainActivity : ComponentActivity() {
         action: () -> Unit,
     ): LinearLayout {
         val density = resources.displayMetrics.density
+        val changeColor = when {
+            changeText.startsWith("+") -> SaiTheme.GAIN
+            changeText.startsWith("-") -> SaiTheme.LOSS
+            else -> SaiTheme.FLAT
+        }
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = SaiTheme.card(density)
             elevation = dp(1).toFloat()
-            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            setPadding(displayDp(12), displayDp(10), displayDp(12), displayDp(8))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
-                bottomMargin = displayDp(10)
+                bottomMargin = displayDp(6)
             }
 
             addView(
@@ -883,70 +909,53 @@ class MainActivity : ComponentActivity() {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                     addView(
-                        cardText(symbol, 18f, SaiTheme.TEXT).apply {
-                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.VERTICAL
+                            addView(
+                                cardText(symbol, 16f, SaiTheme.TEXT).apply {
+                                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                },
+                            )
+                            addView(
+                                cardText(name, 11f, SaiTheme.MUTED).apply {
+                                    maxLines = 1
+                                },
+                            )
                         },
-                        LinearLayout.LayoutParams(
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ),
+                        LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
                     )
                     addView(
-                        cardText(name, 15f, SaiTheme.TEXT_SECONDARY).apply {
-                            maxLines = 2
-                            setPadding(dp(10), 0, dp(8), 0)
-                        },
-                        LinearLayout.LayoutParams(
-                            0,
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            1f,
-                        ),
-                    )
-                    addView(
-                        cardText(price, 20f, SaiTheme.TEXT).apply {
+                        cardText(price, 18f, SaiTheme.TEXT).apply {
                             gravity = Gravity.END
                             setTypeface(typeface, android.graphics.Typeface.BOLD)
                         },
+                        LinearLayout.LayoutParams(displayDp(82), ViewGroup.LayoutParams.WRAP_CONTENT),
+                    )
+                    addView(
+                        cardText(changeText, 14f, changeColor).apply {
+                            gravity = Gravity.END
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                        LinearLayout.LayoutParams(displayDp(78), ViewGroup.LayoutParams.WRAP_CONTENT),
                     )
                 },
             )
 
             addView(
-                LinearLayout(this@MainActivity).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER_VERTICAL
-                    setPadding(0, dp(8), 0, 0)
-                    val changeColor = when {
-                        changeText.startsWith("+") -> SaiTheme.GAIN
-                        changeText.startsWith("-") -> SaiTheme.LOSS
-                        else -> SaiTheme.FLAT
-                    }
-                    addView(
-                        cardText(changeText, 14f, changeColor).apply {
-                            setTypeface(typeface, android.graphics.Typeface.BOLD)
-                        },
-                    )
-                    addView(
-                        cardText(
-                            "$source  •  $quality  •  ${ageSeconds}s",
-                            12f,
-                            SaiTheme.MUTED,
-                        ).apply {
-                            gravity = Gravity.END
-                        },
-                        LinearLayout.LayoutParams(
-                            0,
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            1f,
-                        ),
-                    )
+                cardText(
+                    "$source  •  $quality  •  ${ageSeconds}s",
+                    10f,
+                    SaiTheme.MUTED,
+                ).apply {
+                    gravity = Gravity.END
+                    setPadding(0, displayDp(3), 0, 0)
                 },
             )
 
             isClickable = true
             isFocusable = true
-            minimumHeight = displayDp(72)
-            contentDescription = "$symbol $name $price，$changeText，$source $quality"
+            minimumHeight = displayDp(64)
+            contentDescription = "$symbol $name，價格 $price，漲跌幅 $changeText，$source $quality"
             setOnClickListener { action() }
         }
     }
