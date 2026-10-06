@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.20", BuildConfig.VERSION_NAME)
-        assertEquals(10120, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.21", BuildConfig.VERSION_NAME)
+        assertEquals(10121, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -42,6 +42,7 @@ class BuildContractTest {
         val activity = File("src/main/kotlin/tw/saietf/app/MainActivity.kt").readText()
         val application = File("src/main/kotlin/tw/saietf/app/SaiEtfApplication.kt").readText()
         val gradle = File("build.gradle.kts").readText()
+        val styles = File("src/main/res/values/styles.xml").readText()
         val providers = File("src/main/kotlin/tw/saietf/app/AndroidMarketProviders.kt").readText()
         val taiwanProfiles = File("src/main/kotlin/tw/saietf/app/TaiwanInstrumentInfoProvider.kt").readText()
         val dailyHistory = File("src/main/kotlin/tw/saietf/app/TaiwanDailyHistoryProvider.kt").readText()
@@ -192,6 +193,10 @@ class BuildContractTest {
         assertTrue(activity.contains("SaiTheme.TEXT_SECONDARY"))
         assertTrue(activity.contains("SaiTheme.Mode.SYSTEM"))
         assertTrue(activity.contains("applyThemeToWindow"))
+        assertTrue(activity.contains("R.style.Theme_SaiETF_Dark"))
+        assertTrue(activity.contains("setTheme(if (darkTheme)"))
+        assertTrue(styles.contains("Theme.SaiETF.Dark"))
+        assertTrue(styles.contains("android:windowLightStatusBar\">false"))
         assertTrue(activity.contains("UI_MODE_NIGHT_YES"))
         assertTrue(activity.contains("buildSettingsStatusCard"))
         assertTrue(activity.contains("contentDescription = \"\$title，\$description，可點擊\""))
