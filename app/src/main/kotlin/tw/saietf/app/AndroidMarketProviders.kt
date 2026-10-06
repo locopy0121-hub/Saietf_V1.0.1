@@ -158,6 +158,9 @@ class TwseMisQuoteProvider : MarketQuoteProvider {
                 val symbol = row.optString("c").trim().uppercase(Locale.US)
                 if (symbol !in symbols) continue
 
+                val localizedName = row.optString("n").trim().ifBlank { symbol }
+                TaiwanSecurityNameCache.remember(symbol, localizedName)
+
                 val price = marketNumber(row.optString("z")) ?: continue
                 val previousClose = marketNumber(row.optString("y"))
                 val timestamp = row.optString("tlong").toLongOrNull()
@@ -166,7 +169,7 @@ class TwseMisQuoteProvider : MarketQuoteProvider {
 
                 result[symbol] = MarketQuote(
                     symbol = symbol,
-                    name = row.optString("n").trim().ifBlank { symbol },
+                    name = localizedName,
                     price = price,
                     previousClose = previousClose,
                     open = marketNumber(row.optString("o")),
@@ -193,13 +196,17 @@ class YahooQuoteProvider : MarketQuoteProvider {
 
     override fun fetch(symbols: Set<String>): Map<String, MarketQuote> {
         val result = linkedMapOf<String, MarketQuote>()
+        val localizedNames = TaiwanSecurityNameCache.resolve(symbols)
         symbols.toList().sorted().forEach { symbol ->
-            fetchOne(symbol)?.let { result[symbol] = it }
+            fetchOne(symbol, localizedNames[symbol])?.let { result[symbol] = it }
         }
         return result
     }
 
-    private fun fetchOne(symbol: String): MarketQuote? {
+    private fun fetchOne(
+        symbol: String,
+        localizedName: String?,
+    ): MarketQuote? {
         for (suffix in listOf("TW", "TWO")) {
             val ticker = "$symbol.$suffix"
             val url =
@@ -231,9 +238,9 @@ class YahooQuoteProvider : MarketQuoteProvider {
 
             return MarketQuote(
                 symbol = symbol,
-                name = meta.optString("longName").trim()
-                    .ifBlank { meta.optString("shortName").trim() }
-                    .ifBlank { symbol },
+                name = localizedName?.trim()
+                    ?.takeIf { it.isNotBlank() }
+                    ?: symbol,
                 price = price,
                 previousClose = previousClose,
                 open = meta.optDouble("regularMarketOpen", Double.NaN).finitePositive(),
@@ -248,6 +255,65 @@ class YahooQuoteProvider : MarketQuoteProvider {
 
     private fun Double.finitePositive(): Double? =
         takeIf { it.isFinite() && it > 0.0 }
+}
+
+private object TaiwanSecurityNameCache {
+    private val names = linkedMapOf<String, String>()
+
+    fun remember(
+        symbol: String,
+        localizedName: String,
+    ) {
+        val normalizedSymbol = symbol.trim().uppercase(Locale.US)
+        val normalizedName = localizedName.trim()
+        if (normalizedSymbol.isBlank() || normalizedName.isBlank() || normalizedName == normalizedSymbol) {
+            return
+        }
+        synchronized(names) {
+            names[normalizedSymbol] = normalizedName
+        }
+    }
+
+    fun resolve(symbols: Set<String>): Map<String, String> {
+        val normalizedSymbols = symbols
+            .map { it.trim().uppercase(Locale.US) }
+            .filter { it.isNotBlank() }
+            .toSet()
+        if (normalizedSymbols.isEmpty()) return emptyMap()
+
+        val missing = synchronized(names) {
+            normalizedSymbols.filterNot { it in names }
+        }
+
+        missing.chunked(30).forEach { chunk ->
+            runCatching {
+                val channels = chunk.flatMap { symbol ->
+                    listOf("tse_${symbol}.tw", "otc_${symbol}.tw")
+                }.joinToString("|")
+                val encoded = URLEncoder.encode(channels, Charsets.UTF_8.name())
+                val body = HttpText.get(
+                    "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=$encoded&json=1&delay=0",
+                    headers = mapOf(
+                        "Referer" to "https://mis.twse.com.tw/stock/fibest.jsp",
+                        "Accept" to "application/json,text/plain,*/*",
+                    ),
+                )
+                val rows = JSONObject(body).optJSONArray("msgArray") ?: return@runCatching
+                for (index in 0 until rows.length()) {
+                    val row = rows.optJSONObject(index) ?: continue
+                    val symbol = row.optString("c").trim().uppercase(Locale.US)
+                    if (symbol !in normalizedSymbols) continue
+                    remember(symbol, row.optString("n").trim())
+                }
+            }
+        }
+
+        return synchronized(names) {
+            normalizedSymbols.mapNotNull { symbol ->
+                names[symbol]?.let { symbol to it }
+            }.toMap()
+        }
+    }
 }
 
 private object HttpText {
