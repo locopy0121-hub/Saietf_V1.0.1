@@ -1351,22 +1351,35 @@ class MainActivity : ComponentActivity() {
                 },
             )
             addView(
+                cardText("版本 / 資料庫", 11f, SaiTheme.MUTED).apply {
+                    setPadding(0, displayDp(8), 0, displayDp(2))
+                },
+            )
+            addView(
                 cardText(
                     "SaiETF $version  •  Room v5",
                     16f,
                     SaiTheme.TEXT,
                 ).apply {
                     setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    setPadding(0, displayDp(4), 0, displayDp(4))
+                    setPadding(0, 0, 0, displayDp(6))
+                },
+            )
+            addView(
+                cardText("即時行情", 11f, SaiTheme.MUTED).apply {
+                    setPadding(0, displayDp(2), 0, displayDp(2))
                 },
             )
             addView(
                 cardText(
                     "Fugle ${if (fugleConfigured) "已設定" else "未設定"}  •  $circuitState / $availability",
                     12f,
-                    SaiTheme.MUTED,
+                    SaiTheme.TEXT_SECONDARY,
                 ),
             )
+            contentDescription =
+                "系統摘要，SaiETF $version，Room v5，Fugle " +
+                    if (fugleConfigured) "已設定" else "未設定"
         }
 
     private fun buildPrimaryActionCard(
