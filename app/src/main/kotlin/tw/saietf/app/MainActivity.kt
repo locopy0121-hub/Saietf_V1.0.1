@@ -757,7 +757,7 @@ class MainActivity : ComponentActivity() {
                             },
                             LinearLayout.LayoutParams(
                                 0,
-                                dp(46),
+                                dp(48),
                                 1f,
                             ).apply {
                                 if (index > 0) marginStart = displayDp(4)
@@ -3477,7 +3477,7 @@ class MainActivity : ComponentActivity() {
                         if (index > 0) showInstrumentPage(symbols[index - 1])
                     }
                 },
-                LinearLayout.LayoutParams(0, dp(44), 1f),
+                LinearLayout.LayoutParams(0, dp(48), 1f),
             )
             addView(
                 Button(this@MainActivity).apply {
@@ -3499,7 +3499,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 },
-                LinearLayout.LayoutParams(0, dp(44), 1f),
+                LinearLayout.LayoutParams(0, dp(48), 1f),
             )
         }
         pageContent.addView(navigationRow)
@@ -3521,7 +3521,7 @@ class MainActivity : ComponentActivity() {
                     instrumentTabButtons[tab] = tabButton
                     addView(
                         tabButton,
-                        LinearLayout.LayoutParams(0, dp(46), 1f).apply {
+                        LinearLayout.LayoutParams(0, dp(48), 1f).apply {
                             marginStart = dp(1)
                             marginEnd = dp(1)
                         },
