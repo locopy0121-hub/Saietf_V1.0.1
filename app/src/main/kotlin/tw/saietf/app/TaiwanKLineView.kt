@@ -2,26 +2,25 @@ package tw.saietf.app
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.view.View
 import kotlin.math.max
 
 class TaiwanKLineView(context: Context) : View(context) {
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(71, 85, 105)
+        color = SaiTheme.GRID
         strokeWidth = 1f
     }
     private val upPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(220, 38, 38)
+        color = SaiTheme.GAIN
         strokeWidth = 2f
     }
     private val downPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(22, 163, 74)
+        color = SaiTheme.LOSS
         strokeWidth = 2f
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(100, 116, 139)
+        color = SaiTheme.MUTED
         textSize = 10f * resources.displayMetrics.scaledDensity
     }
 
