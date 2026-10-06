@@ -2,7 +2,6 @@ package tw.saietf.app
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.view.View
@@ -15,17 +14,17 @@ data class PortfolioTrendPoint(
 
 class PortfolioTrendView(context: Context) : View(context) {
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(15, 23, 42)
+        color = SaiTheme.BRAND
         strokeWidth = 3f
         style = Paint.Style.STROKE
     }
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(203, 213, 225)
+        color = SaiTheme.GRID
         strokeWidth = 1f
         style = Paint.Style.STROKE
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(100, 116, 139)
+        color = SaiTheme.MUTED
         textSize = 11f * resources.displayMetrics.scaledDensity
     }
 
