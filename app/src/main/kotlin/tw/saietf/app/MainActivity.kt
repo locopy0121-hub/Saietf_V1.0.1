@@ -1110,8 +1110,16 @@ class MainActivity : ComponentActivity() {
         val monthValue = TextView(this).apply {
             text = "股息摘要載入中…"
             textSize = 14f * displayScale
-            setTextColor(Color.rgb(71, 85, 105))
-            setPadding(0, 0, 0, dp(10))
+            setTextColor(SaiTheme.TEXT_SECONDARY)
+            background = SaiTheme.softCard(resources.displayMetrics.density)
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            setLineSpacing(0f, 1.15f)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(12)
+            }
         }
         pageContent.addView(monthValue)
 
@@ -1174,24 +1182,104 @@ class MainActivity : ComponentActivity() {
                     return@runOnUiThread
                 }
                 recent.forEach { row ->
-                    val status = if (row.status == DividendRepository.Status.CONFIRMED) {
-                        "已確認"
-                    } else {
-                        "預告"
-                    }
+                    val confirmed = row.status == DividendRepository.Status.CONFIRMED
                     val payment = row.paymentDateTaipei ?: "待公告"
                     container.addView(
-                        buildActionCard(
-                            title = "${row.symbol}  $status  ${formatTwd(row.estimatedCash)}",
-                            description =
-                                "除息 ${row.exDateTaipei}｜發放 $payment｜每股 " +
-                                    String.format(Locale.US, "%.4f", row.cashPerShare),
+                        buildDividendEventCard(
+                            symbol = row.symbol,
+                            confirmed = confirmed,
+                            cash = formatTwd(row.estimatedCash),
+                            exDate = row.exDateTaipei,
+                            paymentDate = payment,
+                            cashPerShare = String.format(Locale.US, "%.4f", row.cashPerShare),
                         ) {
                             showDividendCenter()
                         },
                     )
                 }
             }
+        }
+    }
+
+    private fun buildDividendEventCard(
+        symbol: String,
+        confirmed: Boolean,
+        cash: String,
+        exDate: String,
+        paymentDate: String,
+        cashPerShare: String,
+        action: () -> Unit,
+    ): LinearLayout {
+        val status = if (confirmed) "已確認" else "預告"
+        val statusColor = if (confirmed) SaiTheme.LOSS else SaiTheme.ACCENT
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.card(resources.displayMetrics.density)
+            elevation = dp(1).toFloat()
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        cardText(symbol, 18f, SaiTheme.TEXT).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText(status, 12f, statusColor).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            background = SaiTheme.rounded(
+                                fill = if (confirmed) SaiTheme.CARD_SOFT else SaiTheme.ACCENT_SOFT,
+                                radiusDp = 12f,
+                                density = resources.displayMetrics.density,
+                            )
+                            setPadding(displayDp(9), displayDp(4), displayDp(9), displayDp(4))
+                        },
+                    )
+                },
+            )
+
+            addView(
+                cardText(cash, 21f, SaiTheme.TEXT).apply {
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setPadding(0, displayDp(7), 0, displayDp(6))
+                },
+            )
+
+            addView(
+                cardText(
+                    "除息 $exDate  •  發放 $paymentDate",
+                    12f,
+                    SaiTheme.TEXT_SECONDARY,
+                ),
+            )
+            addView(
+                cardText(
+                    "每股 $cashPerShare",
+                    12f,
+                    SaiTheme.MUTED,
+                ).apply {
+                    setPadding(0, displayDp(3), 0, 0)
+                },
+            )
+
+            isClickable = true
+            isFocusable = true
+            contentDescription = "$symbol，$status，$cash，除息 $exDate，發放 $paymentDate，每股 $cashPerShare"
+            setOnClickListener { action() }
         }
     }
 
