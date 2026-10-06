@@ -8,6 +8,7 @@ THEMED_RUNTIME_FILES=(
   "app/src/main/kotlin/tw/saietf/app/MainActivity.kt"
   "app/src/main/kotlin/tw/saietf/app/TaiwanKLineView.kt"
   "app/src/main/kotlin/tw/saietf/app/PortfolioTrendView.kt"
+  "app/src/main/kotlin/tw/saietf/app/EtfComponentDonutView.kt"
 )
 
 for path in "${THEMED_RUNTIME_FILES[@]}"; do
@@ -26,6 +27,8 @@ grep -F 'SYSTEM("system")' "$THEME_FILE" >/dev/null
 grep -F 'LIGHT("light")' "$THEME_FILE" >/dev/null
 grep -F 'DARK("dark")' "$THEME_FILE" >/dev/null
 grep -F 'fun applyDarkMode(enabled: Boolean)' "$THEME_FILE" >/dev/null
+grep -F 'val CHART_1:' "$THEME_FILE" >/dev/null
+grep -F 'SaiTheme.CHART_8' "app/src/main/kotlin/tw/saietf/app/EtfComponentDonutView.kt" >/dev/null
 grep -F 'Theme.SaiETF.Dark' "$STYLES_FILE" >/dev/null
 test "$(grep -c 'android:forceDarkAllowed">false' "$STYLES_FILE")" -eq 2
 grep -F 'showThemeSettingsDialog' "$ACTIVITY_FILE" >/dev/null
