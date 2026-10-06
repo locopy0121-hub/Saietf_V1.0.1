@@ -102,7 +102,6 @@ class MainActivity : ComponentActivity() {
         }
 
     private fun applyThemeToWindow() {
-        SaiTheme.applyDarkMode(resolveDarkTheme())
         window.statusBarColor = SaiTheme.PAGE_BACKGROUND
         window.navigationBarColor = SaiTheme.CARD
         var flags = window.decorView.systemUiVisibility
@@ -259,6 +258,9 @@ class MainActivity : ComponentActivity() {
     private var instrumentEtfComponentsLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val darkTheme = resolveDarkTheme()
+        SaiTheme.applyDarkMode(darkTheme)
+        setTheme(if (darkTheme) R.style.Theme_SaiETF_Dark else R.style.Theme_SaiETF)
         super.onCreate(savedInstanceState)
         installBackNavigation()
         applyThemeToWindow()
