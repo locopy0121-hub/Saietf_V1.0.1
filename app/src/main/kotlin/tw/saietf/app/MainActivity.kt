@@ -449,7 +449,7 @@ class MainActivity : ComponentActivity() {
 
         val investmentCost = buildMetricCard(
             "帳務投入成本",
-            "NT$ 0",
+            "0",
             "Room Ledger → Finance Lock 真實投影",
         )
         investmentCostValue = investmentCost.second
@@ -1768,7 +1768,7 @@ class MainActivity : ComponentActivity() {
             "Ledger ${snapshot.ledgerCount} 筆｜已實現損益 ${formatSignedTwd(snapshot.realizedNetPnL)}"
 
         if (snapshot.holdings.isEmpty()) {
-            totalAssetValue.text = "NT$ 0"
+            totalAssetValue.text = "0"
             setDashboardPnlText(
                 view = pnlValue,
                 previous = latestPreviousDayPnl,
@@ -5061,7 +5061,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun formatTwd(value: Long): String =
-        "NT$ " + NumberFormat.getIntegerInstance(Locale.TAIWAN).format(value)
+        NumberFormat.getIntegerInstance(Locale.TAIWAN).format(value)
 
     private fun formatTwd(value: Double): String =
         formatTwd(value.toLong())

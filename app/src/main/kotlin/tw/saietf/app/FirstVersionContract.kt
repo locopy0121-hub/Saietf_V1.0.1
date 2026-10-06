@@ -25,7 +25,7 @@ object FirstVersionContract {
         ),
         DashboardMetric(
             title = "帳務投入成本",
-            value = "NT$ 0",
+            value = "0",
             note = "由 Room Ledger 經 Finance Lock 投影",
         ),
         DashboardMetric(
