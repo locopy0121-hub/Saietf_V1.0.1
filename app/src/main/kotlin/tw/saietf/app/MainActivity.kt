@@ -1126,7 +1126,7 @@ class MainActivity : ComponentActivity() {
         pageContent.addView(monthValue)
 
         pageContent.addView(
-            buildActionCard("股息中心", "新增 / 更新、月份統計與股息紀錄") {
+            buildPrimaryActionCard("股息中心", "新增 / 更新、月份統計與股息紀錄") {
                 showDividendCenter()
             },
         )
