@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.18", BuildConfig.VERSION_NAME)
-        assertEquals(10118, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.19", BuildConfig.VERSION_NAME)
+        assertEquals(10119, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -186,6 +186,10 @@ class BuildContractTest {
         assertTrue(activity.contains("renderTradePage"))
         assertTrue(activity.contains("renderDividendPage"))
         assertTrue(activity.contains("renderSettingsPage"))
+        assertTrue(activity.contains("showThemeSettingsDialog"))
+        assertTrue(activity.contains("SaiTheme.Mode.SYSTEM"))
+        assertTrue(activity.contains("applyThemeToWindow"))
+        assertTrue(activity.contains("UI_MODE_NIGHT_YES"))
         assertTrue(activity.contains("buildSettingsStatusCard"))
         assertTrue(activity.contains("contentDescription = \"\$title，\$description，可點擊\""))
         assertTrue(activity.contains("cardText(\"›\", 22f, SaiTheme.BRAND)"))

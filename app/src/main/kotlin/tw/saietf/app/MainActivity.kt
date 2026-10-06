@@ -3,6 +3,7 @@ package tw.saietf.app
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
@@ -84,6 +85,36 @@ class MainActivity : ComponentActivity() {
             "roomy" -> 1.30f
             else -> 1.00f
         }
+
+    private val themeMode: SaiTheme.Mode
+        get() = SaiTheme.Mode.fromKey(
+            getSharedPreferences("saietf-display", MODE_PRIVATE)
+                .getString("theme", SaiTheme.Mode.SYSTEM.key),
+        )
+
+    private fun resolveDarkTheme(): Boolean =
+        when (themeMode) {
+            SaiTheme.Mode.LIGHT -> false
+            SaiTheme.Mode.DARK -> true
+            SaiTheme.Mode.SYSTEM ->
+                (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                    Configuration.UI_MODE_NIGHT_YES
+        }
+
+    private fun applyThemeToWindow() {
+        SaiTheme.applyDarkMode(resolveDarkTheme())
+        window.statusBarColor = SaiTheme.PAGE_BACKGROUND
+        window.navigationBarColor = SaiTheme.CARD
+        var flags = window.decorView.systemUiVisibility
+        flags = if (SaiTheme.isDarkMode()) {
+            flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv() and
+                View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+        } else {
+            flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
+                View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        }
+        window.decorView.systemUiVisibility = flags
+    }
 
 
     private val repository: LedgerRepository
@@ -230,10 +261,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installBackNavigation()
-
-        window.statusBarColor = SaiTheme.PAGE_BACKGROUND
-        window.navigationBarColor = SaiTheme.CARD
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        applyThemeToWindow()
 
         val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1376,6 +1404,14 @@ class MainActivity : ComponentActivity() {
         )
 
         pageContent.addView(sectionTitle("介面"))
+        val themeDescription = when (themeMode) {
+            SaiTheme.Mode.SYSTEM -> "跟隨系統｜目前${if (SaiTheme.isDarkMode()) "深色" else "淺色"}"
+            SaiTheme.Mode.LIGHT -> "淺色模式"
+            SaiTheme.Mode.DARK -> "深色模式"
+        }
+        pageContent.addView(buildActionCard("主題模式", themeDescription) {
+            showThemeSettingsDialog()
+        })
         pageContent.addView(buildActionCard("顯示設定", "調整全域文字比例") {
             showDisplaySettingsDialog()
         })
@@ -4834,6 +4870,7 @@ class MainActivity : ComponentActivity() {
                     "行情牆" -> showMarketWall()
                     "股息" -> showDividendCenter()
                     "資料備份" -> showBackupCenter()
+                    "主題模式" -> showThemeSettingsDialog()
                     "顯示設定" -> showDisplaySettingsDialog()
                     "卡片間距" -> showSpacingSettingsDialog()
                     "系統狀態" -> showSystemStatusDialog()
@@ -4848,15 +4885,48 @@ class MainActivity : ComponentActivity() {
         AlertDialog.Builder(this)
             .setTitle("恢復介面標準設定")
             .setMessage(
-                "只會將文字比例與卡片間距恢復為標準值；" +
+                "會將主題恢復為跟隨系統，並將文字比例與卡片間距恢復為標準值；" +
                     "交易、持股、股息、行情憑證與本機帳務資料都不會變更。確認後畫面會立即重建。",
             )
             .setNegativeButton("取消", null)
             .setPositiveButton("確認恢復") { _, _ ->
                 getSharedPreferences("saietf-display", MODE_PRIVATE)
                     .edit()
+                    .remove("theme")
                     .remove("scale")
                     .remove("spacing")
+                    .apply()
+                recreate()
+            }
+            .show()
+    }
+
+    private fun showThemeSettingsDialog() {
+        val labels = listOf("跟隨系統", "淺色模式", "深色模式")
+        val modes = listOf(SaiTheme.Mode.SYSTEM, SaiTheme.Mode.LIGHT, SaiTheme.Mode.DARK)
+        val preferences = getSharedPreferences("saietf-display", MODE_PRIVATE)
+        val current = themeMode
+        val spinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                labels,
+            )
+            setSelection(modes.indexOf(current).coerceAtLeast(0))
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("主題模式")
+            .setMessage("可跟隨 Android 系統，也可固定使用淺色或深色。套用後立即重建畫面。")
+            .setView(spinner)
+            .setNegativeButton("取消", null)
+            .setNeutralButton("跟隨系統") { _, _ ->
+                preferences.edit().putString("theme", SaiTheme.Mode.SYSTEM.key).apply()
+                recreate()
+            }
+            .setPositiveButton("套用") { _, _ ->
+                preferences.edit()
+                    .putString("theme", modes[spinner.selectedItemPosition].key)
                     .apply()
                 recreate()
             }
