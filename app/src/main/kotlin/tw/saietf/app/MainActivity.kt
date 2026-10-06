@@ -4915,6 +4915,22 @@ class MainActivity : ComponentActivity() {
             .show()
     }
 
+    private fun currentThemeSummary(): String =
+        when (themeMode) {
+            SaiTheme.Mode.SYSTEM ->
+                "跟隨系統｜目前" + if (SaiTheme.isDarkMode()) "深色" else "淺色"
+            SaiTheme.Mode.LIGHT -> "固定淺色"
+            SaiTheme.Mode.DARK -> "固定深色"
+        }
+
+    private fun toggleDayNightTheme() {
+        val next = if (SaiTheme.isDarkMode()) SaiTheme.Mode.LIGHT else SaiTheme.Mode.DARK
+        getSharedPreferences("saietf-display", MODE_PRIVATE)
+            .edit()
+            .putString("theme", next.key)
+            .apply()
+        recreate()
+    }
     private fun showThemeSettingsDialog() {
         val labels = listOf("跟隨系統", "淺色模式", "深色模式")
         val modes = listOf(SaiTheme.Mode.SYSTEM, SaiTheme.Mode.LIGHT, SaiTheme.Mode.DARK)
