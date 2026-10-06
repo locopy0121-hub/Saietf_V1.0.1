@@ -4354,7 +4354,8 @@ class MainActivity : ComponentActivity() {
         }
 
     private fun sectionTitle(textValue: String): TextView = TextView(this).apply {
-        text = textValue
+        text = "▌  $textValue"
+        contentDescription = "區段：$textValue"
         textSize = 16f * displayScale
         setTextColor(SaiTheme.BRAND)
         setTypeface(typeface, android.graphics.Typeface.BOLD)
