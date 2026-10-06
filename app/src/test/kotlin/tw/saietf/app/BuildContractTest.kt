@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.80", BuildConfig.VERSION_NAME)
-        assertEquals(10080, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.81", BuildConfig.VERSION_NAME)
+        assertEquals(10081, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -179,6 +179,9 @@ class BuildContractTest {
         assertTrue(activity.contains("onBackPressedDispatcher.addCallback"))
         assertTrue(activity.contains("renderMainTab"))
         assertTrue(activity.contains("renderHomePage"))
+        assertTrue(activity.contains("cardText(value, 26f"))
+        assertTrue(activity.contains("LinearLayout.LayoutParams(dp(4), dp(18))"))
+        assertTrue(activity.contains("setLineSpacing(0f, 1.08f)"))
         assertTrue(activity.contains("renderMarketPage"))
         assertTrue(activity.contains("renderTradePage"))
         assertTrue(activity.contains("renderDividendPage"))
