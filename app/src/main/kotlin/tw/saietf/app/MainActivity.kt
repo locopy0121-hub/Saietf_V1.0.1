@@ -3751,16 +3751,26 @@ class MainActivity : ComponentActivity() {
             )
         }
         pageContent.addView(navigationRow)
+        pageContent.addView(sectionTitle("標的資訊"))
 
-        InstrumentInfoTab.entries.chunked(4).forEach { group ->
+        InstrumentInfoTab.entries.chunked(4).forEachIndexed { rowIndex, group ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
+                background = SaiTheme.softCard(resources.displayMetrics.density)
+                setPadding(displayDp(3), displayDp(3), displayDp(3), displayDp(3))
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    if (rowIndex > 0) topMargin = displayDp(4)
+                }
                 group.forEach { tab ->
                     val tabButton = Button(this@MainActivity).apply {
                         text = tab.label
                         isAllCaps = false
                         textSize = 12f * displayScale
                         stateListAnimator = null
+                        minimumHeight = displayDp(44)
                         contentDescription = "個股資訊：${tab.label}"
                         setOnClickListener {
                             selectInstrumentPageTab(tab)
@@ -3769,7 +3779,7 @@ class MainActivity : ComponentActivity() {
                     instrumentTabButtons[tab] = tabButton
                     addView(
                         tabButton,
-                        LinearLayout.LayoutParams(0, dp(40), 1f).apply {
+                        LinearLayout.LayoutParams(0, displayDp(44), 1f).apply {
                             marginStart = dp(1)
                             marginEnd = dp(1)
                         },
