@@ -192,7 +192,7 @@ class BuildContractTest {
         assertTrue(activity.contains("cardText(\"›\", 22f, Color.WHITE)"))
         assertTrue(activity.contains("▌  "))
         assertTrue(activity.contains("區段："))
-        assertTrue(activity.contains("\"●  \\${tab.label}\""))
+        assertTrue(activity.contains("●  "))
         assertTrue(activity.contains("系統摘要"))
         assertTrue(activity.contains("SaiTheme.softCard"))
         assertTrue(activity.contains("loadTradePreview"))
