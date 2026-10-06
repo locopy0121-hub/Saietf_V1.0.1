@@ -1407,21 +1407,24 @@ class MainActivity : ComponentActivity() {
         )
 
         pageContent.addView(sectionTitle("介面"))
-        val themeDescription = when (themeMode) {
-            SaiTheme.Mode.SYSTEM -> "跟隨系統｜目前${if (SaiTheme.isDarkMode()) "深色" else "淺色"}"
-            SaiTheme.Mode.LIGHT -> "淺色模式"
-            SaiTheme.Mode.DARK -> "深色模式"
-        }
-        pageContent.addView(buildActionCard("主題模式", themeDescription) {
+        pageContent.addView(buildActionCard("主題模式", currentThemeSummary()) {
             showThemeSettingsDialog()
         })
+        pageContent.addView(
+            buildPrimaryActionCard(
+                title = if (SaiTheme.isDarkMode()) "切換日間模式" else "切換夜間模式",
+                description = "一鍵切換日 / 夜；需要自動切換時使用主題模式的「跟隨系統」",
+            ) {
+                toggleDayNightTheme()
+            },
+        )
         pageContent.addView(buildActionCard("顯示設定", "調整全域文字比例") {
             showDisplaySettingsDialog()
         })
         pageContent.addView(buildActionCard("卡片間距", "緊湊 / 標準 / 寬鬆") {
             showSpacingSettingsDialog()
         })
-        pageContent.addView(buildActionCard("恢復介面標準", "清除顯示比例與間距偏好") {
+        pageContent.addView(buildActionCard("恢復介面標準", "主題、文字比例與卡片間距恢復預設") {
             showResetDisplaySettingsConfirmation()
         })
 
