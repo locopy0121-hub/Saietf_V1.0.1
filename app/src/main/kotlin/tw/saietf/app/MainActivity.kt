@@ -1387,13 +1387,39 @@ class MainActivity : ComponentActivity() {
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            addView(cardText(title, 18f, Color.WHITE).apply {
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            })
-            addView(cardText(description, 13f, Color.rgb(237, 233, 254)))
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        cardText(title, 18f, Color.WHITE).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText("›", 22f, Color.WHITE).apply {
+                            gravity = Gravity.CENTER
+                        },
+                        LinearLayout.LayoutParams(
+                            displayDp(28),
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ),
+                    )
+                },
+            )
+            addView(
+                cardText(description, 13f, Color.rgb(237, 233, 254)).apply {
+                    setPadding(0, displayDp(3), displayDp(28), 0)
+                },
+            )
             isClickable = true
             isFocusable = true
-            contentDescription = "$title，$description"
+            contentDescription = "$title，$description，可點擊"
             setOnClickListener { action() }
         }
 
