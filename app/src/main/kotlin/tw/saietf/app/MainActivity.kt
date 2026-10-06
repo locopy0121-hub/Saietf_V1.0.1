@@ -433,7 +433,7 @@ class MainActivity : ComponentActivity() {
             "台股 / ETF 資產總覽｜${BuildConfig.VERSION_NAME}",
         )
 
-        val totalAsset = buildMetricCard(
+        val totalAsset = buildHeroMetricCard(
             "總資產",
             "行情載入中",
             "完整行情覆蓋後才發布總市值",
@@ -4577,6 +4577,51 @@ class MainActivity : ComponentActivity() {
         accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
         minimumHeight = displayDp(44)
+    }
+
+    private fun buildHeroMetricCard(
+        title: String,
+        value: String,
+        note: String,
+    ): Pair<LinearLayout, TextView> {
+        val valueView = cardText(value, 34f, SaiTheme.TEXT).apply {
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, displayDp(7), 0, displayDp(6))
+        }
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.heroCard(resources.displayMetrics.density)
+            elevation = dp(2).toFloat()
+            setPadding(displayDp(18), displayDp(16), displayDp(18), displayDp(16))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(12)
+            }
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        View(this@MainActivity).apply {
+                            setBackgroundColor(SaiTheme.BRAND)
+                        },
+                        LinearLayout.LayoutParams(displayDp(4), displayDp(20)).apply {
+                            marginEnd = displayDp(10)
+                        },
+                    )
+                    addView(cardText(title, 15f, SaiTheme.TEXT_SECONDARY).apply {
+                        setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    })
+                },
+            )
+            addView(valueView)
+            addView(cardText(note, 12f, SaiTheme.MUTED).apply {
+                setLineSpacing(0f, 1.08f)
+            })
+        }
+        return card to valueView
     }
 
     private fun buildMetricCard(
