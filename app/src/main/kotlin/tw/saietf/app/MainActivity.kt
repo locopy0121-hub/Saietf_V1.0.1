@@ -1504,6 +1504,7 @@ class MainActivity : ComponentActivity() {
             )
             isClickable = true
             isFocusable = true
+            minimumHeight = displayDp(64)
             contentDescription = "$title，$description，可點擊"
             setOnClickListener { action() }
         }
@@ -1556,6 +1557,7 @@ class MainActivity : ComponentActivity() {
             )
             isClickable = true
             isFocusable = true
+            minimumHeight = displayDp(64)
             contentDescription = "$title，$description，可點擊"
             setOnClickListener { action() }
         }
@@ -4614,6 +4616,8 @@ class MainActivity : ComponentActivity() {
             addView(cardText(card.status, 13f, SaiTheme.MUTED))
             isClickable = true
             isFocusable = true
+            minimumHeight = displayDp(64)
+            contentDescription = "${card.title}，${card.body}，可點擊"
             setOnClickListener {
                 when (card.title) {
                     "交易新增" -> showTradeDialog()
