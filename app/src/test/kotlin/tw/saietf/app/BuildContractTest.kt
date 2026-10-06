@@ -187,7 +187,7 @@ class BuildContractTest {
         assertTrue(activity.contains("renderDividendPage"))
         assertTrue(activity.contains("renderSettingsPage"))
         assertTrue(activity.contains("buildSettingsStatusCard"))
-        assertTrue(activity.contains("contentDescription = \"$title，$description，可點擊\""))
+        assertTrue(activity.contains("contentDescription = \"\$title，\$description，可點擊\""))
         assertTrue(activity.contains("cardText(\"›\", 22f, SaiTheme.BRAND)"))
         assertTrue(activity.contains("系統摘要"))
         assertTrue(activity.contains("SaiTheme.softCard"))
