@@ -4325,8 +4325,17 @@ class MainActivity : ComponentActivity() {
     private fun statusText(value: String): TextView = TextView(this).apply {
         text = value
         textSize = 13f * displayScale
-        setTextColor(SaiTheme.MUTED)
-        setPadding(0, 0, 0, dp(8))
+        setTextColor(SaiTheme.TEXT_SECONDARY)
+        background = SaiTheme.softCard(resources.displayMetrics.density)
+        setPadding(displayDp(14), displayDp(11), displayDp(14), displayDp(11))
+        setLineSpacing(0f, 1.08f)
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            bottomMargin = displayDp(10)
+        }
+        contentDescription = "狀態：$value"
     }
 
     private fun buildMetricCard(
