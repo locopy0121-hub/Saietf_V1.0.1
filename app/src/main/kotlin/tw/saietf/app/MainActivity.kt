@@ -374,28 +374,53 @@ class MainActivity : ComponentActivity() {
                 bottomMargin = dp(16)
             }
             addView(
-                TextView(this@MainActivity).apply {
-                    text = "SaiETF  •  台股資產管家"
-                    textSize = 12f * displayScale
-                    setTextColor(SaiTheme.BRAND)
-                    setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    setPadding(0, 0, 0, dp(4))
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        TextView(this@MainActivity).apply {
+                            text = "SaiETF"
+                            textSize = 12f * displayScale
+                            setTextColor(SaiTheme.BRAND)
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                    addView(
+                        TextView(this@MainActivity).apply {
+                            text = "  台股資產管家"
+                            textSize = 12f * displayScale
+                            setTextColor(SaiTheme.MUTED)
+                        },
+                    )
                 },
             )
             addView(
                 TextView(this@MainActivity).apply {
                     text = title
-                    textSize = 28f * displayScale
+                    textSize = 27f * displayScale
                     setTextColor(SaiTheme.TEXT)
                     setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setPadding(0, dp(6), 0, 0)
                 },
             )
             addView(
                 TextView(this@MainActivity).apply {
                     text = subtitle
                     textSize = 13f * displayScale
-                    setTextColor(SaiTheme.MUTED)
-                    setPadding(0, dp(4), 0, 0)
+                    setTextColor(SaiTheme.TEXT_SECONDARY)
+                    setPadding(0, dp(5), 0, 0)
+                    setLineSpacing(0f, 1.08f)
+                },
+            )
+            addView(
+                View(this@MainActivity).apply {
+                    setBackgroundColor(SaiTheme.BRAND_SOFT)
+                    layoutParams = LinearLayout.LayoutParams(
+                        dp(48),
+                        dp(3),
+                    ).apply {
+                        topMargin = dp(10)
+                    }
                 },
             )
         }
