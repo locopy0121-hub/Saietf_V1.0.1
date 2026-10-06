@@ -19,6 +19,7 @@ object SaiTheme {
     val GAIN: Int = Color.rgb(220, 38, 38)
     val LOSS: Int = Color.rgb(22, 163, 74)
     val FLAT: Int = MUTED
+    val PNL_FLAT: Int = Color.rgb(202, 138, 4)
 
     fun rounded(
         fill: Int,

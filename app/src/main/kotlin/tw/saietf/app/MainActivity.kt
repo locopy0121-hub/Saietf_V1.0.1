@@ -1757,20 +1757,61 @@ class MainActivity : ComponentActivity() {
 
         if (snapshot.holdings.isEmpty()) {
             totalAssetValue.text = "NT$ 0"
-            pnlValue.text =
-                "${latestPreviousDayPnl?.let(::formatSignedTwd) ?: "—"} / NT$ 0 / NT$ 0"
+            setDashboardPnlText(
+                view = pnlValue,
+                previous = latestPreviousDayPnl,
+                today = 0L,
+                total = 0.0,
+            )
             marketStatusValue.text = "目前沒有持股，不需抓取行情"
             latestMarketBatch = null
             latestValuation = valuator.value(emptyList(), emptyMap())
         } else if (latestMarketBatch == null) {
             totalAssetValue.text = "行情載入中"
-            pnlValue.text =
-                "${latestPreviousDayPnl?.let(::formatSignedTwd) ?: "—"} / — / —"
+            setDashboardPnlText(
+                view = pnlValue,
+                previous = latestPreviousDayPnl,
+                today = null,
+                total = null,
+            )
             marketStatusValue.text = "行情中心準備更新 ${snapshot.holdings.size} 檔持股"
         }
         refreshVisibleMarketSections()
     }
 
+    private fun setDashboardPnlText(
+        view: TextView,
+        previous: Long?,
+        today: Long?,
+        total: Double?,
+    ) {
+        val parts = listOf(
+            (previous?.let(::formatSignedTwd) ?: "—") to previous?.toDouble(),
+            (today?.let(::formatSignedTwd) ?: "—") to today?.toDouble(),
+            (total?.let(::formatSignedTwd) ?: "—") to total,
+        )
+        val builder = android.text.SpannableStringBuilder()
+        parts.forEachIndexed { index, (textValue, numericValue) ->
+            if (index > 0) builder.append(" / ")
+            val start = builder.length
+            builder.append(textValue)
+            val color = when {
+                numericValue == null -> SaiTheme.MUTED
+                numericValue > 0.0 -> SaiTheme.GAIN
+                numericValue < 0.0 -> SaiTheme.LOSS
+                else -> SaiTheme.PNL_FLAT
+            }
+            builder.setSpan(
+                android.text.style.ForegroundColorSpan(color),
+                start,
+                builder.length,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+        }
+        view.text = builder
+        view.contentDescription =
+            "昨日損益 ${parts[0].first}，今日損益 ${parts[1].first}，總損益 ${parts[2].first}"
+    }
     private fun scheduleMarketRefresh(delayMillis: Long, generation: Long) {
         if (!marketPollingActive || generation != pollGeneration) return
         marketScheduler.schedule(
@@ -1882,19 +1923,21 @@ class MainActivity : ComponentActivity() {
 
         if (valuation.isComplete) {
             totalAssetValue.text = formatTwd(valuation.totalMarketValue ?: 0L)
-            val previousText = latestPreviousDayPnl?.let(::formatSignedTwd) ?: "—"
-            val todayText = if (freshCurrentSession) {
-                valuation.todayPnl?.let(::formatSignedTwd) ?: "—"
-            } else {
-                "—"
-            }
-            pnlValue.text =
-                "$previousText / $todayText / " +
-                    "${valuation.totalPnl?.let(::formatSignedTwd) ?: "—"}"
+            setDashboardPnlText(
+                view = pnlValue,
+                previous = latestPreviousDayPnl,
+                today = if (freshCurrentSession) valuation.todayPnl else null,
+                total = valuation.totalPnl,
+            )
         } else {
             totalAssetValue.text =
                 "行情 ${valuation.quotedHoldingCount}/${valuation.expectedHoldingCount}｜暫不結算"
-            pnlValue.text = "— / — / —"
+            setDashboardPnlText(
+                view = pnlValue,
+                previous = null,
+                today = null,
+                total = null,
+            )
         }
 
         val sources = batch.quotes.values
@@ -2854,8 +2897,8 @@ class MainActivity : ComponentActivity() {
             addView(label("交易模式"))
             addView(modeSpinner)
             addView(symbol)
-            addView(shares)
             addView(price)
+            addView(shares)
             addView(fee)
             addView(tax)
             addView(tradeDate)
