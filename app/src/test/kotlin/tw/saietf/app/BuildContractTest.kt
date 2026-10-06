@@ -196,7 +196,7 @@ class BuildContractTest {
         assertTrue(activity.contains("buildSettingsStatusCard"))
         assertTrue(activity.contains("contentDescription = \"\$title，\$description，可點擊\""))
         assertTrue(activity.contains("cardText(\"›\", 22f, SaiTheme.BRAND)"))
-        assertTrue(activity.contains("cardText(\"›\", 22f, Color.WHITE)"))
+        assertTrue(activity.contains("cardText(\"›\", 22f, SaiTheme.ON_ACCENT)"))
         assertTrue(activity.contains("▌  "))
         assertTrue(activity.contains("區段："))
         assertTrue(activity.contains("●  "))
