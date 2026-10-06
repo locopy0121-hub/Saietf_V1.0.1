@@ -993,7 +993,7 @@ class MainActivity : ComponentActivity() {
             },
         )
 
-        pageContent.addView(sectionTitle("最近交易"))
+        pageContent.addView(sectionTitle("最近交易｜最多 5 筆"))
         val preview = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             addView(statusText("最近交易載入中…"))
@@ -1129,12 +1129,21 @@ class MainActivity : ComponentActivity() {
                 },
             )
 
+            addView(
+                cardText("查看完整交易紀錄 ›", 11f, SaiTheme.BRAND).apply {
+                    gravity = Gravity.END
+                    setPadding(0, displayDp(7), 0, 0)
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                },
+            )
+
             isClickable = true
             isFocusable = true
             contentDescription =
                 "$tradeDate，$symbol，$side，$shares 股，價格 " +
                     String.format(Locale.US, "%.2f", price) +
-                    if (edited) "，已修改" else ""
+                    (if (edited) "，已修改" else "") +
+                    "，可查看完整交易紀錄"
             setOnClickListener { action() }
         }
     }
