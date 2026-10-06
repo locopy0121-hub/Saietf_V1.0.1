@@ -8,6 +8,7 @@
         <item name="android:statusBarColor">#F2F7FF</item>
         <item name="android:windowBackground">#F2F7FF</item>
         <item name="android:colorAccent">#2563EB</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 
     <style name="Theme.SaiETF.Dark" parent="android:style/Theme.Material.NoActionBar">
@@ -18,5 +19,6 @@
         <item name="android:statusBarColor">#08111F</item>
         <item name="android:windowBackground">#08111F</item>
         <item name="android:colorAccent">#4DA6FF</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 </resources>
