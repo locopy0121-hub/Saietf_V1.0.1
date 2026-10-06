@@ -478,7 +478,7 @@ class MainActivity : ComponentActivity() {
 
         pageContent.addView(sectionTitle("快速操作"))
         pageContent.addView(
-            buildActionCard(
+            buildPrimaryActionCard(
                 title = "查看持股",
                 description = "持股清單、均價、市值與個股 8 大資訊頁",
             ) { showHoldingsDialog() },
