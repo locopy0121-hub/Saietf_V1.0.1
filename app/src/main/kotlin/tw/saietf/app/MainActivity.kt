@@ -3551,6 +3551,15 @@ class MainActivity : ComponentActivity() {
         val titleRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            background = SaiTheme.card(resources.displayMetrics.density)
+            setPadding(displayDp(12), displayDp(12), displayDp(14), displayDp(12))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+            contentDescription = "標的即時行情：$symbol"
             addView(
                 Button(this@MainActivity).apply {
                     text = "‹"
@@ -3578,6 +3587,11 @@ class MainActivity : ComponentActivity() {
             addView(
                 LinearLayout(this@MainActivity).apply {
                     orientation = LinearLayout.VERTICAL
+                    addView(
+                        cardText("即時行情", 10f, SaiTheme.BRAND).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
                     addView(cardText("${quote?.name ?: symbol}  $symbol", 22f, SaiTheme.TEXT).apply {
                         setTypeface(typeface, android.graphics.Typeface.BOLD)
                     })
@@ -3621,7 +3635,7 @@ class MainActivity : ComponentActivity() {
 
         val metricRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(12), 0, dp(10))
+            setPadding(0, 0, 0, dp(10))
             addView(
                 buildInstrumentMetricCard(
                     "均價",
