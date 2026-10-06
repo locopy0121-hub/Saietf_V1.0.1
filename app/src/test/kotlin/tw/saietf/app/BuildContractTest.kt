@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.29", BuildConfig.VERSION_NAME)
-        assertEquals(10129, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.30", BuildConfig.VERSION_NAME)
+        assertEquals(10130, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -175,6 +175,8 @@ class BuildContractTest {
         assertTrue(activity.contains("OnBackPressedCallback"))
         assertTrue(activity.contains("onBackPressedDispatcher"))
         assertTrue(activity.contains("instrumentTabButtons"))
+        assertTrue(activity.contains("sectionTitle(\"標的資訊\")"))
+        assertTrue(activity.contains("InstrumentInfoTab.entries.chunked(4).forEachIndexed"))
         assertTrue(activity.contains("updateInstrumentTabSelection"))
         assertTrue(activity.contains("OnBackPressedCallback"))
         assertTrue(activity.contains("onBackPressedDispatcher.addCallback"))
