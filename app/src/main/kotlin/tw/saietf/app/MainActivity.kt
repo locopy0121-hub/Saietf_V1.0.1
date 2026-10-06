@@ -566,14 +566,102 @@ class MainActivity : ComponentActivity() {
                     ?.let { String.format(Locale.US, "%.2f", it) }
                     ?: "—"
                 val marketValueText = row.marketValue?.let(::formatTwd) ?: "—"
-                val pnlText = row.totalPnl?.let(::formatSignedTwd) ?: "—"
                 container.addView(
-                    buildActionCard(
-                        title = "${row.symbol}  ${quote?.name ?: ""}",
-                        description = "${row.shares} 股｜現價 $priceText｜市值 $marketValueText｜總損益 $pnlText",
+                    buildHoldingSummaryCard(
+                        symbol = row.symbol,
+                        name = quote?.name ?: "",
+                        shares = row.shares,
+                        price = priceText,
+                        marketValue = marketValueText,
+                        totalPnl = row.totalPnl,
                     ) { showInstrumentPage(row.symbol) },
                 )
             }
+    }
+
+    private fun buildHoldingSummaryCard(
+        symbol: String,
+        name: String,
+        shares: Long,
+        price: String,
+        marketValue: String,
+        totalPnl: Long?,
+        action: () -> Unit,
+    ): LinearLayout {
+        val pnlText = totalPnl?.let(::formatSignedTwd) ?: "—"
+        val pnlColor = when {
+            totalPnl == null || totalPnl == 0L -> SaiTheme.FLAT
+            totalPnl > 0L -> SaiTheme.GAIN
+            else -> SaiTheme.LOSS
+        }
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.card(resources.displayMetrics.density)
+            elevation = dp(1).toFloat()
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        cardText(symbol, 18f, SaiTheme.TEXT).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                    addView(
+                        cardText(name, 14f, SaiTheme.TEXT_SECONDARY).apply {
+                            setPadding(displayDp(9), 0, displayDp(8), 0)
+                            maxLines = 2
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText(price, 18f, SaiTheme.TEXT).apply {
+                            gravity = Gravity.END
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                },
+            )
+
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, displayDp(8), 0, 0)
+                    addView(
+                        cardText("$shares 股  •  $marketValue", 12f, SaiTheme.MUTED),
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText(pnlText, 14f, pnlColor).apply {
+                            gravity = Gravity.END
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                },
+            )
+
+            isClickable = true
+            isFocusable = true
+            contentDescription = "$symbol $name，$shares 股，現價 $price，市值 $marketValue，總損益 $pnlText"
+            setOnClickListener { action() }
+        }
     }
 
     private fun buildInlineMarketSortBar(): LinearLayout =
