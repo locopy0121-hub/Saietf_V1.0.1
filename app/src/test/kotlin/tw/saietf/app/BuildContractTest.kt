@@ -213,7 +213,7 @@ class BuildContractTest {
         assertTrue(activity.contains("區段："))
         assertTrue(activity.contains("●  "))
         assertTrue(activity.contains("台股資產管家  •"))
-        assertTrue(activity.contains("buildPrimaryActionCard(\n                title = \"查看持股\""))
+        assertTrue(activity.contains("\"新增交易\" to { showTradeDialog() }"))
         assertTrue(activity.contains("buildPrimaryActionCard(\n                title = \"行情牆\""))
         assertTrue(activity.contains("sectionTitle(\"帳務工具\")"))
         assertTrue(activity.contains("buildPrimaryActionCard(\"股息中心\""))
