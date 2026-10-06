@@ -975,15 +975,15 @@ class MainActivity : ComponentActivity() {
                     return@runOnUiThread
                 }
                 rows.forEach { row ->
-                    val side = if (row.side == LedgerEntryKind.BUY) "買進" else "賣出"
-                    val edited = if (row.isEdited) "｜已修改" else ""
                     container.addView(
-                        buildActionCard(
-                            title = "${row.tradeDateTaipei}  ${row.symbol}  $side",
-                            description =
-                                "${row.shares} 股 × " +
-                                    String.format(Locale.US, "%.2f", row.price) +
-                                    "｜${row.tradeMode.name}$edited",
+                        buildTradePreviewCard(
+                            symbol = row.symbol,
+                            tradeDate = row.tradeDateTaipei,
+                            isBuy = row.side == LedgerEntryKind.BUY,
+                            shares = row.shares,
+                            price = row.price,
+                            mode = row.tradeMode.name,
+                            edited = row.isEdited,
                         ) {
                             showTransactionHistoryDialog()
                         },
@@ -997,6 +997,106 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+        }
+    }
+
+    private fun buildTradePreviewCard(
+        symbol: String,
+        tradeDate: String,
+        isBuy: Boolean,
+        shares: Long,
+        price: Double,
+        mode: String,
+        edited: Boolean,
+        action: () -> Unit,
+    ): LinearLayout {
+        val side = if (isBuy) "買進" else "賣出"
+        val sideColor = if (isBuy) SaiTheme.GAIN else SaiTheme.LOSS
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.card(resources.displayMetrics.density)
+            elevation = dp(1).toFloat()
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        cardText(side, 13f, sideColor).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            background = SaiTheme.rounded(
+                                fill = SaiTheme.SURFACE_SOFT,
+                                radiusDp = 12f,
+                                density = resources.displayMetrics.density,
+                                strokeColor = SaiTheme.BORDER,
+                                strokeDp = 1,
+                            )
+                            setPadding(displayDp(9), displayDp(4), displayDp(9), displayDp(4))
+                        },
+                    )
+                    addView(
+                        cardText(symbol, 18f, SaiTheme.TEXT).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            setPadding(displayDp(10), 0, 0, 0)
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText(
+                            String.format(Locale.US, "%.2f", price),
+                            17f,
+                            SaiTheme.TEXT,
+                        ).apply {
+                            gravity = Gravity.END
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                },
+            )
+
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, displayDp(8), 0, 0)
+                    addView(
+                        cardText("$shares 股  •  $mode", 12f, SaiTheme.TEXT_SECONDARY),
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText(
+                            tradeDate + if (edited) "  •  已修改" else "",
+                            12f,
+                            SaiTheme.MUTED,
+                        ).apply {
+                            gravity = Gravity.END
+                        },
+                    )
+                },
+            )
+
+            isClickable = true
+            isFocusable = true
+            contentDescription =
+                "$tradeDate，$symbol，$side，$shares 股，價格 " +
+                    String.format(Locale.US, "%.2f", price) +
+                    if (edited) "，已修改" else ""
+            setOnClickListener { action() }
         }
     }
 
