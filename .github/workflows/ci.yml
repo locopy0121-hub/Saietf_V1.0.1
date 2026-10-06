@@ -35,6 +35,8 @@ jobs:
         run: bash ./scripts/apply_release_version.sh
       - name: Verify frozen finance core lock
         run: ./scripts/verify_finance_lock.sh
+      - name: Verify frozen market update center core
+        run: ./scripts/verify_market_core_lock.sh
       - name: Verify unit tests, lint, and debug APK
         run: ./gradlew --no-daemon clean test :core:database:testDebugUnitTest :core:database:assembleAndroidTest lintDebug :app:assembleDebug
       - name: Verify fixed development signing certificate
