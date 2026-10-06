@@ -336,6 +336,12 @@ class BuildContractTest {
         assertTrue(activity.contains("listOf(10, 20, 50)"))
         assertTrue(providers.contains("YahooIntradayHistoryProvider"))
         assertTrue(providers.contains("interval=1m"))
+        assertTrue(providers.contains("TaiwanSecurityNameCache"))
+        assertTrue(providers.contains("TaiwanSecurityNameCache.remember"))
+        assertTrue(providers.contains("val localizedNames = TaiwanSecurityNameCache.resolve(symbols)"))
+        assertTrue(providers.contains("name = localizedName?.trim()"))
+        assertTrue(!providers.contains("meta.optString(\"longName\")"))
+        assertTrue(!providers.contains("meta.optString(\"shortName\")"))
         assertTrue(gradle.contains("saietf-development.jks"))
     }
 
