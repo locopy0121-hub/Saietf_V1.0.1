@@ -3561,6 +3561,11 @@ class MainActivity : ComponentActivity() {
         instrumentTabButtons.forEach { (tab, button) ->
             val active = tab == instrumentSelectedTab
             button.isSelected = active
+            button.contentDescription = if (active) {
+                "個股資訊：${tab.label}，目前分頁"
+            } else {
+                "切換個股資訊：${tab.label}"
+            }
             button.setTextColor(
                 if (active) SaiTheme.BRAND else SaiTheme.TEXT_SECONDARY,
             )
