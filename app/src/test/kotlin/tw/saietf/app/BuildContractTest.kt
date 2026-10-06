@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.81", BuildConfig.VERSION_NAME)
-        assertEquals(10081, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.82", BuildConfig.VERSION_NAME)
+        assertEquals(10082, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -197,6 +197,10 @@ class BuildContractTest {
         assertTrue(activity.contains("homeHoldingsContainer"))
         assertTrue(activity.contains("marketQuotesContainer"))
         assertTrue(activity.contains("renderHomeHoldingsInline"))
+        assertTrue(activity.contains("buildHoldingSummaryCard"))
+        assertTrue(activity.contains("totalPnl > 0L -> SaiTheme.GAIN"))
+        assertTrue(activity.contains("else -> SaiTheme.LOSS"))
+        assertTrue(activity.contains("總損益 $pnlText"))
         assertTrue(activity.contains("buildInlineMarketSortBar"))
         assertTrue(activity.contains("marketWallDescending"))
         assertTrue(activity.contains("SaiTheme.BRAND_SOFT"))
