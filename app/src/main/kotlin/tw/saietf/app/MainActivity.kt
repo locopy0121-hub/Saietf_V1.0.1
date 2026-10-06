@@ -535,13 +535,42 @@ class MainActivity : ComponentActivity() {
     private fun buildInlineMarketSortBar(): LinearLayout =
         LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 0, 0, dp(8))
-            MarketWallSort.entries.forEach { option ->
+            setPadding(0, 0, 0, displayDp(10))
+            val density = resources.displayMetrics.density
+            MarketWallSort.entries.forEachIndexed { index, option ->
+                val active = marketWallSort == option
                 addView(
-                    Button(this@MainActivity).apply {
-                        text = option.label
-                        isAllCaps = false
-                        textSize = 11f * displayScale
+                    TextView(this@MainActivity).apply {
+                        text = if (active) {
+                            option.label + if (marketWallDescending) "  ↓" else "  ↑"
+                        } else {
+                            option.label
+                        }
+                        gravity = Gravity.CENTER
+                        textSize = 12f * displayScale
+                        setTypeface(
+                            typeface,
+                            if (active) {
+                                android.graphics.Typeface.BOLD
+                            } else {
+                                android.graphics.Typeface.NORMAL
+                            },
+                        )
+                        setTextColor(if (active) SaiTheme.BRAND else SaiTheme.TEXT_SECONDARY)
+                        background = SaiTheme.rounded(
+                            fill = if (active) SaiTheme.BRAND_SOFT else SaiTheme.CARD,
+                            radiusDp = 16f,
+                            density = density,
+                            strokeColor = if (active) SaiTheme.BRAND else SaiTheme.BORDER,
+                            strokeDp = 1,
+                        )
+                        isClickable = true
+                        isFocusable = true
+                        contentDescription = if (active) {
+                            "${option.label}排序，目前${if (marketWallDescending) "降冪" else "升冪"}"
+                        } else {
+                            "依${option.label}排序"
+                        }
                         setOnClickListener {
                             if (marketWallSort == option) {
                                 marketWallDescending = !marketWallDescending
@@ -549,15 +578,14 @@ class MainActivity : ComponentActivity() {
                                 marketWallSort = option
                                 marketWallDescending = true
                             }
-                            renderMarketQuotesInline()
                             renderMainTab(MainTab.MARKET)
                         }
                         layoutParams = LinearLayout.LayoutParams(
                             0,
-                            dp(44),
+                            dp(46),
                             1f,
                         ).apply {
-                            marginEnd = dp(4)
+                            if (index > 0) marginStart = displayDp(4)
                         }
                     },
                 )
