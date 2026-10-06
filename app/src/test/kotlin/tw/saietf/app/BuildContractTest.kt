@@ -224,7 +224,7 @@ class BuildContractTest {
         assertTrue(activity.contains("SaiTheme.ACCENT_SOFT"))
         assertTrue(activity.contains("本月摘要"))
         assertTrue(activity.contains("今年已確認"))
-        assertTrue(activity.contains("資料與系統"))
+        assertTrue(activity.contains("系統與維護"))
         assertTrue(activity.contains("Room v5"))
         assertTrue(activity.contains("fitsSystemWindows = true"))
         assertTrue(activity.contains("homeHoldingsContainer"))
