@@ -198,7 +198,7 @@ class BuildContractTest {
         assertTrue(activity.contains("marketQuotesContainer"))
         assertTrue(activity.contains("renderHomeHoldingsInline"))
         assertTrue(activity.contains("buildHoldingSummaryCard"))
-        assertTrue(activity.contains("totalPnl > 0L -> SaiTheme.GAIN"))
+        assertTrue(activity.contains("totalPnl > 0.0 -> SaiTheme.GAIN"))
         assertTrue(activity.contains("else -> SaiTheme.LOSS"))
         assertTrue(activity.contains("總損益 $pnlText"))
         assertTrue(activity.contains("buildInlineMarketSortBar"))
