@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.12", BuildConfig.VERSION_NAME)
-        assertEquals(10112, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.13", BuildConfig.VERSION_NAME)
+        assertEquals(10113, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -392,6 +392,9 @@ class BuildContractTest {
         assertTrue(activity.contains("本月目前沒有股息事件"))
         assertTrue(activity.contains("backupRepository.inspectJson"))
         assertTrue(activity.contains("confirmBackupRestore"))
+        assertTrue(activity.contains("目前帳務非空"))
+        assertTrue(activity.contains("restoreButton.isEnabled = !hasExistingLedger"))
+        assertTrue(activity.contains("交易、持股、股息、行情憑證與本機帳務資料都不會變更"))
         assertTrue(activity.contains("SHA-256"))
         assertTrue(activity.contains("showDisplaySettingsDialog"))
         assertTrue(activity.contains("displayScale"))

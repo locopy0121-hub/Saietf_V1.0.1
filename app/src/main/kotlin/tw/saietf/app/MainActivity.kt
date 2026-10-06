@@ -2279,6 +2279,7 @@ class MainActivity : ComponentActivity() {
             .atZone(taipeiZone)
             .toLocalDateTime()
         val hashPreview = inspection.payloadSha256.take(12)
+        val hasExistingLedger = latestLedgerSnapshot?.ledgerCount?.let { it > 0 } ?: false
         val message = buildString {
             append("備份時間 $createdAt")
             append("\n格式 v${inspection.formatVersion}｜DB v${inspection.databaseSchemaVersion}")
@@ -2287,19 +2288,37 @@ class MainActivity : ComponentActivity() {
             append("｜每日快照 ${inspection.dailySnapshotCount} 筆")
             append("\n盤中走勢 ${inspection.intradayPointCount} 點")
             append("｜股息 ${inspection.dividendCount} 筆")
-            append("\n\n還原仍遵守不可變 Ledger 規則；目前帳務已有交易時會拒絕覆寫。")
+            if (hasExistingLedger) {
+                append("\n\n目前帳務非空。為保護不可變 Ledger，本次還原不可執行；請保留現有資料或改在空帳務環境還原。")
+            } else {
+                append("\n\n目前帳務為空，可執行還原。還原仍遵守不可變 Ledger 規則。")
+            }
         }
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("確認備份還原")
             .setMessage(message)
             .setNegativeButton("取消", null)
-            .setPositiveButton("確認還原") { _, _ ->
+            .setPositiveButton("確認還原", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val restoreButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            restoreButton.isEnabled = !hasExistingLedger
+            restoreButton.contentDescription = if (hasExistingLedger) {
+                "目前帳務非空，還原不可用"
+            } else {
+                "確認還原備份"
+            }
+            restoreButton.setOnClickListener {
+                if (hasExistingLedger) return@setOnClickListener
+                restoreButton.isEnabled = false
                 ledgerExecutor.execute {
                     runCatching { backupRepository.restoreJson(raw) }
                         .onSuccess { restored ->
                             latestMarketBatch = null
                             runOnUiThread {
+                                dialog.dismiss()
                                 Toast.makeText(
                                     this,
                                     "還原完成：交易 ${restored.ledgerCount}、股息 ${restored.dividendCount}",
@@ -2310,6 +2329,7 @@ class MainActivity : ComponentActivity() {
                         }
                         .onFailure { error ->
                             runOnUiThread {
+                                restoreButton.isEnabled = true
                                 Toast.makeText(
                                     this,
                                     "還原失敗：${error.message ?: "未知錯誤"}",
@@ -2319,7 +2339,8 @@ class MainActivity : ComponentActivity() {
                         }
                 }
             }
-            .show()
+        }
+        dialog.show()
     }
 
     private fun showBackupCenter() {
@@ -4662,7 +4683,10 @@ class MainActivity : ComponentActivity() {
     private fun showResetDisplaySettingsConfirmation() {
         AlertDialog.Builder(this)
             .setTitle("恢復介面標準設定")
-            .setMessage("將文字比例與卡片間距恢復為標準值。此動作需要再次確認。")
+            .setMessage(
+                "只會將文字比例與卡片間距恢復為標準值；" +
+                    "交易、持股、股息、行情憑證與本機帳務資料都不會變更。確認後畫面會立即重建。",
+            )
             .setNegativeButton("取消", null)
             .setPositiveButton("確認恢復") { _, _ ->
                 getSharedPreferences("saietf-display", MODE_PRIVATE)
