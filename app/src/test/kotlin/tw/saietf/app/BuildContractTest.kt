@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.0", BuildConfig.VERSION_NAME)
-        assertEquals(10100, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.1", BuildConfig.VERSION_NAME)
+        assertEquals(10101, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -204,6 +204,8 @@ class BuildContractTest {
         assertTrue(activity.contains("排序方式｜再點目前項目切換升降冪"))
         assertTrue(activity.contains("最近交易｜最多 5 筆"))
         assertTrue(activity.contains("查看完整交易紀錄 ›"))
+        assertTrue(activity.contains("股息現金流"))
+        assertTrue(activity.contains("本月已確認"))
         assertTrue(activity.contains("系統摘要"))
         assertTrue(activity.contains("SaiTheme.softCard"))
         assertTrue(activity.contains("loadTradePreview"))

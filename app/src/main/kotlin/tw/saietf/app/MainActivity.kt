@@ -1156,20 +1156,32 @@ class MainActivity : ComponentActivity() {
 
         pageContent.addView(sectionTitle("本月摘要"))
         val monthValue = TextView(this).apply {
-            text = "股息摘要載入中…"
-            textSize = 14f * displayScale
-            setTextColor(SaiTheme.TEXT_SECONDARY)
-            background = SaiTheme.softCard(resources.displayMetrics.density)
-            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
-            setLineSpacing(0f, 1.15f)
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply {
-                bottomMargin = displayDp(12)
-            }
+            text = "本月股息摘要載入中…"
+            textSize = 15f * displayScale
+            setTextColor(SaiTheme.TEXT)
+            setLineSpacing(0f, 1.18f)
         }
-        pageContent.addView(monthValue)
+        pageContent.addView(
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                background = SaiTheme.softCard(resources.displayMetrics.density)
+                setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    bottomMargin = displayDp(12)
+                }
+                addView(
+                    cardText("股息現金流", 14f, SaiTheme.BRAND).apply {
+                        setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        setPadding(0, 0, 0, displayDp(6))
+                    },
+                )
+                addView(monthValue)
+                contentDescription = "股息現金流摘要"
+            },
+        )
 
         pageContent.addView(
             buildPrimaryActionCard("股息中心", "新增 / 更新、月份統計與股息紀錄") {
@@ -1220,8 +1232,12 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 if (selectedMainTab != MainTab.DIVIDEND) return@runOnUiThread
                 monthValue.text =
-                    "${currentMonth}｜已確認 ${formatTwd(monthConfirmedCash)}｜預告 ${formatTwd(monthAnnouncedCash)}" +
-                        "\n今年已確認 ${formatTwd(yearConfirmedCash)}｜本月 ${monthRows.size} 筆"
+                    "${currentMonth}" +
+                        "\n本月已確認 ${formatTwd(monthConfirmedCash)}  •  預告 ${formatTwd(monthAnnouncedCash)}" +
+                        "\n今年已確認 ${formatTwd(yearConfirmedCash)}  •  本月 ${monthRows.size} 筆"
+                monthValue.contentDescription =
+                    "本月已確認 ${formatTwd(monthConfirmedCash)}，預告 ${formatTwd(monthAnnouncedCash)}，" +
+                        "今年已確認 ${formatTwd(yearConfirmedCash)}，本月 ${monthRows.size} 筆"
 
                 container.removeAllViews()
                 val recent = rows.take(6)
