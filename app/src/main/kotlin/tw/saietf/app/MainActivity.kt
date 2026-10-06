@@ -3391,6 +3391,8 @@ class MainActivity : ComponentActivity() {
                     textSize = 22f
                     isAllCaps = false
                     stateListAnimator = null
+                    isFocusable = true
+                    contentDescription = "返回${instrumentReturnTab.label}"
                     setTextColor(SaiTheme.BRAND)
                     background = SaiTheme.rounded(
                         fill = SaiTheme.BRAND_SOFT,
@@ -3469,6 +3471,12 @@ class MainActivity : ComponentActivity() {
                     isAllCaps = false
                     stateListAnimator = null
                     isEnabled = index > 0
+                    isFocusable = true
+                    contentDescription = if (isEnabled) {
+                        "上一檔 ${symbols[index - 1]}"
+                    } else {
+                        "已是第一檔"
+                    }
                     setTextColor(if (isEnabled) SaiTheme.TEXT_SECONDARY else SaiTheme.MUTED)
                     background = SaiTheme.rounded(
                         fill = SaiTheme.CARD_SOFT,
@@ -3489,6 +3497,12 @@ class MainActivity : ComponentActivity() {
                     isAllCaps = false
                     stateListAnimator = null
                     isEnabled = index >= 0 && index + 1 < symbols.size
+                    isFocusable = true
+                    contentDescription = if (isEnabled) {
+                        "下一檔 ${symbols[index + 1]}"
+                    } else {
+                        "已是最後一檔"
+                    }
                     setTextColor(if (isEnabled) SaiTheme.TEXT_SECONDARY else SaiTheme.MUTED)
                     background = SaiTheme.rounded(
                         fill = SaiTheme.CARD_SOFT,
