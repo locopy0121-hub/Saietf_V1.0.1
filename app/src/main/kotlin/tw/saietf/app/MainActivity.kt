@@ -1920,7 +1920,7 @@ class MainActivity : ComponentActivity() {
                         cardText(
                             "目前沒有可顯示的每日紀錄",
                             13f,
-                            Color.rgb(100, 116, 139),
+                            SaiTheme.MUTED,
                         ),
                     )
                 } else {
@@ -3205,6 +3205,15 @@ class MainActivity : ComponentActivity() {
                     text = "‹"
                     textSize = 22f
                     isAllCaps = false
+                    stateListAnimator = null
+                    setTextColor(SaiTheme.BRAND)
+                    background = SaiTheme.rounded(
+                        fill = SaiTheme.BRAND_SOFT,
+                        radiusDp = 16f,
+                        density = resources.displayMetrics.density,
+                        strokeColor = SaiTheme.BORDER,
+                        strokeDp = 1,
+                    )
                     setOnClickListener {
                         activeInstrumentSymbol = null
                         renderMainTab(instrumentReturnTab)
@@ -3216,7 +3225,7 @@ class MainActivity : ComponentActivity() {
             addView(
                 LinearLayout(this@MainActivity).apply {
                     orientation = LinearLayout.VERTICAL
-                    addView(cardText("${quote?.name ?: symbol}  $symbol", 22f, Color.rgb(15, 23, 42)))
+                    addView(cardText("${quote?.name ?: symbol}  $symbol", 22f, SaiTheme.TEXT))
                     addView(
                         cardText(
                             quote?.let {
@@ -3273,7 +3282,16 @@ class MainActivity : ComponentActivity() {
                 Button(this@MainActivity).apply {
                     text = "上一檔"
                     isAllCaps = false
+                    stateListAnimator = null
                     isEnabled = index > 0
+                    setTextColor(if (isEnabled) SaiTheme.TEXT_SECONDARY else SaiTheme.MUTED)
+                    background = SaiTheme.rounded(
+                        fill = SaiTheme.CARD_SOFT,
+                        radiusDp = 14f,
+                        density = resources.displayMetrics.density,
+                        strokeColor = SaiTheme.BORDER,
+                        strokeDp = 1,
+                    )
                     setOnClickListener {
                         if (index > 0) showInstrumentPage(symbols[index - 1])
                     }
@@ -3284,7 +3302,16 @@ class MainActivity : ComponentActivity() {
                 Button(this@MainActivity).apply {
                     text = "下一檔"
                     isAllCaps = false
+                    stateListAnimator = null
                     isEnabled = index >= 0 && index + 1 < symbols.size
+                    setTextColor(if (isEnabled) SaiTheme.TEXT_SECONDARY else SaiTheme.MUTED)
+                    background = SaiTheme.rounded(
+                        fill = SaiTheme.CARD_SOFT,
+                        radiusDp = 14f,
+                        density = resources.displayMetrics.density,
+                        strokeColor = SaiTheme.BORDER,
+                        strokeDp = 1,
+                    )
                     setOnClickListener {
                         if (index >= 0 && index + 1 < symbols.size) {
                             showInstrumentPage(symbols[index + 1])
@@ -3332,8 +3359,8 @@ class MainActivity : ComponentActivity() {
 
         instrumentTabContentView = TextView(this).apply {
             textSize = 14f * displayScale
-            setTextColor(Color.rgb(51, 65, 85))
-            setBackgroundColor(Color.WHITE)
+            setTextColor(SaiTheme.TEXT_SECONDARY)
+            background = SaiTheme.card(resources.displayMetrics.density)
             setPadding(dp(16), dp(14), dp(16), dp(22))
             minHeight = dp(132)
         }
@@ -3354,10 +3381,14 @@ class MainActivity : ComponentActivity() {
             val active = tab == instrumentSelectedTab
             button.isSelected = active
             button.setTextColor(
-                if (active) Color.rgb(15, 23, 42) else Color.rgb(100, 116, 139),
+                if (active) SaiTheme.BRAND else SaiTheme.TEXT_SECONDARY,
             )
-            button.setBackgroundColor(
-                if (active) Color.rgb(226, 232, 240) else Color.WHITE,
+            button.background = SaiTheme.rounded(
+                fill = if (active) SaiTheme.BRAND_SOFT else SaiTheme.CARD,
+                radiusDp = 14f,
+                density = resources.displayMetrics.density,
+                strokeColor = if (active) SaiTheme.BRAND else SaiTheme.BORDER,
+                strokeDp = 1,
             )
         }
     }
