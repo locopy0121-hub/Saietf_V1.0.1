@@ -34,11 +34,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import tw.saietf.core.database.BackupRepository
 import tw.saietf.core.database.DividendRepository
 import tw.saietf.core.database.LedgerRepository
 import tw.saietf.core.database.PerformanceHistoryRepository
+import tw.saietf.core.database.entity.EtfComponentEntity
 import tw.saietf.core.finance.LedgerEntryKind
 import tw.saietf.core.market.HoldingCost
 import tw.saietf.core.market.MarketBatch
@@ -107,6 +109,9 @@ class MainActivity : ComponentActivity() {
 
     private val backupRepository: BackupRepository
         get() = (application as SaiEtfApplication).backupRepository
+
+    private val stockDetailRepository: StockDetailRepository
+        get() = (application as SaiEtfApplication).stockDetailRepository
 
     private val intradayHistoryProvider: YahooIntradayHistoryProvider
         get() = (application as SaiEtfApplication).intradayHistoryProvider
@@ -210,6 +215,7 @@ class MainActivity : ComponentActivity() {
     private var instrumentDailyBarsPage: List<TaiwanDailyBar> = emptyList()
     private var instrumentInstitutionalPage: TaiwanInstitutionalFlow? = null
     private var instrumentRevenuePage: TaiwanRevenueSnapshot? = null
+    private var instrumentEtfComponentsPage: List<EtfComponentEntity> = emptyList()
     private var instrumentProfileLoading = false
     private var instrumentProfileLoaded = false
     private var instrumentHistoryLoading = false
@@ -218,6 +224,8 @@ class MainActivity : ComponentActivity() {
     private var instrumentInstitutionalLoaded = false
     private var instrumentRevenueLoading = false
     private var instrumentRevenueLoaded = false
+    private var instrumentEtfComponentsLoading = false
+    private var instrumentEtfComponentsLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -3381,6 +3389,7 @@ class MainActivity : ComponentActivity() {
         instrumentDailyBarsPage = emptyList()
         instrumentInstitutionalPage = null
         instrumentRevenuePage = null
+        instrumentEtfComponentsPage = emptyList()
         instrumentProfileLoading = false
         instrumentProfileLoaded = false
         instrumentHistoryLoading = false
@@ -3389,6 +3398,8 @@ class MainActivity : ComponentActivity() {
         instrumentInstitutionalLoaded = false
         instrumentRevenueLoading = false
         instrumentRevenueLoaded = false
+        instrumentEtfComponentsLoading = false
+        instrumentEtfComponentsLoaded = false
         instrumentTabButtons.clear()
 
         homeHoldingsContainer = null
@@ -3680,9 +3691,16 @@ class MainActivity : ComponentActivity() {
         val symbol = activeInstrumentSymbol ?: return
         when (tab) {
             InstrumentInfoTab.DETAIL,
-            InstrumentInfoTab.COMPONENTS,
             InstrumentInfoTab.DATA,
             -> loadInstrumentProfileForPage(symbol)
+
+            InstrumentInfoTab.COMPONENTS -> {
+                if (isLikelyEtf(symbol)) {
+                    loadInstrumentEtfComponentsForPage(symbol)
+                } else {
+                    loadInstrumentProfileForPage(symbol)
+                }
+            }
 
             InstrumentInfoTab.TREND,
             InstrumentInfoTab.TECHNICAL,
@@ -3755,6 +3773,26 @@ class MainActivity : ComponentActivity() {
                 instrumentRevenuePage = result
                 instrumentRevenueLoading = false
                 instrumentRevenueLoaded = true
+                renderInstrumentPageTab()
+            }
+        }
+    }
+
+    private fun isLikelyEtf(symbol: String): Boolean =
+        symbol.trim().uppercase(Locale.US).startsWith("00")
+
+    private fun loadInstrumentEtfComponentsForPage(symbol: String) {
+        if (instrumentEtfComponentsLoaded || instrumentEtfComponentsLoading) return
+        instrumentEtfComponentsLoading = true
+        uiScope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                stockDetailRepository.observeEtfComponents(symbol).first()
+            }.getOrDefault(emptyList())
+            runOnUiThread {
+                if (activeInstrumentSymbol != symbol) return@runOnUiThread
+                instrumentEtfComponentsPage = result
+                instrumentEtfComponentsLoading = false
+                instrumentEtfComponentsLoaded = true
                 renderInstrumentPageTab()
             }
         }
@@ -3848,17 +3886,52 @@ class MainActivity : ComponentActivity() {
             }
 
             InstrumentInfoTab.COMPONENTS -> {
-                instrumentProfilePage?.let { profile ->
-                    buildString {
-                        append("標的結構｜${profile.market}")
-                        append("\n產業 ${profile.industry ?: "—"}")
-                        append("｜已發行普通股 ${profile.issuedCommonShares?.let { NumberFormat.getIntegerInstance(Locale.TAIWAN).format(it) } ?: "—"}")
-                        append("\nETF 成分 / 權重只在專屬資料源可核實時顯示；目前不以公司股本冒充 ETF 成分。")
+                if (!isLikelyEtf(symbol)) {
+                    instrumentProfilePage?.let { profile ->
+                        buildString {
+                            append("個股不適用 ETF 成分")
+                            append("\n${profile.companyName}（${profile.shortName}）")
+                            append("｜${profile.market}｜產業 ${profile.industry ?: "—"}")
+                            append("\n公司股本與產業資訊歸類於財務 / 數據，不再冒充成分頁。")
+                        }
+                    } ?: if (instrumentProfileLoading) {
+                        "個股基本資料載入中…"
+                    } else {
+                        "個股不適用 ETF 成分。"
                     }
-                } ?: if (instrumentProfileLoading) {
-                    "成分 / 結構資料載入中…"
+                } else if (instrumentEtfComponentsPage.isNotEmpty()) {
+                    chartHost.visibility = View.VISIBLE
+                    chartHost.addView(
+                        EtfComponentDonutView(this).apply {
+                            setRows(instrumentEtfComponentsPage)
+                        },
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dp(230),
+                        ),
+                    )
+                    buildString {
+                        val latestPeriod = instrumentEtfComponentsPage.maxOfOrNull { it.period }
+                        val rows = instrumentEtfComponentsPage
+                            .filter { latestPeriod == null || it.period == latestPeriod }
+                            .sortedByDescending { it.weightPct ?: Double.NEGATIVE_INFINITY }
+                        append("ETF 成分｜${rows.size} 檔")
+                        rows.firstOrNull()?.let {
+                            append("｜資料日 ${it.dataDate}｜來源 ${it.source}")
+                        }
+                        append("\n\n排名  成分股  權重")
+                        rows.take(50).forEachIndexed { index, row ->
+                            append("\n${index + 1}. ${row.componentName ?: row.componentSymbol}  ${row.componentSymbol}")
+                            append("  ${row.weightPct?.let { String.format(Locale.US, "%.2f%%", it) } ?: "—"}")
+                        }
+                        if (rows.size > 50) append("\n…其餘 ${rows.size - 50} 檔")
+                    }
+                } else if (instrumentEtfComponentsLoading) {
+                    "ETF 成分與權重載入中…"
+                } else if (instrumentEtfComponentsLoaded) {
+                    "目前資料庫尚無可核實的 ETF 成分 / 權重；不以公司股本或推估值代填。"
                 } else {
-                    "目前尚無可核實的 ETF 成分資料。"
+                    "ETF 成分等待載入…"
                 }
             }
 

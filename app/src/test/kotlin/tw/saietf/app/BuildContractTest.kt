@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.17", BuildConfig.VERSION_NAME)
-        assertEquals(10117, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.18", BuildConfig.VERSION_NAME)
+        assertEquals(10118, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -334,6 +334,8 @@ class BuildContractTest {
         assertTrue(activity.contains("\"均價\""))
         assertTrue(activity.contains("\"市值\""))
         assertTrue(activity.contains("InstrumentInfoTab.COMPONENTS"))
+        assertTrue(activity.contains("EtfComponentDonutView"))
+        assertTrue(activity.contains("個股不適用 ETF 成分"))
         assertTrue(activity.contains("InstrumentInfoTab.FINANCIAL"))
         assertTrue(activity.contains("taiwanInstrumentInfoProvider"))
         assertTrue(activity.contains("台股基本資料"))
