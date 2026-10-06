@@ -4469,6 +4469,9 @@ class MainActivity : ComponentActivity() {
             bottomMargin = displayDp(10)
         }
         contentDescription = "狀態：$value"
+        accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+        minimumHeight = displayDp(44)
     }
 
     private fun buildMetricCard(
