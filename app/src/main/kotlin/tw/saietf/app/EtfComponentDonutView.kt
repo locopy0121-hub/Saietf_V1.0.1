@@ -2,7 +2,6 @@ package tw.saietf.app
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.view.View
@@ -48,14 +47,14 @@ class EtfComponentDonutView(context: Context) : View(context) {
         }
 
         val palette = intArrayOf(
-            Color.rgb(37, 99, 235),
-            Color.rgb(124, 58, 237),
-            Color.rgb(14, 165, 233),
-            Color.rgb(16, 185, 129),
-            Color.rgb(245, 158, 11),
-            Color.rgb(239, 68, 68),
-            Color.rgb(99, 102, 241),
-            Color.rgb(20, 184, 166),
+            SaiTheme.CHART_1,
+            SaiTheme.CHART_2,
+            SaiTheme.CHART_3,
+            SaiTheme.CHART_4,
+            SaiTheme.CHART_5,
+            SaiTheme.CHART_6,
+            SaiTheme.CHART_7,
+            SaiTheme.CHART_8,
         )
         var start = -90f
         rows.take(12).forEachIndexed { index, row ->
