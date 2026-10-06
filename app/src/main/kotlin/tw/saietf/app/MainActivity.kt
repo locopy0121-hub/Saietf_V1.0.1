@@ -741,9 +741,20 @@ class MainActivity : ComponentActivity() {
                         ),
                     )
                     addView(
-                        cardText(price, 18f, SaiTheme.TEXT).apply {
+                        LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.VERTICAL
                             gravity = Gravity.END
-                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            addView(
+                                cardText("現價", 10f, SaiTheme.MUTED).apply {
+                                    gravity = Gravity.END
+                                },
+                            )
+                            addView(
+                                cardText(price, 18f, SaiTheme.TEXT).apply {
+                                    gravity = Gravity.END
+                                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                },
+                            )
                         },
                     )
                 },
@@ -755,7 +766,7 @@ class MainActivity : ComponentActivity() {
                     gravity = Gravity.CENTER_VERTICAL
                     setPadding(0, displayDp(8), 0, 0)
                     addView(
-                        cardText("$shares 股  •  $marketValue", 12f, SaiTheme.MUTED),
+                        cardText("持有 $shares 股  •  市值 $marketValue", 12f, SaiTheme.MUTED),
                         LinearLayout.LayoutParams(
                             0,
                             ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -763,7 +774,7 @@ class MainActivity : ComponentActivity() {
                         ),
                     )
                     addView(
-                        cardText(pnlText, 14f, pnlColor).apply {
+                        cardText("總損益 $pnlText", 14f, pnlColor).apply {
                             gravity = Gravity.END
                             setTypeface(typeface, android.graphics.Typeface.BOLD)
                         },
