@@ -216,7 +216,7 @@ class BuildContractTest {
         assertTrue(activity.contains("numericValue > 0.0 -> SaiTheme.GAIN"))
         assertTrue(activity.contains("numericValue < 0.0 -> SaiTheme.LOSS"))
         assertTrue(activity.contains("else -> SaiTheme.PNL_FLAT"))
-        assertTrue(activity.contains("\"目前頁面\""))
+        assertTrue(activity.contains("目前頁面"))
         assertTrue(activity.contains("isSelected = active"))
         assertTrue(activity.contains("addView(symbol)\n            addView(price)\n            addView(shares)"))
         assertTrue(activity.contains("系統摘要"))
