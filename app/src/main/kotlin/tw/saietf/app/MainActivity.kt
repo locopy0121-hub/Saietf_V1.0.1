@@ -1382,10 +1382,12 @@ class MainActivity : ComponentActivity() {
             requestImmediateMarketRefresh()
         })
 
-        pageContent.addView(sectionTitle("資料與系統"))
+        pageContent.addView(sectionTitle("資料"))
         pageContent.addView(buildActionCard("資料備份", "匯出 / 還原本機 JSON 備份") {
             showBackupCenter()
         })
+
+        pageContent.addView(sectionTitle("系統與維護"))
         pageContent.addView(buildActionCard("系統狀態", "行情來源、品質、延遲與 Provider Health") {
             showSystemStatusDialog()
         })
