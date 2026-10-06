@@ -64,6 +64,15 @@ object SaiTheme {
     val DIVIDER: Int get() =
         if (darkMode) Color.rgb(43, 57, 76) else Color.rgb(226, 232, 240)
 
+    val HINT: Int get() =
+        if (darkMode) Color.rgb(100, 116, 139) else Color.rgb(148, 163, 184)
+    val GRID: Int get() =
+        if (darkMode) Color.rgb(51, 65, 85) else Color.rgb(203, 213, 225)
+    val ON_ACCENT: Int get() =
+        if (darkMode) Color.rgb(248, 250, 252) else Color.WHITE
+    val ON_ACCENT_MUTED: Int get() =
+        if (darkMode) Color.rgb(233, 213, 255) else Color.rgb(237, 233, 254)
+
     const val CARD_RADIUS_DP: Float = 20f
     const val SECTION_RADIUS_DP: Float = 14f
     const val HERO_RADIUS_DP: Float = 24f
