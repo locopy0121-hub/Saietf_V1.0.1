@@ -73,6 +73,15 @@ object SaiTheme {
     val ON_ACCENT_MUTED: Int get() =
         if (darkMode) Color.rgb(233, 213, 255) else Color.rgb(237, 233, 254)
 
+    val CHART_1: Int get() = if (darkMode) Color.rgb(96, 165, 250) else Color.rgb(37, 99, 235)
+    val CHART_2: Int get() = if (darkMode) Color.rgb(196, 181, 253) else Color.rgb(124, 58, 237)
+    val CHART_3: Int get() = if (darkMode) Color.rgb(56, 189, 248) else Color.rgb(14, 165, 233)
+    val CHART_4: Int get() = if (darkMode) Color.rgb(52, 211, 153) else Color.rgb(16, 185, 129)
+    val CHART_5: Int get() = if (darkMode) Color.rgb(251, 191, 36) else Color.rgb(245, 158, 11)
+    val CHART_6: Int get() = if (darkMode) Color.rgb(248, 113, 113) else Color.rgb(239, 68, 68)
+    val CHART_7: Int get() = if (darkMode) Color.rgb(129, 140, 248) else Color.rgb(99, 102, 241)
+    val CHART_8: Int get() = if (darkMode) Color.rgb(45, 212, 191) else Color.rgb(20, 184, 166)
+
     const val CARD_RADIUS_DP: Float = 20f
     const val SECTION_RADIUS_DP: Float = 14f
     const val HERO_RADIUS_DP: Float = 24f
