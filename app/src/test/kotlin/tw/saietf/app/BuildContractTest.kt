@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.16", BuildConfig.VERSION_NAME)
-        assertEquals(10116, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.17", BuildConfig.VERSION_NAME)
+        assertEquals(10117, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 

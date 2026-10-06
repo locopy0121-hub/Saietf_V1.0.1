@@ -3402,6 +3402,15 @@ class MainActivity : ComponentActivity() {
         val averageCost = holding.investmentCost
             .takeIf { holding.shares > 0L }
             ?.div(holding.shares.toDouble())
+        val quoteChange = quote?.previousClose?.let { previous -> quote.price - previous }
+        val quotePct = quote?.previousClose
+            ?.takeIf { it > 0.0 }
+            ?.let { previous -> (quote.price - previous) / previous * 100.0 }
+        val quoteColor = when {
+            quoteChange == null || quoteChange == 0.0 -> SaiTheme.FLAT
+            quoteChange > 0.0 -> SaiTheme.GAIN
+            else -> SaiTheme.LOSS
+        }
 
         val titleRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -3433,25 +3442,38 @@ class MainActivity : ComponentActivity() {
             addView(
                 LinearLayout(this@MainActivity).apply {
                     orientation = LinearLayout.VERTICAL
-                    addView(cardText("${quote?.name ?: symbol}  $symbol", 22f, SaiTheme.TEXT))
+                    addView(cardText("${quote?.name ?: symbol}  $symbol", 22f, SaiTheme.TEXT).apply {
+                        setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    })
+                    addView(
+                        cardText(
+                            quote?.let { String.format(Locale.US, "%.2f", it.price) } ?: "行情待更新",
+                            30f,
+                            quoteColor,
+                        ).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            setPadding(0, displayDp(2), 0, 0)
+                        },
+                    )
                     addView(
                         cardText(
                             quote?.let {
-                                val previous = it.previousClose
-                                val pct = previous
-                                    ?.takeIf { p -> p > 0.0 }
-                                    ?.let { p -> (it.price - p) / p * 100.0 }
                                 buildString {
-                                    append("現價 ${String.format(Locale.US, "%.2f", it.price)}")
-                                    pct?.let { value ->
-                                        append("  ")
-                                        append(String.format(Locale.US, "%+.2f%%", value))
+                                    quoteChange?.let { change ->
+                                        append(String.format(Locale.US, "%+.2f", change))
+                                        quotePct?.let { pct ->
+                                            append("  ")
+                                            append(String.format(Locale.US, "%+.2f%%", pct))
+                                        }
+                                        append("  ｜  ")
                                     }
-                                    append("｜${sourceName(it.source)}｜${it.quality.name}")
+                                    append(sourceName(it.source))
+                                    append("  ｜  ")
+                                    append(it.quality.name)
                                 }
-                            } ?: "行情待更新",
-                            13f,
-                            Color.rgb(100, 116, 139),
+                            } ?: "等待行情中心",
+                            12f,
+                            SaiTheme.MUTED,
                         ),
                     )
                 },
@@ -3482,6 +3504,42 @@ class MainActivity : ComponentActivity() {
         }
         pageContent.addView(metricRow)
 
+        quote?.let { q ->
+            pageContent.addView(
+                LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    background = SaiTheme.card(resources.displayMetrics.density)
+                    setPadding(displayDp(12), displayDp(10), displayDp(12), displayDp(10))
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = displayDp(10)
+                    }
+                    val quoteItems = listOf(
+                        "開" to q.open?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+                        "高" to q.high?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+                        "低" to q.low?.let { String.format(Locale.US, "%.2f", it) }.orEmpty(),
+                        "量" to (q.volume?.toString() ?: "—"),
+                    )
+                    quoteItems.forEach { (label, value) ->
+                        addView(
+                            LinearLayout(this@MainActivity).apply {
+                                orientation = LinearLayout.VERTICAL
+                                gravity = Gravity.CENTER
+                                addView(cardText(label, 11f, SaiTheme.MUTED))
+                                addView(cardText(value.ifBlank { "—" }, 13f, SaiTheme.TEXT).apply {
+                                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                                })
+                            },
+                            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+                        )
+                    }
+                },
+            )
+        }
+
         val navigationRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             val symbols = latestLedgerSnapshot?.holdings?.map { it.symbol }?.sorted().orEmpty()
@@ -3510,7 +3568,7 @@ class MainActivity : ComponentActivity() {
                         if (index > 0) showInstrumentPage(symbols[index - 1])
                     }
                 },
-                LinearLayout.LayoutParams(0, dp(48), 1f),
+                LinearLayout.LayoutParams(0, dp(40), 1f),
             )
             addView(
                 Button(this@MainActivity).apply {
@@ -3538,7 +3596,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 },
-                LinearLayout.LayoutParams(0, dp(48), 1f),
+                LinearLayout.LayoutParams(0, dp(40), 1f),
             )
         }
         pageContent.addView(navigationRow)
@@ -3560,7 +3618,7 @@ class MainActivity : ComponentActivity() {
                     instrumentTabButtons[tab] = tabButton
                     addView(
                         tabButton,
-                        LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+                        LinearLayout.LayoutParams(0, dp(40), 1f).apply {
                             marginStart = dp(1)
                             marginEnd = dp(1)
                         },
