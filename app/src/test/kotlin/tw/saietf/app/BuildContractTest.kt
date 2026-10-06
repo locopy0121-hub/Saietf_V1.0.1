@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.22", BuildConfig.VERSION_NAME)
-        assertEquals(10122, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.23", BuildConfig.VERSION_NAME)
+        assertEquals(10123, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -201,6 +201,7 @@ class BuildContractTest {
         assertTrue(activity.contains("setTheme(if (darkTheme)"))
         assertTrue(styles.contains("Theme.SaiETF.Dark"))
         assertTrue(styles.contains("android:windowLightStatusBar\">false"))
+        assertEquals(2, "android:forceDarkAllowed\">false".toRegex().findAll(styles).count())
         assertTrue(activity.contains("UI_MODE_NIGHT_YES"))
         assertTrue(activity.contains("buildSettingsStatusCard"))
         assertTrue(activity.contains("contentDescription = \"\$title，\$description，可點擊\""))
