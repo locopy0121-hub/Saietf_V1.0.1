@@ -3986,23 +3986,46 @@ class MainActivity : ComponentActivity() {
         value: String,
         note: String,
     ): Pair<LinearLayout, TextView> {
-        val valueView = cardText(value, 24f, SaiTheme.TEXT).apply {
+        val valueView = cardText(value, 26f, SaiTheme.TEXT).apply {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, displayDp(5), 0, displayDp(5))
         }
         val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = SaiTheme.card(resources.displayMetrics.density)
             elevation = dp(1).toFloat()
-            setPadding(displayDp(16), displayDp(15), displayDp(16), displayDp(15))
+            setPadding(displayDp(17), displayDp(15), displayDp(17), displayDp(15))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            addView(cardText(title, 15f, SaiTheme.MUTED))
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        View(this@MainActivity).apply {
+                            setBackgroundColor(SaiTheme.BRAND)
+                        },
+                        LinearLayout.LayoutParams(dp(4), dp(18)).apply {
+                            marginEnd = displayDp(8)
+                        },
+                    )
+                    addView(
+                        cardText(title, 14f, SaiTheme.TEXT_SECONDARY).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                },
+            )
             addView(valueView)
-            addView(cardText(note, 13f, SaiTheme.MUTED))
+            addView(
+                cardText(note, 12f, SaiTheme.MUTED).apply {
+                    setLineSpacing(0f, 1.08f)
+                },
+            )
         }
         return card to valueView
     }
