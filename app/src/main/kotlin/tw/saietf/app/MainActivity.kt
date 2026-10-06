@@ -269,16 +269,25 @@ class MainActivity : ComponentActivity() {
     private fun buildBottomNavigation(): LinearLayout =
         LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(SaiTheme.CARD)
-            setPadding(dp(8), dp(7), dp(8), dp(9))
+            gravity = Gravity.CENTER_VERTICAL
+            background = SaiTheme.rounded(
+                fill = SaiTheme.CARD,
+                radiusDp = 22f,
+                density = resources.displayMetrics.density,
+                strokeColor = SaiTheme.BORDER,
+                strokeDp = 1,
+            )
+            setPadding(displayDp(8), displayDp(8), displayDp(8), displayDp(10))
             elevation = dp(12).toFloat()
             MainTab.entries.forEach { tab ->
                 addView(
-                    Button(this@MainActivity).apply {
+                    TextView(this@MainActivity).apply {
                         text = tab.label
+                        gravity = Gravity.CENTER
                         textSize = 12f * displayScale
-                        isAllCaps = false
-                        stateListAnimator = null
+                        setTextColor(SaiTheme.MUTED)
+                        isClickable = true
+                        isFocusable = true
                         contentDescription = "切換至${tab.label}"
                         setOnClickListener {
                             if (selectedMainTab != tab) {
@@ -288,11 +297,11 @@ class MainActivity : ComponentActivity() {
                         }
                         layoutParams = LinearLayout.LayoutParams(
                             0,
-                            dp(52),
+                            dp(54),
                             1f,
                         ).apply {
-                            marginStart = dp(2)
-                            marginEnd = dp(2)
+                            marginStart = displayDp(2)
+                            marginEnd = displayDp(2)
                         }
                     },
                 )
@@ -318,16 +327,26 @@ class MainActivity : ComponentActivity() {
 
     private fun updateBottomNavigationSelection() {
         MainTab.entries.forEachIndexed { index, tab ->
-            val button = bottomNavigation.getChildAt(index) as? Button ?: return@forEachIndexed
+            val item = bottomNavigation.getChildAt(index) as? TextView ?: return@forEachIndexed
             val active = tab == selectedMainTab
-            button.setTextColor(
+            item.setTextColor(
                 if (active) SaiTheme.BRAND else SaiTheme.MUTED,
             )
-            button.isSelected = active
-            button.background = SaiTheme.rounded(
+            item.setTypeface(
+                item.typeface,
+                if (active) {
+                    android.graphics.Typeface.BOLD
+                } else {
+                    android.graphics.Typeface.NORMAL
+                },
+            )
+            item.isSelected = active
+            item.background = SaiTheme.rounded(
                 fill = if (active) SaiTheme.BRAND_SOFT else SaiTheme.CARD,
-                radiusDp = 16f,
+                radiusDp = 17f,
                 density = resources.displayMetrics.density,
+                strokeColor = if (active) SaiTheme.BORDER else SaiTheme.CARD,
+                strokeDp = 1,
             )
         }
     }
