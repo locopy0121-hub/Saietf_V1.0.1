@@ -585,13 +585,13 @@ class MainActivity : ComponentActivity() {
         shares: Long,
         price: String,
         marketValue: String,
-        totalPnl: Long?,
+        totalPnl: Double?,
         action: () -> Unit,
     ): LinearLayout {
         val pnlText = totalPnl?.let(::formatSignedTwd) ?: "—"
         val pnlColor = when {
-            totalPnl == null || totalPnl == 0L -> SaiTheme.FLAT
-            totalPnl > 0L -> SaiTheme.GAIN
+            totalPnl == null || totalPnl == 0.0 -> SaiTheme.FLAT
+            totalPnl > 0.0 -> SaiTheme.GAIN
             else -> SaiTheme.LOSS
         }
         return LinearLayout(this).apply {
