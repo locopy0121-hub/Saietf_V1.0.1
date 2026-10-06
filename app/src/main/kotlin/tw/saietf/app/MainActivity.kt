@@ -1291,10 +1291,11 @@ class MainActivity : ComponentActivity() {
 
         val fugleHealth = fugleStreamingController.health()
         pageContent.addView(
-            statusText(
-                "版本 ${BuildConfig.VERSION_NAME}｜Room v5｜Fugle " +
-                    (if (fugleApiKeyStore.hasKey()) "已設定" else "未設定") +
-                    "｜${fugleHealth.circuitState.name}/${fugleHealth.availability.name}",
+            buildSettingsStatusCard(
+                version = BuildConfig.VERSION_NAME,
+                fugleConfigured = fugleApiKeyStore.hasKey(),
+                circuitState = fugleHealth.circuitState.name,
+                availability = fugleHealth.availability.name,
             ),
         )
 
@@ -1325,6 +1326,46 @@ class MainActivity : ComponentActivity() {
             showSystemStatusDialog()
         })
     }
+
+    private fun buildSettingsStatusCard(
+        version: String,
+        fugleConfigured: Boolean,
+        circuitState: String,
+        availability: String,
+    ): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.softCard(resources.displayMetrics.density)
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(12)
+            }
+            addView(
+                cardText("系統摘要", 14f, SaiTheme.BRAND).apply {
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                },
+            )
+            addView(
+                cardText(
+                    "SaiETF $version  •  Room v5",
+                    16f,
+                    SaiTheme.TEXT,
+                ).apply {
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setPadding(0, displayDp(4), 0, displayDp(4))
+                },
+            )
+            addView(
+                cardText(
+                    "Fugle ${if (fugleConfigured) "已設定" else "未設定"}  •  $circuitState / $availability",
+                    12f,
+                    SaiTheme.MUTED,
+                ),
+            )
+        }
 
     private fun buildPrimaryActionCard(
         title: String,
