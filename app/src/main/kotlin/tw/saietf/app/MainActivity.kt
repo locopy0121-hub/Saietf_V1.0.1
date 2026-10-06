@@ -567,7 +567,7 @@ class MainActivity : ComponentActivity() {
         val snapshot = latestLedgerSnapshot
 
         if (snapshot == null || snapshot.holdings.isEmpty()) {
-            container.addView(statusText("目前沒有持股"))
+            container.addView(emptyStateText("目前沒有持股"))
             return
         }
 
@@ -774,7 +774,7 @@ class MainActivity : ComponentActivity() {
         container.removeAllViews()
         val batch = latestMarketBatch
         if (batch == null || batch.quotes.isEmpty()) {
-            container.addView(statusText("目前尚無可顯示行情"))
+            container.addView(emptyStateText("目前尚無可顯示行情"))
             return
         }
 
@@ -1018,7 +1018,7 @@ class MainActivity : ComponentActivity() {
                 container.removeAllViews()
                 val rows = page?.rows.orEmpty().take(5)
                 if (rows.isEmpty()) {
-                    container.addView(statusText("目前沒有交易紀錄"))
+                    container.addView(emptyStateText("目前沒有交易紀錄"))
                     return@runOnUiThread
                 }
                 rows.forEach { row ->
@@ -1251,7 +1251,7 @@ class MainActivity : ComponentActivity() {
                 container.removeAllViews()
                 val recent = rows.take(6)
                 if (recent.isEmpty()) {
-                    container.addView(statusText("目前沒有股息事件"))
+                    container.addView(emptyStateText("目前沒有股息事件"))
                     return@runOnUiThread
                 }
                 recent.forEach { row ->
@@ -4531,6 +4531,24 @@ class MainActivity : ComponentActivity() {
             topMargin = displayDp(6)
             bottomMargin = displayDp(10)
         }
+    }
+
+    private fun emptyStateText(value: String): TextView = TextView(this).apply {
+        text = value
+        textSize = 13f * displayScale
+        setTextColor(SaiTheme.MUTED)
+        gravity = Gravity.CENTER_VERTICAL
+        background = SaiTheme.softCard(resources.displayMetrics.density)
+        setPadding(displayDp(14), displayDp(13), displayDp(14), displayDp(13))
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            bottomMargin = displayDp(10)
+        }
+        minimumHeight = displayDp(56)
+        contentDescription = "空狀態：$value"
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
     private fun statusText(value: String): TextView = TextView(this).apply {
