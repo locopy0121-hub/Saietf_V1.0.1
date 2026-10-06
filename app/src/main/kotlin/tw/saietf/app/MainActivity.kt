@@ -1406,19 +1406,46 @@ class MainActivity : ComponentActivity() {
             orientation = LinearLayout.VERTICAL
             background = SaiTheme.card(resources.displayMetrics.density)
             elevation = dp(1).toFloat()
-            setPadding(displayDp(16), displayDp(15), displayDp(16), displayDp(15))
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            addView(cardText(title, 17f, SaiTheme.TEXT).apply {
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            })
-            addView(cardText(description, 13f, SaiTheme.MUTED))
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        cardText(title, 17f, SaiTheme.TEXT).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText("›", 22f, SaiTheme.BRAND).apply {
+                            gravity = Gravity.CENTER
+                        },
+                        LinearLayout.LayoutParams(
+                            displayDp(28),
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ),
+                    )
+                },
+            )
+            addView(
+                cardText(description, 13f, SaiTheme.MUTED).apply {
+                    setPadding(0, displayDp(3), displayDp(28), 0)
+                },
+            )
             isClickable = true
             isFocusable = true
+            contentDescription = "$title，$description，可點擊"
             setOnClickListener { action() }
         }
 
