@@ -37,6 +37,8 @@ jobs:
         run: ./scripts/verify_finance_lock.sh
       - name: Verify frozen market update center core
         run: ./scripts/verify_market_core_lock.sh
+      - name: Verify day night theme contract
+        run: bash ./scripts/verify_theme_contract.sh
       - name: Verify unit tests, lint, and debug APK
         run: ./gradlew --no-daemon clean test :core:database:testDebugUnitTest :core:database:assembleAndroidTest lintDebug :app:assembleDebug
       - name: Verify fixed development signing certificate
@@ -122,10 +124,10 @@ jobs:
           path: core/database/schemas
           if-no-files-found: error
           include-hidden-files: true
-      - name: Upload V1.1.22 APK
+      - name: Upload V1.1.23 APK
         uses: actions/upload-artifact@v4
         with:
-          name: SaiETF-V1.1.22-theme-quick-switch-apk
+          name: SaiETF-V1.1.23-theme-contract-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Publish Android CI commit status
