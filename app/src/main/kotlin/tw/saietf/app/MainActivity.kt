@@ -690,62 +690,76 @@ class MainActivity : ComponentActivity() {
 
     private fun buildInlineMarketSortBar(): LinearLayout =
         LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+            orientation = LinearLayout.VERTICAL
             setPadding(0, 0, 0, displayDp(10))
-            val density = resources.displayMetrics.density
-            MarketWallSort.entries.forEachIndexed { index, option ->
-                val active = marketWallSort == option
-                addView(
-                    TextView(this@MainActivity).apply {
-                        text = if (active) {
-                            option.label + if (marketWallDescending) "  ↓" else "  ↑"
-                        } else {
-                            option.label
-                        }
-                        gravity = Gravity.CENTER
-                        textSize = 12f * displayScale
-                        setTypeface(
-                            typeface,
-                            if (active) {
-                                android.graphics.Typeface.BOLD
-                            } else {
-                                android.graphics.Typeface.NORMAL
+            addView(
+                cardText(
+                    "排序方式｜再點目前項目切換升降冪",
+                    11f,
+                    SaiTheme.MUTED,
+                ).apply {
+                    setPadding(0, 0, 0, displayDp(6))
+                },
+            )
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    val density = resources.displayMetrics.density
+                    MarketWallSort.entries.forEachIndexed { index, option ->
+                        val active = marketWallSort == option
+                        addView(
+                            TextView(this@MainActivity).apply {
+                                text = if (active) {
+                                    option.label + if (marketWallDescending) "  ↓" else "  ↑"
+                                } else {
+                                    option.label
+                                }
+                                gravity = Gravity.CENTER
+                                textSize = 12f * displayScale
+                                setTypeface(
+                                    typeface,
+                                    if (active) {
+                                        android.graphics.Typeface.BOLD
+                                    } else {
+                                        android.graphics.Typeface.NORMAL
+                                    },
+                                )
+                                setTextColor(if (active) SaiTheme.BRAND else SaiTheme.TEXT_SECONDARY)
+                                background = SaiTheme.rounded(
+                                    fill = if (active) SaiTheme.BRAND_SOFT else SaiTheme.CARD,
+                                    radiusDp = 16f,
+                                    density = density,
+                                    strokeColor = if (active) SaiTheme.BRAND else SaiTheme.BORDER,
+                                    strokeDp = 1,
+                                )
+                                isClickable = true
+                                isFocusable = true
+                                contentDescription = if (active) {
+                                    "${option.label}排序，目前${if (marketWallDescending) "降冪" else "升冪"}"
+                                } else {
+                                    "依${option.label}排序"
+                                }
+                                setOnClickListener {
+                                    if (marketWallSort == option) {
+                                        marketWallDescending = !marketWallDescending
+                                    } else {
+                                        marketWallSort = option
+                                        marketWallDescending = true
+                                    }
+                                    renderMainTab(MainTab.MARKET)
+                                }
+                            },
+                            LinearLayout.LayoutParams(
+                                0,
+                                dp(46),
+                                1f,
+                            ).apply {
+                                if (index > 0) marginStart = displayDp(4)
                             },
                         )
-                        setTextColor(if (active) SaiTheme.BRAND else SaiTheme.TEXT_SECONDARY)
-                        background = SaiTheme.rounded(
-                            fill = if (active) SaiTheme.BRAND_SOFT else SaiTheme.CARD,
-                            radiusDp = 16f,
-                            density = density,
-                            strokeColor = if (active) SaiTheme.BRAND else SaiTheme.BORDER,
-                            strokeDp = 1,
-                        )
-                        isClickable = true
-                        isFocusable = true
-                        contentDescription = if (active) {
-                            "${option.label}排序，目前${if (marketWallDescending) "降冪" else "升冪"}"
-                        } else {
-                            "依${option.label}排序"
-                        }
-                        setOnClickListener {
-                            if (marketWallSort == option) {
-                                marketWallDescending = !marketWallDescending
-                            } else {
-                                marketWallSort = option
-                                marketWallDescending = true
-                            }
-                            renderMainTab(MainTab.MARKET)
-                        }
-                        layoutParams = LinearLayout.LayoutParams(
-                            0,
-                            dp(46),
-                            1f,
-                        ).apply {
-                            if (index > 0) marginStart = displayDp(4)
-                        }
-                    },
-                )
-            }
+                    }
+                },
+            )
         }
 
     private fun renderMarketQuotesInline() {
