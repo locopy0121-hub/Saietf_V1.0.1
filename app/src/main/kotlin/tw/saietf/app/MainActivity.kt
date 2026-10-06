@@ -605,11 +605,106 @@ class MainActivity : ComponentActivity() {
             val ageSeconds =
                 ((System.currentTimeMillis() - quote.receivedAtEpochMillis).coerceAtLeast(0L) / 1_000L)
             container.addView(
-                buildActionCard(
-                    title = "${quote.symbol}  ${quote.name}  ${String.format(Locale.US, "%.2f", quote.price)}",
-                    description = "$changeText｜${sourceName(quote.source)}｜${quote.quality.name}｜${ageSeconds}s",
+                buildMarketQuoteCard(
+                    symbol = quote.symbol,
+                    name = quote.name,
+                    price = String.format(Locale.US, "%.2f", quote.price),
+                    changeText = changeText,
+                    source = sourceName(quote.source),
+                    quality = quote.quality.name,
+                    ageSeconds = ageSeconds,
                 ) { showInstrumentPage(quote.symbol) },
             )
+        }
+    }
+
+    private fun buildMarketQuoteCard(
+        symbol: String,
+        name: String,
+        price: String,
+        changeText: String,
+        source: String,
+        quality: String,
+        ageSeconds: Long,
+        action: () -> Unit,
+    ): LinearLayout {
+        val density = resources.displayMetrics.density
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = SaiTheme.card(density)
+            elevation = dp(1).toFloat()
+            setPadding(displayDp(16), displayDp(14), displayDp(16), displayDp(14))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(
+                        cardText(symbol, 18f, SaiTheme.TEXT).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ),
+                    )
+                    addView(
+                        cardText(name, 15f, SaiTheme.TEXT_SECONDARY).apply {
+                            maxLines = 2
+                            setPadding(dp(10), 0, dp(8), 0)
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                    addView(
+                        cardText(price, 20f, SaiTheme.TEXT).apply {
+                            gravity = Gravity.END
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                },
+            )
+
+            addView(
+                LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, dp(8), 0, 0)
+                    addView(
+                        cardText(changeText, 14f, SaiTheme.BRAND).apply {
+                            setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        },
+                    )
+                    addView(
+                        cardText(
+                            "$source  •  $quality  •  ${ageSeconds}s",
+                            12f,
+                            SaiTheme.MUTED,
+                        ).apply {
+                            gravity = Gravity.END
+                        },
+                        LinearLayout.LayoutParams(
+                            0,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        ),
+                    )
+                },
+            )
+
+            isClickable = true
+            isFocusable = true
+            contentDescription = "$symbol $name $price，$changeText，$source $quality"
+            setOnClickListener { action() }
         }
     }
 
