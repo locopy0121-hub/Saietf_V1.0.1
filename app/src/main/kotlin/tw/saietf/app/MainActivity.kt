@@ -364,13 +364,7 @@ class MainActivity : ComponentActivity() {
         val density = resources.displayMetrics.density
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = SaiTheme.rounded(
-                fill = SaiTheme.CARD,
-                radiusDp = 24f,
-                density = density,
-                strokeColor = SaiTheme.BORDER,
-                strokeDp = 1,
-            )
+            background = SaiTheme.heroCard(density)
             elevation = dp(1).toFloat()
             setPadding(dp(18), dp(15), dp(18), dp(15))
             layoutParams = LinearLayout.LayoutParams(
@@ -4537,13 +4531,7 @@ class MainActivity : ComponentActivity() {
         textSize = 16f * displayScale
         setTextColor(SaiTheme.BRAND)
         setTypeface(typeface, android.graphics.Typeface.BOLD)
-        background = SaiTheme.rounded(
-            fill = SaiTheme.BRAND_SOFT,
-            radiusDp = 14f,
-            density = resources.displayMetrics.density,
-            strokeColor = SaiTheme.BORDER,
-            strokeDp = 1,
-        )
+        background = SaiTheme.sectionSurface(resources.displayMetrics.density)
         setPadding(displayDp(14), displayDp(10), displayDp(14), displayDp(10))
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,

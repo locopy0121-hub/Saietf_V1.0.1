@@ -21,6 +21,15 @@ object SaiTheme {
     val FLAT: Int = MUTED
     val PNL_FLAT: Int = Color.rgb(202, 138, 4)
 
+    // V1.1.15 UI Recovery tokens: one visual language for every runtime page.
+    val HERO: Int = Color.rgb(235, 242, 255)
+    val SECTION: Int = Color.rgb(231, 239, 255)
+    val SURFACE_ALT: Int = Color.rgb(248, 250, 255)
+    val DIVIDER: Int = Color.rgb(226, 232, 240)
+    const val CARD_RADIUS_DP: Float = 20f
+    const val SECTION_RADIUS_DP: Float = 14f
+    const val HERO_RADIUS_DP: Float = 24f
+
     fun rounded(
         fill: Int,
         radiusDp: Float,
@@ -37,8 +46,14 @@ object SaiTheme {
     }
 
     fun card(density: Float): GradientDrawable =
-        rounded(CARD, 20f, density, BORDER, 1)
+        rounded(CARD, CARD_RADIUS_DP, density, BORDER, 1)
 
     fun softCard(density: Float): GradientDrawable =
         rounded(CARD_SOFT, 16f, density, BORDER, 1)
+
+    fun heroCard(density: Float): GradientDrawable =
+        rounded(HERO, HERO_RADIUS_DP, density, BORDER, 1)
+
+    fun sectionSurface(density: Float): GradientDrawable =
+        rounded(SECTION, SECTION_RADIUS_DP, density, BORDER, 1)
 }
