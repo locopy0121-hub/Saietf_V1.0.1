@@ -538,18 +538,7 @@ class MainActivity : ComponentActivity() {
         pageContent.addView(marketStatusValue)
 
         pageContent.addView(sectionTitle("快速操作"))
-        pageContent.addView(
-            buildPrimaryActionCard(
-                title = "查看持股",
-                description = "持股清單、均價、市值與個股 8 大資訊頁",
-            ) { showHoldingsDialog() },
-        )
-        pageContent.addView(
-            buildActionCard(
-                title = "行情牆",
-                description = "詳細條列、大字、方格、多筆走勢與趨勢摘要",
-            ) { showMarketWall() },
-        )
+        pageContent.addView(buildHomeQuickActions())
 
         pageContent.addView(sectionTitle("持股快照"))
         homeHoldingsContainer = LinearLayout(this).apply {
@@ -559,6 +548,68 @@ class MainActivity : ComponentActivity() {
         renderHomeHoldingsInline()
 
         latestLedgerSnapshot?.let(::applyLedgerSnapshot)
+    }
+
+    private fun buildHomeQuickActions(): LinearLayout {
+        fun quickAction(title: String, action: () -> Unit): TextView =
+            TextView(this).apply {
+                text = title
+                gravity = Gravity.CENTER
+                textSize = 13f * displayScale
+                setTextColor(SaiTheme.BRAND)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                background = SaiTheme.rounded(
+                    fill = SaiTheme.BRAND_SOFT,
+                    radiusDp = 16f,
+                    density = resources.displayMetrics.density,
+                    strokeColor = SaiTheme.BORDER,
+                    strokeDp = 1,
+                )
+                minimumHeight = displayDp(56)
+                isClickable = true
+                isFocusable = true
+                contentDescription = "快速操作：$title"
+                setOnClickListener { action() }
+            }
+
+        val actions = listOf<Pair<String, () -> Unit>>(
+            "新增交易" to { showTradeDialog() },
+            "持股分析" to { showHoldingsAnalysisDialog() },
+            "持股清單" to { showHoldingsDialog() },
+            "行情牆" to { showMarketWall() },
+        )
+
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            actions.chunked(2).forEachIndexed { rowIndex, rowActions ->
+                addView(
+                    LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        rowActions.forEachIndexed { index, item ->
+                            addView(
+                                quickAction(item.first, item.second),
+                                LinearLayout.LayoutParams(0, displayDp(56), 1f).apply {
+                                    if (index > 0) marginStart = displayDp(8)
+                                },
+                            )
+                        }
+                    },
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        if (rowIndex > 0) topMargin = displayDp(8)
+                    },
+                )
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = displayDp(10)
+            }
+            contentDescription = "首頁快速操作：新增交易、持股分析、持股清單、行情牆"
+        }
     }
 
     private fun renderMarketPage() {
