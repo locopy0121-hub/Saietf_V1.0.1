@@ -1032,7 +1032,7 @@ class MainActivity : ComponentActivity() {
                         cardText(side, 13f, sideColor).apply {
                             setTypeface(typeface, android.graphics.Typeface.BOLD)
                             background = SaiTheme.rounded(
-                                fill = SaiTheme.SURFACE_SOFT,
+                                fill = SaiTheme.CARD_SOFT,
                                 radiusDp = 12f,
                                 density = resources.displayMetrics.density,
                                 strokeColor = SaiTheme.BORDER,
