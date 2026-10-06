@@ -688,6 +688,7 @@ class MainActivity : ComponentActivity() {
 
             isClickable = true
             isFocusable = true
+            minimumHeight = displayDp(72)
             contentDescription = "$symbol $name，$shares 股，現價 $price，市值 $marketValue，總損益 $pnlText"
             setOnClickListener { action() }
         }
@@ -912,6 +913,7 @@ class MainActivity : ComponentActivity() {
 
             isClickable = true
             isFocusable = true
+            minimumHeight = displayDp(72)
             contentDescription = "$symbol $name $price，$changeText，$source $quality"
             setOnClickListener { action() }
         }
@@ -1145,6 +1147,7 @@ class MainActivity : ComponentActivity() {
 
             isClickable = true
             isFocusable = true
+            minimumHeight = displayDp(72)
             contentDescription =
                 "$tradeDate，$symbol，$side，$shares 股，價格 " +
                     String.format(Locale.US, "%.2f", price) +
@@ -1348,6 +1351,7 @@ class MainActivity : ComponentActivity() {
 
             isClickable = true
             isFocusable = true
+            minimumHeight = displayDp(72)
             contentDescription = "$symbol，$status，$cash，除息 $exDate，發放 $paymentDate，每股 $cashPerShare"
             setOnClickListener { action() }
         }
