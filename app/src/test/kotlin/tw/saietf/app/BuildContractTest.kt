@@ -228,7 +228,7 @@ class BuildContractTest {
         assertTrue(activity.contains("SaiTheme.BRAND_SOFT"))
         assertTrue(activity.contains("radiusDp = 14f"))
         assertTrue(activity.contains("instrumentTabContentView"))
-        assertTrue(activity.contains("contentDescription = \"狀態：$value\""))
+        assertTrue(activity.contains("contentDescription = \"狀態：\\$value\""))
         assertTrue(activity.contains("setLineSpacing(0f, 1.08f)"))
         assertTrue(activity.contains("selectInstrumentPageTab"))
         assertTrue(activity.contains("ensureInstrumentPageData"))
