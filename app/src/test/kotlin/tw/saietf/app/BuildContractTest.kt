@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.0.86", BuildConfig.VERSION_NAME)
-        assertEquals(10086, BuildConfig.VERSION_CODE)
+        assertEquals("1.0.87", BuildConfig.VERSION_NAME)
+        assertEquals(10087, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -228,6 +228,8 @@ class BuildContractTest {
         assertTrue(activity.contains("SaiTheme.BRAND_SOFT"))
         assertTrue(activity.contains("radiusDp = 14f"))
         assertTrue(activity.contains("instrumentTabContentView"))
+        assertTrue(activity.contains("contentDescription = \"狀態：$value\""))
+        assertTrue(activity.contains("setLineSpacing(0f, 1.08f)"))
         assertTrue(activity.contains("selectInstrumentPageTab"))
         assertTrue(activity.contains("ensureInstrumentPageData"))
         assertTrue(activity.contains("loadInstrumentProfileForPage"))
