@@ -342,6 +342,11 @@ class MainActivity : ComponentActivity() {
                 },
             )
             item.isSelected = active
+            item.contentDescription = if (active) {
+                "${tab.label}，目前頁面"
+            } else {
+                "切換至${tab.label}"
+            }
             item.background = SaiTheme.rounded(
                 fill = if (active) SaiTheme.BRAND_SOFT else SaiTheme.CARD,
                 radiusDp = 17f,
@@ -734,6 +739,7 @@ class MainActivity : ComponentActivity() {
                                 )
                                 isClickable = true
                                 isFocusable = true
+                                isSelected = active
                                 contentDescription = if (active) {
                                     "${option.label}排序，目前${if (marketWallDescending) "降冪" else "升冪"}"
                                 } else {
