@@ -9,8 +9,8 @@ class BuildContractTest {
     @Test
     fun `installed app exposes the approved identity and locale`() {
         assertEquals("tw.saietf.app", BuildConfig.APPLICATION_ID)
-        assertEquals("1.1.30", BuildConfig.VERSION_NAME)
-        assertEquals(10130, BuildConfig.VERSION_CODE)
+        assertEquals("1.1.31", BuildConfig.VERSION_NAME)
+        assertEquals(10131, BuildConfig.VERSION_CODE)
         assertEquals("zh-Hant-TW", SaiEtfApplication.DEFAULT_LOCALE_TAG)
     }
 
@@ -68,6 +68,7 @@ class BuildContractTest {
         val stockDetailDao = File("../core/database/src/main/kotlin/tw/saietf/core/database/dao/StockDetailDao.kt").readText()
         val sessionPolicy = File("src/main/kotlin/tw/saietf/app/TaiwanIntradaySessionPolicy.kt").readText()
         val technicalEngine = File("src/main/kotlin/tw/saietf/app/TaiwanTechnicalEngine.kt").readText()
+        val dividendAnnouncements = File("src/main/kotlin/tw/saietf/app/TaiwanDividendAnnouncementProvider.kt").readText()
 
         assertTrue(manifest.contains("android:name=\".MainActivity\""))
         assertTrue(manifest.contains("android:exported=\"true\""))
@@ -259,6 +260,15 @@ class BuildContractTest {
         assertTrue(activity.contains("已修改"))
         assertTrue(activity.contains("最近交易"))
         assertTrue(activity.contains("loadDividendPreview"))
+        assertTrue(activity.contains("一鍵取得網路資訊"))
+        assertTrue(activity.contains("一鍵新增股息"))
+        assertTrue(activity.contains("showDividendOnlineLookup"))
+        assertTrue(activity.contains("oneTapImportDividendAnnouncements"))
+        assertTrue(activity.contains("TaiwanDividendAnnouncementProvider.SOURCE"))
+        assertTrue(dividendAnnouncements.contains("TWT48U?response=json"))
+        assertTrue(dividendAnnouncements.contains("除權除息日期"))
+        assertTrue(dividendAnnouncements.contains("現金股利"))
+        assertTrue(dividendAnnouncements.contains("待公告"))
         assertTrue(activity.contains("buildDividendEventCard"))
         assertTrue(activity.contains("SaiTheme.softCard"))
         assertTrue(activity.contains("if (confirmed) \"已確認\" else \"預告\""))
