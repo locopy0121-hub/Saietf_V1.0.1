@@ -45,12 +45,16 @@ class PortfolioMarketValuator {
             val marketValue = quote?.let {
                 floor(holding.shares.toDouble() * it.price).toLong()
             }
-            val today = quote?.previousClose
-                ?.takeIf { it.isFinite() && it > 0.0 }
-                ?.let { previous ->
+            val today = quote?.let { currentQuote ->
+                val previous = currentQuote.previousClose
+                    ?.takeIf { it.isFinite() && it > 0.0 }
+                if (previous == null) {
+                    0L
+                } else {
                     val priorValue = floor(holding.shares.toDouble() * previous).toLong()
-                    marketValue?.minus(priorValue)
+                    marketValue?.minus(priorValue) ?: 0L
                 }
+            }
             val total = marketValue?.toDouble()?.minus(holding.investmentCost)
 
             HoldingMarketValue(
