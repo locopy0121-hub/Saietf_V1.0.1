@@ -3382,7 +3382,7 @@ class MainActivity : ComponentActivity() {
         val sideSpinner = optionSpinner(listOf("買進", "賣出"))
         val modeSpinner = optionSpinner(listOf("零股", "整股", "定期定額"))
         val symbol = input("例如 0050").apply {
-            contentDescription = "ETF 或股票代號"
+            contentDescription = "交易代號"
         }
         val instrumentName = cardText("輸入代號後自動顯示名稱", 13f, SaiTheme.MUTED).apply {
             setPadding(displayDp(12), displayDp(8), displayDp(12), displayDp(8))
@@ -3391,11 +3391,11 @@ class MainActivity : ComponentActivity() {
         val tradeDate = dateInput("日期", LocalDate.now(taipeiZone).toString())
         val price = input("0").apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-            contentDescription = "成交價格"
+            contentDescription = "交易成交價"
         }
         val shares = input("0").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
-            contentDescription = "股數"
+            contentDescription = "交易股數"
         }
         val fee = input("自動估算；可輸入實際值覆寫").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
