@@ -614,7 +614,7 @@ class MainActivity : ComponentActivity() {
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            contentDescription = "首頁快速操作：加碼試算、持股分析、目標規劃、行情牆"
+            contentDescription = "首頁快速操作：新增交易、持股分析、持股清單、行情牆；V2.0.2 顯示：加碼試算、持股分析、目標規劃、行情牆"
         }
     }
 
