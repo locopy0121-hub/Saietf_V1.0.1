@@ -4901,7 +4901,7 @@ class MainActivity : ComponentActivity() {
                             ?.let { (quote.price - it) / it * 100.0 }
                         buildString {
                             append("${quote.symbol} ${quote.name}")
-                            append("\n${"%.2f".format(Locale.US, quote.price)}")
+                            append("\n成交 ${"%.2f".format(Locale.US, quote.price)}")
                             pct?.let {
                                 append("  ${if (it > 0) "+" else ""}${"%.2f".format(Locale.US, it)}%")
                             }
