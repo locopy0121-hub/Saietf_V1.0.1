@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -3378,110 +3380,158 @@ class MainActivity : ComponentActivity() {
 
     private fun showTradeDialog() {
         val sideSpinner = optionSpinner(listOf("買進", "賣出"))
-        val modeSpinner = optionSpinner(listOf("整股", "零股"))
-        val symbol = input("代號，例如 0050").apply {
-            contentDescription = "交易代號"
+        val modeSpinner = optionSpinner(listOf("零股", "整股", "定期定額"))
+        val symbol = input("例如 0050").apply {
+            contentDescription = "ETF 或股票代號"
         }
-        val shares = input("股數").apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            contentDescription = "交易股數"
+        val instrumentName = cardText("輸入代號後自動顯示名稱", 13f, SaiTheme.MUTED).apply {
+            setPadding(displayDp(12), displayDp(8), displayDp(12), displayDp(8))
+            contentDescription = "證券名稱"
         }
-        val price = input("成交價").apply {
+        val tradeDate = dateInput("日期", LocalDate.now(taipeiZone).toString())
+        val price = input("0").apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-            contentDescription = "交易成交價"
+            contentDescription = "成交價格"
         }
-        val fee = input("實際手續費（可留空）").apply {
+        val shares = input("0").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
+            contentDescription = "股數"
         }
-        val tax = input("實際證交稅（賣出可留空）").apply {
+        val fee = input("自動估算；可輸入實際值覆寫").apply {
             inputType = InputType.TYPE_CLASS_NUMBER
+            contentDescription = "實際手續費"
         }
-        val tradeDate = dateInput("交易日期", LocalDate.now(taipeiZone).toString())
+        val tax = input("賣出自動估算；可輸入實際值覆寫").apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            contentDescription = "實際證交稅"
+        }
+        val note = input("選填").apply {
+            contentDescription = "交易備註"
+        }
+
+        fun field(labelText: String, view: View): LinearLayout =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(label(labelText))
+                addView(view)
+            }
+
+        fun twoColumns(left: View, right: View): LinearLayout =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                addView(left, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginEnd = displayDp(6)
+                })
+                addView(right, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = displayDp(6)
+                })
+            }
 
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(8), dp(18), 0)
-            addView(label("買賣別"))
-            addView(sideSpinner)
-            addView(label("交易模式"))
-            addView(modeSpinner)
-            addView(symbol)
-            addView(shares)
-            addView(price)
-            addView(fee)
-            addView(tax)
-            addView(tradeDate)
+            addView(field("買賣別", sideSpinner))
+            addView(field("ETF / 股票代號", symbol))
+            addView(instrumentName)
+            addView(twoColumns(field("日期", tradeDate), field("成交價格", price)))
+            addView(field("交易模式", modeSpinner))
+            addView(twoColumns(field("股數", shares), field("實際手續費", fee)))
+            addView(field("實際證交稅", tax))
+            addView(field("備註", note))
         }
 
+        var lookupGeneration = 0
+        symbol.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(value: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(value: CharSequence?, start: Int, before: Int, count: Int) {
+                val normalized = value?.toString()?.trim()?.uppercase(Locale.US).orEmpty()
+                lookupGeneration += 1
+                val generation = lookupGeneration
+                if (normalized.length < 4) {
+                    instrumentName.text = "輸入代號後自動顯示名稱"
+                    instrumentName.setTextColor(SaiTheme.MUTED)
+                    return
+                }
+                val cachedName = latestMarketBatch?.quotes?.get(normalized)?.name
+                    ?.takeIf { it.isNotBlank() && !it.equals(normalized, ignoreCase = true) }
+                if (cachedName != null) {
+                    instrumentName.text = "$normalized  $cachedName"
+                    instrumentName.setTextColor(SaiTheme.TEXT)
+                    return
+                }
+                instrumentName.text = "$normalized  名稱查詢中…"
+                instrumentName.setTextColor(SaiTheme.MUTED)
+                ledgerExecutor.execute {
+                    val profile = runCatching { taiwanInstrumentInfoProvider.fetchProfile(normalized) }.getOrNull()
+                    runOnUiThread {
+                        if (generation != lookupGeneration) return@runOnUiThread
+                        if (profile != null) {
+                            instrumentName.text = "$normalized  ${profile.shortName}"
+                            instrumentName.setTextColor(SaiTheme.TEXT)
+                        } else {
+                            instrumentName.text = "$normalized  名稱待行情/證券資料同步"
+                            instrumentName.setTextColor(SaiTheme.MUTED)
+                        }
+                    }
+                }
+            }
+            override fun afterTextChanged(value: Editable?) = Unit
+        })
+
         val dialog = AlertDialog.Builder(this)
-            .setTitle("新增交易")
-            .setView(form)
+            .setTitle("快速建檔")
+            .setView(ScrollView(this).apply { addView(form) })
             .setNegativeButton("取消", null)
-            .setPositiveButton("寫入 Ledger", null)
+            .setPositiveButton("確認交易紀錄", null)
             .create()
 
         dialog.setOnShowListener {
             val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             saveButton.setOnClickListener {
-                val symbolValue = symbol.text.toString().trim()
-                val selectedSide = if (sideSpinner.selectedItemPosition == 0) {
-                    LedgerEntryKind.BUY
-                } else {
-                    LedgerEntryKind.SELL
-                }
-                val availableShares = latestLedgerSnapshot
-                    ?.holdings
-                    ?.firstOrNull { it.symbol.equals(symbolValue, ignoreCase = true) }
-                    ?.shares
-                    ?: 0L
+                val symbolValue = symbol.text.toString().trim().uppercase(Locale.US)
+                val selectedSide = if (sideSpinner.selectedItemPosition == 0) LedgerEntryKind.BUY else LedgerEntryKind.SELL
+                val availableShares = latestLedgerSnapshot?.holdings
+                    ?.firstOrNull { it.symbol.equals(symbolValue, ignoreCase = true) }?.shares ?: 0L
                 val sharesValue = shares.text.toString().trim().toLongOrNull()
                 val priceValue = price.text.toString().trim().toDoubleOrNull()
                 val feeText = fee.text.toString().trim()
                 val taxText = tax.text.toString().trim()
                 val feeValue = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
                 val taxValue = taxText.takeIf { it.isNotEmpty() }?.toLongOrNull()
-                val tradeDateText = tradeDate.text.toString().trim()
-                val tradeDateValue = runCatching { LocalDate.parse(tradeDateText) }.getOrNull()
-
+                val tradeDateValue = runCatching { LocalDate.parse(tradeDate.text.toString().trim()) }.getOrNull()
                 val validationError = when {
                     symbolValue.isEmpty() -> "請輸入 ETF / 股票代號"
                     sharesValue == null || sharesValue <= 0L -> "股數必須為大於 0 的整數"
                     selectedSide == LedgerEntryKind.SELL && sharesValue > availableShares ->
                         "賣出股數 $sharesValue 超過目前持有 $availableShares 股"
-                    priceValue == null || !priceValue.isFinite() || priceValue <= 0.0 ->
-                        "成交價必須大於 0"
+                    priceValue == null || !priceValue.isFinite() || priceValue <= 0.0 -> "成交價必須大於 0"
                     feeText.isNotEmpty() && feeValue == null -> "手續費必須為整數"
                     feeValue != null && feeValue < 0L -> "手續費不可小於 0"
                     taxText.isNotEmpty() && taxValue == null -> "證交稅必須為整數"
                     taxValue != null && taxValue < 0L -> "證交稅不可小於 0"
                     tradeDateValue == null -> "交易日期格式必須為 YYYY-MM-DD"
-                    tradeDateValue != null && tradeDateValue.isAfter(LocalDate.now(taipeiZone)) ->
-                        "交易日期不可晚於今天"
+                    tradeDateValue != null && tradeDateValue.isAfter(LocalDate.now(taipeiZone)) -> "交易日期不可晚於今天"
                     else -> null
                 }
                 if (validationError != null) {
                     Toast.makeText(this, validationError, Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
-
-                val validShares = sharesValue ?: return@setOnClickListener
-                val validPrice = priceValue ?: return@setOnClickListener
-                val validTradeDate = tradeDateValue ?: return@setOnClickListener
+                val tradeMode = when (modeSpinner.selectedItemPosition) {
+                    1 -> TradeMode.ROUND_LOT
+                    else -> TradeMode.ODD_LOT
+                }
                 val command = LedgerRepository.AddTradeCommand(
                     side = selectedSide,
                     symbol = symbolValue,
-                    shares = validShares,
-                    price = validPrice,
-                    tradeMode = if (modeSpinner.selectedItemPosition == 0) {
-                        TradeMode.ROUND_LOT
-                    } else {
-                        TradeMode.ODD_LOT
-                    },
-                    tradeDateTaipei = validTradeDate.toString(),
+                    shares = sharesValue ?: return@setOnClickListener,
+                    price = priceValue ?: return@setOnClickListener,
+                    tradeMode = tradeMode,
+                    tradeDateTaipei = tradeDateValue?.toString() ?: return@setOnClickListener,
                     actualFee = feeValue,
                     actualTax = taxValue,
+                    note = note.text.toString().trim().takeIf { it.isNotEmpty() },
                 )
-
                 saveButton.isEnabled = false
                 ledgerExecutor.execute {
                     runCatching { repository.addTrade(command) }
@@ -3491,20 +3541,14 @@ class MainActivity : ComponentActivity() {
                             runOnUiThread {
                                 dialog.dismiss()
                                 applyLedgerSnapshot(snapshot)
-                                Toast.makeText(this, "交易已寫入不可變 Ledger", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, "交易已寫入 Ledger", Toast.LENGTH_SHORT).show()
                             }
-                            if (marketPollingActive) {
-                                scheduleMarketRefresh(0L, pollGeneration)
-                            }
+                            if (marketPollingActive) scheduleMarketRefresh(0L, pollGeneration)
                         }
                         .onFailure { error ->
                             runOnUiThread {
                                 saveButton.isEnabled = true
-                                Toast.makeText(
-                                    this,
-                                    "交易未寫入：${error.message ?: "未知錯誤"}",
-                                    Toast.LENGTH_LONG,
-                                ).show()
+                                Toast.makeText(this, "交易未寫入：${error.message ?: "未知錯誤"}", Toast.LENGTH_LONG).show()
                             }
                         }
                 }
@@ -3513,6 +3557,7 @@ class MainActivity : ComponentActivity() {
         dialog.show()
         styleDialog(dialog, accent = true)
     }
+
     private fun showHoldingsAnalysisDialog() {
         val valuation = latestValuation
         if (valuation == null || !valuation.isComplete || valuation.totalMarketValue == null) {
