@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private enum class MarketWallMode(val label: String) {
-        DETAIL_LIST("詳細條列 ●"),
+        DETAIL_LIST("詳細條列"),
         LARGE_LIST("大字條列"),
         GRID("簡易方格"),
         MULTI_TREND("多筆走勢"),
@@ -4866,7 +4866,7 @@ class MainActivity : ComponentActivity() {
                         ?.let { (quote.price - it) / it * 100.0 }
                     buildString {
                         append("${quote.symbol} ${quote.name}")
-                        append("\n現價 ${"%.2f".format(Locale.US, quote.price)}")
+                        append("\n成交 ${"%.2f".format(Locale.US, quote.price)}")
                         if (change != null && pct != null) {
                             append("｜${if (change > 0) "+" else ""}${"%.2f".format(Locale.US, change)}")
                             append(" (${if (pct > 0) "+" else ""}${"%.2f".format(Locale.US, pct)}%)")
