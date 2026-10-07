@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
     private val taiwanDailyHistoryProvider = TaiwanDailyHistoryProvider()
     private val taiwanInstitutionalProvider = TaiwanInstitutionalProvider()
     private val taiwanRevenueProvider = TaiwanRevenueProvider()
+    private val taiwanDividendAnnouncementProvider = TaiwanDividendAnnouncementProvider()
     private val taipeiZone = ZoneId.of("Asia/Taipei")
 
     private val displayScale: Float
@@ -1297,6 +1298,23 @@ class MainActivity : ComponentActivity() {
         )
 
         pageContent.addView(
+            buildPrimaryActionCard(
+                "一鍵取得網路資訊",
+                "依目前持股讀取 TWSE 官方除權除息預告；先預覽、不寫入",
+            ) {
+                showDividendOnlineLookup()
+            },
+        )
+        pageContent.addView(
+            buildActionCard(
+                "一鍵新增股息",
+                "取得官方已公告金額並批次新增 / 更新；待公告金額自動略過",
+            ) {
+                oneTapImportDividendAnnouncements()
+            },
+        )
+
+        pageContent.addView(
             buildPrimaryActionCard("股息中心", "新增 / 更新、月份統計與股息紀錄") {
                 showDividendCenter()
             },
@@ -2513,6 +2531,148 @@ class MainActivity : ComponentActivity() {
                 }
             }
             .show()
+    }
+
+    private fun dividendHoldingSymbols(): Set<String> {
+        val holdings = latestLedgerSnapshot?.holdings
+            ?: runCatching { repository.loadDashboard().holdings }.getOrDefault(emptyList())
+        return holdings
+            .filter { it.shares > 0L }
+            .map { it.symbol.trim().uppercase(Locale.US) }
+            .filter { it.isNotBlank() }
+            .toSet()
+    }
+
+    private fun showDividendOnlineLookup() {
+        ledgerExecutor.execute {
+            val symbols = dividendHoldingSymbols()
+            if (symbols.isEmpty()) {
+                runOnUiThread {
+                    Toast.makeText(this, "目前沒有持股可查詢股息", Toast.LENGTH_SHORT).show()
+                }
+                return@execute
+            }
+
+            val result = runCatching {
+                taiwanDividendAnnouncementProvider.fetchForSymbols(symbols)
+            }
+            val rows = result.getOrElse { error ->
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "網路股息資訊取得失敗：${error.message ?: "未知錯誤"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+                return@execute
+            }
+
+            runOnUiThread {
+                val body = if (rows.isEmpty()) {
+                    "目前持股在 TWSE 除權除息預告表沒有可用資料。\n" +
+                        "上櫃標的或尚未公告的標的，不會虛構股息資料。"
+                } else {
+                    buildString {
+                        append("來源：${TaiwanDividendAnnouncementProvider.SOURCE}")
+                        append("\n符合目前持股 ${rows.size} 筆；此畫面只預覽，不會寫入。")
+                        rows.forEach { row ->
+                            append("\n\n${row.symbol} ${row.name}")
+                            append("｜除息 ${row.exDateTaipei}")
+                            append("\n每股 ${row.cashPerShare?.let { String.format(Locale.US, "%.4f", it) } ?: row.cashText}")
+                            if (row.cashPerShare == null) append("｜待公告，暫不可一鍵新增")
+                        }
+                    }
+                }
+
+                AlertDialog.Builder(this)
+                    .setTitle("一鍵取得網路股息資訊")
+                    .setMessage(body)
+                    .setNegativeButton("關閉", null)
+                    .setPositiveButton("新增可用資料") { _, _ ->
+                        oneTapImportDividendAnnouncements()
+                    }
+                    .show()
+            }
+        }
+    }
+
+    private fun oneTapImportDividendAnnouncements() {
+        ledgerExecutor.execute {
+            val symbols = dividendHoldingSymbols()
+            if (symbols.isEmpty()) {
+                runOnUiThread {
+                    Toast.makeText(this, "目前沒有持股可新增股息", Toast.LENGTH_SHORT).show()
+                }
+                return@execute
+            }
+
+            val rows = runCatching {
+                taiwanDividendAnnouncementProvider.fetchForSymbols(symbols)
+            }.getOrElse { error ->
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "一鍵新增失敗：${error.message ?: "網路資料取得失敗"}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+                return@execute
+            }
+
+            val addable = rows.filter { (it.cashPerShare ?: 0.0) > 0.0 }
+            if (addable.isEmpty()) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        if (rows.isEmpty()) {
+                            "目前持股沒有可新增的 TWSE 股息公告"
+                        } else {
+                            "目前公告金額仍待確認，沒有可安全新增的資料"
+                        },
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+                return@execute
+            }
+
+            var successCount = 0
+            var failedCount = 0
+            addable.forEach { row ->
+                val cash = row.cashPerShare ?: return@forEach
+                runCatching {
+                    dividendRepository.upsert(
+                        DividendRepository.UpsertCommand(
+                            symbol = row.symbol,
+                            exDateTaipei = row.exDateTaipei,
+                            recordDateTaipei = null,
+                            paymentDateTaipei = null,
+                            cashPerShare = cash,
+                            status = DividendRepository.Status.CONFIRMED,
+                        ),
+                    )
+                }.onSuccess {
+                    successCount += 1
+                }.onFailure {
+                    failedCount += 1
+                }
+            }
+
+            val pendingCount = rows.count { it.cashPerShare == null }
+            runOnUiThread {
+                Toast.makeText(
+                    this,
+                    buildString {
+                        append("一鍵新增完成：${successCount} 筆")
+                        if (pendingCount > 0) append("｜待公告略過 ${pendingCount} 筆")
+                        if (failedCount > 0) append("｜失敗 ${failedCount} 筆")
+                    },
+                    if (failedCount > 0) Toast.LENGTH_LONG else Toast.LENGTH_SHORT,
+                ).show()
+                if (selectedMainTab == MainTab.DIVIDEND) {
+                    renderMainTab(MainTab.DIVIDEND)
+                }
+            }
+        }
     }
 
     private fun showDividendCenter() {
