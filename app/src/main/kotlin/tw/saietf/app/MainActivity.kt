@@ -3388,7 +3388,7 @@ class MainActivity : ComponentActivity() {
             setPadding(displayDp(12), displayDp(8), displayDp(12), displayDp(8))
             contentDescription = "證券名稱"
         }
-        val tradeDate = dateInput("日期", LocalDate.now(taipeiZone).toString())
+        val tradeDate = dateInput("交易日期", LocalDate.now(taipeiZone).toString())
         val price = input("0").apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
             contentDescription = "交易成交價"
@@ -3482,7 +3482,7 @@ class MainActivity : ComponentActivity() {
             .setTitle("快速建檔")
             .setView(ScrollView(this).apply { addView(form) })
             .setNegativeButton("取消", null)
-            .setPositiveButton("確認交易紀錄", null)
+            .setPositiveButton("寫入 Ledger", null)
             .create()
 
         dialog.setOnShowListener {
