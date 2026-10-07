@@ -51,21 +51,47 @@ class TaiwanInstrumentInfoProvider {
     @Volatile
     private var cachedProfiles: Map<String, TaiwanInstrumentProfile> = emptyMap()
 
+    @Volatile
+    private var cachedDisplayNamesAtEpochMillis: Long = 0L
+
+    @Volatile
+    private var cachedDisplayNames: Map<String, String> = emptyMap()
+
     fun fetchDisplayName(symbol: String): String? {
         val normalized = symbol.trim().uppercase(Locale.US)
         if (normalized.isBlank()) return null
-        fetchProfile(normalized)?.shortName?.let { return it }
-        return runCatching {
-            val rows = JSONArray(httpGet("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"))
-            for (index in 0 until rows.length()) {
-                val row = rows.optJSONObject(index) ?: continue
-                val code = row.textOf("Code", "證券代號")?.trim()?.uppercase(Locale.US)
-                if (code == normalized) {
-                    return@runCatching row.textOf("Name", "證券名稱")?.trim()
+        val now = System.currentTimeMillis()
+        synchronized(this) {
+            if (now - cachedDisplayNamesAtEpochMillis < CACHE_MILLIS) {
+                cachedDisplayNames[normalized]?.let { return it }
+            }
+        }
+        val names = linkedMapOf<String, String>()
+        listOf(
+            "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL",
+            "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes",
+        ).forEach { url ->
+            runCatching { JSONArray(httpGet(url)) }.getOrNull()?.let { rows ->
+                for (index in 0 until rows.length()) {
+                    val row = rows.optJSONObject(index) ?: continue
+                    val code = row.textOf("Code", "SecuritiesCompanyCode", "證券代號", "股票代號")
+                        ?.trim()?.uppercase(Locale.US) ?: continue
+                    val name = row.textOf("Name", "CompanyName", "SecuritiesCompanyName", "證券名稱", "股票名稱")
+                        ?.trim()?.takeIf { it.isNotBlank() } ?: continue
+                    names.putIfAbsent(code, name)
                 }
             }
-            null
-        }.getOrNull()
+        }
+        endpoints.forEach { endpoint ->
+            runCatching { parseEndpoint(endpoint) }.getOrDefault(emptyList()).forEach { profile ->
+                names.putIfAbsent(profile.symbol, profile.shortName)
+            }
+        }
+        synchronized(this) {
+            cachedDisplayNamesAtEpochMillis = now
+            cachedDisplayNames = names.toMap()
+        }
+        return names[normalized]
     }
 
     fun fetchProfile(symbol: String): TaiwanInstrumentProfile? {

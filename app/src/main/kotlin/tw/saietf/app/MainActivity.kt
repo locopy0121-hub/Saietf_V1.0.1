@@ -3525,7 +3525,8 @@ class MainActivity : ComponentActivity() {
                 val priceValue = price.text.toString().trim().toDoubleOrNull()
                 val feeText = fee.text.toString().trim()
                 val taxText = tax.text.toString().trim()
-                val feeValue = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val parsedFee = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val feeValue = parsedFee?.takeUnless { it == automaticFee }
                 val taxValue = taxText.takeIf { it.isNotEmpty() }?.toLongOrNull()
                 val tradeDateValue = runCatching { LocalDate.parse(tradeDate.text.toString().trim()) }.getOrNull()
                 val validationError = when {
@@ -3534,8 +3535,8 @@ class MainActivity : ComponentActivity() {
                     selectedSide == LedgerEntryKind.SELL && sharesValue > availableShares ->
                         "賣出股數 $sharesValue 超過目前持有 $availableShares 股"
                     priceValue == null || !priceValue.isFinite() || priceValue <= 0.0 -> "成交價必須大於 0"
-                    feeText.isNotEmpty() && feeValue == null -> "手續費必須為整數"
-                    feeValue != null && feeValue < 0L -> "手續費不可小於 0"
+                    feeText.isNotEmpty() && parsedFee == null -> "手續費必須為整數"
+                    parsedFee != null && parsedFee < 0L -> "手續費不可小於 0"
                     taxText.isNotEmpty() && taxValue == null -> "證交稅必須為整數"
                     taxValue != null && taxValue < 0L -> "證交稅不可小於 0"
                     tradeDateValue == null -> "交易日期格式必須為 YYYY-MM-DD"
