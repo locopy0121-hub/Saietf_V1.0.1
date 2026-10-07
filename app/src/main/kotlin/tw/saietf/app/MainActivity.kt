@@ -543,6 +543,9 @@ class MainActivity : ComponentActivity() {
         pageContent.addView(sectionTitle("快速操作"))
         pageContent.addView(buildHomeQuickActions())
 
+        pageContent.addView(sectionTitle("市場重點"))
+        pageContent.addView(buildActionCard("台股 / ETF 即時行情", "自選、ETF、台股、熱門標的｜點擊進入行情牆") { showMarketWall() })
+
         pageContent.addView(sectionTitle("持股快照"))
         homeHoldingsContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -576,9 +579,9 @@ class MainActivity : ComponentActivity() {
             }
 
         val actions = listOf<Pair<String, () -> Unit>>(
-            "新增交易" to { showTradeDialog() },
+            "加碼試算" to { showTradeDialog() },
             "持股分析" to { showHoldingsAnalysisDialog() },
-            "持股清單" to { showHoldingsDialog() },
+            "目標規劃" to { showDailyPerformanceDialog() },
             "行情牆" to { showMarketWall() },
         )
 
@@ -611,7 +614,7 @@ class MainActivity : ComponentActivity() {
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            contentDescription = "首頁快速操作：新增交易、持股分析、持股清單、行情牆"
+            contentDescription = "首頁快速操作：加碼試算、持股分析、目標規劃、行情牆"
         }
     }
 
