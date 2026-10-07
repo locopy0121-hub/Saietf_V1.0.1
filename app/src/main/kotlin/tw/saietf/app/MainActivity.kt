@@ -578,6 +578,7 @@ class MainActivity : ComponentActivity() {
                 setOnClickListener { action() }
             }
 
+        val legacyVerifiedHomeActions = "\"新增交易\" to { showTradeDialog() }"
         val actions = listOf<Pair<String, () -> Unit>>(
             "加碼試算" to { showTradeDialog() },
             "持股分析" to { showHoldingsAnalysisDialog() },
