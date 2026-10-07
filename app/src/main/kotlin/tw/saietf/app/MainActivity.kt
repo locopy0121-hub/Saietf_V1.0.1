@@ -578,11 +578,10 @@ class MainActivity : ComponentActivity() {
                 setOnClickListener { action() }
             }
 
-        val legacyVerifiedHomeActions = "\"新增交易\" to { showTradeDialog() }"
         val actions = listOf<Pair<String, () -> Unit>>(
-            "加碼試算" to { showTradeDialog() },
+            "新增交易" to { showTradeDialog() },
             "持股分析" to { showHoldingsAnalysisDialog() },
-            "目標規劃" to { showDailyPerformanceDialog() },
+            "持股清單" to { showHoldingsDialog() },
             "行情牆" to { showMarketWall() },
         )
 
@@ -615,7 +614,7 @@ class MainActivity : ComponentActivity() {
             ).apply {
                 bottomMargin = displayDp(10)
             }
-            contentDescription = "首頁快速操作：新增交易、持股分析、持股清單、行情牆；V2.0.2 顯示：加碼試算、持股分析、目標規劃、行情牆"
+            contentDescription = "首頁快速操作：新增交易、持股分析、持股清單、行情牆"
         }
     }
 
