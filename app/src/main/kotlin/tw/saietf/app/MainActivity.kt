@@ -3249,7 +3249,8 @@ class MainActivity : ComponentActivity() {
                 val priceValue = price.text.toString().trim().toDoubleOrNull()
                 val feeText = fee.text.toString().trim()
                 val taxText = tax.text.toString().trim()
-                val feeValue = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val parsedFee = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
+                val feeValue = parsedFee?.takeUnless { it == automaticFee }
                 val taxValue = taxText.takeIf { it.isNotEmpty() }?.toLongOrNull()
                 val tradeDateText = tradeDate.text.toString().trim()
                 val tradeDateValue = runCatching { LocalDate.parse(tradeDateText) }.getOrNull()
@@ -3259,8 +3260,8 @@ class MainActivity : ComponentActivity() {
                     sharesValue == null || sharesValue <= 0L -> "股數必須為大於 0 的整數"
                     priceValue == null || !priceValue.isFinite() || priceValue <= 0.0 ->
                         "成交價必須大於 0"
-                    feeText.isNotEmpty() && feeValue == null -> "手續費必須為整數"
-                    feeValue != null && feeValue < 0L -> "手續費不可小於 0"
+                    feeText.isNotEmpty() && parsedFee == null -> "手續費必須為整數"
+                    parsedFee != null && parsedFee < 0L -> "手續費不可小於 0"
                     taxText.isNotEmpty() && taxValue == null -> "證交稅必須為整數"
                     taxValue != null && taxValue < 0L -> "證交稅不可小於 0"
                     tradeDateValue == null -> "交易日期格式必須為 YYYY-MM-DD"
@@ -3408,6 +3409,34 @@ class MainActivity : ComponentActivity() {
         val note = input("選填").apply {
             contentDescription = "交易備註"
         }
+        var automaticFee: Long? = null
+        fun refreshAutomaticFee() {
+            val sharesValue = shares.text.toString().trim().toLongOrNull()
+            val priceValue = price.text.toString().trim().toDoubleOrNull()
+            if (sharesValue == null || sharesValue <= 0L || priceValue == null || priceValue <= 0.0) {
+                automaticFee = null
+                if (!fee.hasFocus()) fee.setText("")
+                return
+            }
+            val tradeMode = when (modeSpinner.selectedItemPosition) {
+                1 -> TradeMode.ROUND_LOT
+                else -> TradeMode.ODD_LOT
+            }
+            val estimated = repository.estimateCommission(sharesValue, priceValue, tradeMode)
+            automaticFee = estimated
+            if (!fee.hasFocus()) fee.setText(estimated.toString())
+        }
+        val estimateWatcher = object : TextWatcher {
+            override fun beforeTextChanged(value: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(value: CharSequence?, start: Int, before: Int, count: Int) = refreshAutomaticFee()
+            override fun afterTextChanged(value: Editable?) = Unit
+        }
+        shares.addTextChangedListener(estimateWatcher)
+        price.addTextChangedListener(estimateWatcher)
+        modeSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) = refreshAutomaticFee()
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
+        }
 
         fun field(labelText: String, view: View): LinearLayout =
             LinearLayout(this).apply {
@@ -3462,11 +3491,11 @@ class MainActivity : ComponentActivity() {
                 instrumentName.text = "$normalized  名稱查詢中…"
                 instrumentName.setTextColor(SaiTheme.MUTED)
                 ledgerExecutor.execute {
-                    val profile = runCatching { taiwanInstrumentInfoProvider.fetchProfile(normalized) }.getOrNull()
+                    val displayName = runCatching { taiwanInstrumentInfoProvider.fetchDisplayName(normalized) }.getOrNull()
                     runOnUiThread {
                         if (generation != lookupGeneration) return@runOnUiThread
-                        if (profile != null) {
-                            instrumentName.text = "$normalized  ${profile.shortName}"
+                        if (displayName != null) {
+                            instrumentName.text = "$normalized  $displayName"
                             instrumentName.setTextColor(SaiTheme.TEXT)
                         } else {
                             instrumentName.text = "$normalized  名稱待行情/證券資料同步"

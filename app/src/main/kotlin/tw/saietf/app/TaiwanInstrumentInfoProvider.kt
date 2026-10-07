@@ -51,6 +51,23 @@ class TaiwanInstrumentInfoProvider {
     @Volatile
     private var cachedProfiles: Map<String, TaiwanInstrumentProfile> = emptyMap()
 
+    fun fetchDisplayName(symbol: String): String? {
+        val normalized = symbol.trim().uppercase(Locale.US)
+        if (normalized.isBlank()) return null
+        fetchProfile(normalized)?.shortName?.let { return it }
+        return runCatching {
+            val rows = JSONArray(httpGet("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"))
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                val code = row.textOf("Code", "證券代號")?.trim()?.uppercase(Locale.US)
+                if (code == normalized) {
+                    return@runCatching row.textOf("Name", "證券名稱")?.trim()
+                }
+            }
+            null
+        }.getOrNull()
+    }
+
     fun fetchProfile(symbol: String): TaiwanInstrumentProfile? {
         val normalized = symbol.trim().uppercase(Locale.US)
         if (normalized.isBlank()) return null

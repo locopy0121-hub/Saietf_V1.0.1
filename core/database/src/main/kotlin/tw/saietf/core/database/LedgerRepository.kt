@@ -63,6 +63,29 @@ class LedgerRepository(
         val rows: List<TransactionRow>,
     )
 
+    fun estimateCommission(
+        shares: Long,
+        price: Double,
+        tradeMode: TradeMode,
+    ): Long {
+        if (shares <= 0L || !price.isFinite() || price <= 0.0) return 0L
+        val projection = projector.project(
+            listOf(
+                LedgerEntry(
+                    id = "preview",
+                    symbol = "PREVIEW",
+                    kind = LedgerEntryKind.BUY,
+                    date = "1970-01-01",
+                    shares = shares,
+                    price = price,
+                    tradeMode = tradeMode,
+                ),
+            ),
+        )
+        val tradeAmount = kotlin.math.floor(shares.toDouble() * price).toLong()
+        return (projection.totalInvestmentCost.toLong() - tradeAmount).coerceAtLeast(0L)
+    }
+
     fun addTrade(command: AddTradeCommand): DashboardSnapshot {
         val normalizedSymbol = command.symbol.trim().uppercase(Locale.US)
         require(normalizedSymbol.isNotBlank()) { "請輸入股票 / ETF 代號" }
