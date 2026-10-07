@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private enum class MarketWallMode(val label: String) {
-        DETAIL_LIST("詳細條列"),
+        DETAIL_LIST("詳細條列 ●"),
         LARGE_LIST("大字條列"),
         GRID("簡易方格"),
         MULTI_TREND("多筆走勢"),
@@ -4956,14 +4956,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            dialog.setTitle("行情牆｜${mode.label}｜${sort.label}")
+            dialog.setTitle("行情牆｜${mode.label}｜${sort.label}｜${if (descending) "降冪" else "升冪"}")
             controls.removeAllViews()
 
             val latestAsOf = batch.quotes.values.maxOfOrNull { it.asOfEpochMillis }
             controls.addView(
                 TextView(this).apply {
                     text = buildString {
-                        append("行情 ${batch.quotes.size} 檔")
+                        append("自選行情 ${batch.quotes.size} 檔")
                         append("｜漲 $advancingCount 跌 $decliningCount 平 $unchangedCount")
                         latestAsOf?.let {
                             append("｜更新 ")
