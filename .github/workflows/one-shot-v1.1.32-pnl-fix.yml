@@ -145,3 +145,5 @@ jobs:
           git diff --cached --check
           git commit -m 'fix: publish realtime today pnl v1.1.32'
           git push origin HEAD:main
+
+# trigger: 2
