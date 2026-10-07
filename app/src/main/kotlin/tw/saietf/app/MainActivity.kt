@@ -3250,7 +3250,7 @@ class MainActivity : ComponentActivity() {
                 val feeText = fee.text.toString().trim()
                 val taxText = tax.text.toString().trim()
                 val parsedFee = feeText.takeIf { it.isNotEmpty() }?.toLongOrNull()
-                val feeValue = parsedFee?.takeUnless { it == automaticFee }
+                val feeValue = parsedFee
                 val taxValue = taxText.takeIf { it.isNotEmpty() }?.toLongOrNull()
                 val tradeDateText = tradeDate.text.toString().trim()
                 val tradeDateValue = runCatching { LocalDate.parse(tradeDateText) }.getOrNull()
